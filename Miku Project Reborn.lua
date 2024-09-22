@@ -313,7 +313,7 @@ local menusettings = new.bool()
 local found_update = new.bool()
 -- auto updates
 local lmPath = "Miku Project Reborn.lua"
-local lmUrl = "твоя ссылка"
+local lmUrl = "https://raw.githubusercontent.com/MikuImpulse/Miku-Lua-AutoUpdates/main/Miku%20Project%20Reborn.lua"
 -- tpall
 local nop = false
 local tpidstate = false
