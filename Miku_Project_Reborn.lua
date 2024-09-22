@@ -1,6 +1,6 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.8.2')
+script_version('0.8.1')
 script_author('t.me/mikureborn')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channel: t.me/mikureborn')
 --------Библиотеки--------
@@ -4555,6 +4555,23 @@ function notf(text)
 end
 
 -- auto updates
+function downloadFile(url, path)
+    local response = {}
+    local _, status_code, _ = http.request{
+    url = url,
+    method = "GET",
+    sink = ltn12.sink.file(io.open(path, "w")),
+        headers = {
+            ["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0;Win64) AppleWebkit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36",
+        },
+    }
+    if status_code == 200 then
+        return true
+    else
+        return false
+    end
+end
+
 function check_update()
     notf('Проверка наличия обновлений...')
     local currentVersionFile = io.open(lmPath, "r")
