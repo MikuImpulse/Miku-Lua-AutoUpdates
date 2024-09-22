@@ -1,7 +1,7 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version('0.8.1')
-script_author('t.me/mikureborn')
+script_author('@mikureborn - main dev / @TheopkaStudio - autoupdates / @tglangera - helping in developing')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channel: t.me/mikureborn')
 --------Библиотеки--------
 local imgui = require 'mimgui'
