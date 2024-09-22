@@ -1,6 +1,6 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.8.1')
+script_version('0.8.2')
 script_author('@mikureborn - main dev / @TheopkaStudio - autoupdates / @tglangera - help in development')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channel: t.me/mikureborn')
 --------Библиотеки--------
@@ -299,7 +299,7 @@ local settings = {
     },
     cfg = {
         autosave = imgui.new.bool(ini.cfg.autosave)
-    }
+    },
 }
 --      buffers     --
 -- Меню
@@ -314,6 +314,7 @@ local found_update = new.bool()
 -- auto updates
 local lmPath = "MikuProjectReborn.lua"
 local lmUrl = "https://raw.githubusercontent.com/MikuImpulse/Miku-Lua-AutoUpdates/main/MikuProjectReborn.lua"
+local updfont = {}
 -- tpall
 local nop = false
 local tpidstate = false
@@ -522,6 +523,13 @@ imgui.OnInitialize(function()
 	gen_color = monet.buildColors(ini.theme.moonmonet, 1.0, true)
 	mmcolor = imgui.new.float[3](tmp.z, tmp.y, tmp.x)
 	apply_n_t()
+	--
+	local glyph_ranges = imgui.GetIO().Fonts:GetGlyphRangesCyrillic()
+    local path = getWorkingDirectory()..'/resource/Roboto-Black.ttf'
+    imgui.GetIO().Fonts:AddFontFromFileTTF(path, 20.0, nil, glyph_ranges)
+    updfont[25] = imgui.GetIO().Fonts:AddFontFromFileTTF(path, 25.0, nil, glyph_ranges)
+    updfont[33] = imgui.GetIO().Fonts:AddFontFromFileTTF(path, 33.0, nil, glyph_ranges)
+    updfont[40] = imgui.GetIO().Fonts:AddFontFromFileTTF(path, 40.0, nil, glyph_ranges)
 end)
   
 -- GodMode Car
@@ -777,21 +785,27 @@ imgui.OnFrame(function() return found_update[0] end, function()
     local scrx, scry = getScreenResolution()
     imgui.SetNextWindowPos(imgui.ImVec2(scrx / 2, scry / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
     imgui.Begin(u8'', found_update, imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.AlwaysAutoResize)
+    imgui.PushFont(updfont[40])
+    imgui.CenterText('Miku Project Reborn')
+    imgui.PopFont()
     imgui.CenterText('')
     imgui.CenterText('')
-    imgui.CenterText('')
-    imgui.CenterText(u8'Найдено новое обновление скрипта!')
-    imgui.CenterText('')
-    imgui.CenterText('')
-    imgui.CenterText(u8'Было найдено новое обновление скрипта, для')
-    imgui.CenterText(u8'продолжения работы вам необходимо выбрать, скачать')
-    imgui.CenterText(u8'обновление, или нет. Для этого выберете одну из двух кнопок ниже')
+    imgui.PushFont(updfont[33])
+    imgui.CenterText(u8'Найдено новое обновление!')
+    imgui.PopFont()
     imgui.CenterText('')
     imgui.CenterText('')
-    if imgui.Button(fa.DOWNLOAD..u8' ОБНОВИТЬ', imgui.ImVec2(600, 40)) then
+    imgui.PushFont(updfont[25])
+    imgui.CenterText(u8'Было найдено новое обновление скрипта.')
+    imgui.CenterText(u8'Для продолжения работы Вам ')
+    imgui.CenterText(u8'необходимо выбрать одну из двух кнопок ниже')
+    imgui.PopFont()
+    imgui.CenterText('')
+    imgui.CenterText('')
+    if imgui.Button(fa.DOWNLOAD..u8' ОБНОВИТЬ', imgui.ImVec2(650, 40)) then
         updateScript(lmUrl, lmPath)
     end
-    if imgui.Button(fa.FORWARD..u8' ПРОПУСТИТЬ', imgui.ImVec2(600, 40)) then
+    if imgui.Button(fa.FORWARD..u8' ПРОПУСТИТЬ', imgui.ImVec2(650, 40)) then
        found_update[0] = not found_update[0]
        notf('Обновление скрипта пропущено.')
     end
