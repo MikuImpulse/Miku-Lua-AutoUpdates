@@ -1,6 +1,6 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.8.1')
+script_version('0.8.2')
 script_author('t.me/mikureborn')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channel: t.me/mikureborn')
 --------Библиотеки--------
@@ -4709,4 +4709,4 @@ local function ARGBtoRGB(color)
     return bit.band(color, 0xFFFFFF)
 end
 
---
+-- ban
