@@ -1,7 +1,7 @@
 --------ќ скрипте--------
 script_name('Miku Project Reborn')
 script_version('0.8.1')
-script_author('@mikureborn - main dev / @TheopkaStudio - autoupdates / @tglangera - helping in developing')
+script_author('@mikureborn - main dev / @TheopkaStudio - autoupdates / @tglangera - help in development')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channel: t.me/mikureborn')
 --------Ѕиблиотеки--------
 local imgui = require 'mimgui'
@@ -774,9 +774,9 @@ local newFrame2 = imgui.OnFrame(
 )
 -- found update window
 imgui.OnFrame(function() return found_update[0] end, function()
-    local screenx, screeny = getScreenResolution()
-    imgui.SetNextWindowPos(imgui.ImVec2(screenx / 2, screeny / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
-    imgui.Begin(u8'', found_update, imgui.WindowFlags.NoMove + imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.AlwaysAutoResize)
+    local scrx, scry = getScreenResolution()
+    imgui.SetNextWindowPos(imgui.ImVec2(scrx / 2, scry / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+    imgui.Begin(u8'', found_update, imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.AlwaysAutoResize)
     imgui.CenterText('')
     imgui.CenterText('')
     imgui.CenterText('')
@@ -788,11 +788,10 @@ imgui.OnFrame(function() return found_update[0] end, function()
     imgui.CenterText(u8'обновление, или нет. ƒл€ этого выберете одну из двух кнопок ниже')
     imgui.CenterText('')
     imgui.CenterText('')
-    if imgui.Button(fa.DOWNLOAD..u8' ќЅЌќ¬»“№') then
+    if imgui.Button(fa.DOWNLOAD..u8' ќЅЌќ¬»“№', imgui.ImVec2(600, 40)) then
         updateScript(lmUrl, lmPath)
     end
-    imgui.SameLine()
-    if imgui.Button(fa.FORWARD..u8' ѕ–ќѕ”—“»“№') then
+    if imgui.Button(fa.FORWARD..u8' ѕ–ќѕ”—“»“№', imgui.ImVec2(600, 40)) then
        found_update[0] = not found_update[0]
        notf('ќбновление скрипта пропущено.')
     end
