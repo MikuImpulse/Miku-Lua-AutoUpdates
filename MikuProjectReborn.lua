@@ -1,6 +1,6 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.8.6')
+script_version('0.8.5')
 script_author('@mikureborn - main dev / @TheopkaStudio - autoupdates / @tglangera - help in development')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channel: t.me/mikureborn')
 --------Библиотеки--------
@@ -4974,3 +4974,10 @@ end
 local function ARGBtoRGB(color)
     return bit.band(color, 0xFFFFFF)
 end
+
+--[[
+проста чучуть кода
+ну чучут
+добавил чтоб ебаный скрипт подгрузил тест обнову с гитхаба
+ну ебаная хуета пишет что обновлений нет хотя они есть ебанныйрот
+]]
