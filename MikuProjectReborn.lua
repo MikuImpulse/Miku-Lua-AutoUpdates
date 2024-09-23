@@ -1,6 +1,6 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.8.5')
+script_version('0.8.6')
 script_author('@mikureborn - main dev / @TheopkaStudio - autoupdates / @tglangera - help in development')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channel: t.me/mikureborn')
 --------Библиотеки--------
@@ -3356,7 +3356,7 @@ function events.onServerMessage(color, text)
 			end)
 		end
 		if string.find(txt, 'ответил вам') or string.find(txt, 'телепортированы') then	
-			sampAddChatMessage('{FF0000}[WARNING] {FFFFFF}Вам написал администратор, закругляемся...', -1)
+			sampAddChatMessage('Вам написал администратор, закругляемся...', -1)
 			lua_thread.create(function()
 				wait(math.random(1470, 1955))
 				point = 0
@@ -4976,8 +4976,22 @@ local function ARGBtoRGB(color)
 end
 
 --[[
-проста чучуть кода
-ну чучут
-добавил чтоб ебаный скрипт подгрузил тест обнову с гитхаба
-ну ебаная хуета пишет что обновлений нет хотя они есть ебанныйрот
+я 00пшукш0ф0ш амвышзбфаушзфф
+хуй
+хуй
+хуйх
+ухйху
+йху
+й
+ху
+й
+хухй
+
+хуйх
+у
+й
+ху
+йхуйх
+ухйух
+уйх
 ]]
