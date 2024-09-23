@@ -1,6 +1,6 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.8.5')
+script_version('0.8.51')
 script_author('@mikureborn - main dev / @TheopkaStudio - autoupdates / @tglangera - help in development')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channel: t.me/mikureborn')
 --------Библиотеки--------
@@ -1614,7 +1614,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
             imgui.CenterText(fa.GUN..u8' Оружие')
             imgui.Separator()
             if imgui.Button(fa.GUN..u8' Выдать ган') then
-                givePlayerGun()
+                givePlayerGun(settings.dgun.gunsList[0], settings.dgun.ammo[0])
             end
             imgui.PushItemWidth(350)
             if imgui.Combo(fa.PERSON_RIFLE..u8' Ганы',settings.dgun.gunsList,ImItems, #item_list) then
@@ -3872,19 +3872,13 @@ function processAirBrake()
     end
 end
 
--- dgun
-function giveWeapon(value)
-    givePlayerGun(settings.dgun.gunsList[0], settings.dgun.ammo[0])
-end
-
 function givePlayerGun(id, ammo)
     local model = getWeapontypeModel(id)
     requestModel(model)
     loadAllModelsNow()
-    giveWeaponToChar(PLAYER_PED, id, settings.dgun.ammo[0])
+    giveWeaponToChar(PLAYER_PED, id, ammo)
 end
 
--- hpbar
 function drawBar(posX, posY, sizeX, sizeY, color1, color2, borderThickness, font, value)
     renderDrawBoxWithBorder(posX, posY, sizeX, sizeY, color2, borderThickness, 0xFF000000)
     renderDrawBox(posX + borderThickness, posY + borderThickness, sizeX / 100 * value - (borderThickness * 2), sizeY - (2 * borderThickness), color1)
