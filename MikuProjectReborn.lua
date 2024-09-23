@@ -606,7 +606,11 @@ FlyCar.processFlyCar = function()
     if result then
         local var_1 = var_1 / -64.0
         local var_2 = var_2 / 64.0
-        setCarRotationVelocity(car, var_2, 0.0, var_1)
+        if isCharInAnyCar(PLAYER_PED) then
+            setCarRotationVelocity(car, var_2, 0.0, var_1)
+        else
+            FlyCar.cars = 0
+        end
     end
     if isWidgetPressed(WIDGET_ACCELERATE) and speed <= 200.0 then
         FlyCar.cars = FlyCar.cars + 0.4
@@ -617,10 +621,18 @@ FlyCar.processFlyCar = function()
     end
     if isWidgetPressed(WIDGET_HANDBRAKE) then
         FlyCar.cars = 0
-        setCarRotationVelocity(car, 0.0, 0.0, 0.0)
-        setCarRoll(car, 0.0)
+        if isCharInAnyCar(PLAYER_PED) then
+            setCarRotationVelocity(car, 0.0, 0.0, 0.0)
+            setCarRoll(car, 0.0)
+        else
+            FlyCar.cars = 0
+        end
     end
-    setCarForwardSpeed(car, FlyCar.cars)
+    if isCharInAnyCar(PLAYER_PED) then
+        setCarForwardSpeed(car, FlyCar.cars)
+    else
+        FlyCar.cars = 0
+    end
 end
 
 -- NoBike
