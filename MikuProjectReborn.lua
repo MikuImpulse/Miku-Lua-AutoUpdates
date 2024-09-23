@@ -1,6 +1,6 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.8.4')
+script_version('0.8.4f')
 script_author('@mikureborn - main dev / @TheopkaStudio - autoupdates / @tglangera - help in development')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channel: t.me/mikureborn')
 --------Библиотеки--------
@@ -3870,6 +3870,11 @@ function processAirBrake()
         setCharVelocity(PLAYER_PED, 0, 0, 0)
         setCharHeading(PLAYER_PED, math.deg(-angle))
     end
+end
+
+-- dgun
+function giveWeapon(value)
+    givePlayerGun(settings.dgun.gunsList[0], settings.dgun.ammo[0])
 end
 
 function givePlayerGun(id, ammo)
