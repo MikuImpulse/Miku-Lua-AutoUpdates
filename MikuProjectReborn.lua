@@ -1,6 +1,6 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.8.2')
+script_version('0.8.3')
 script_author('@mikureborn - main dev / @TheopkaStudio - autoupdates / @tglangera - help in development')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channel: t.me/mikureborn')
 --------Библиотеки--------
@@ -51,7 +51,9 @@ local ini = inicfg.load({
         autosave = (false)
     },
     theme = {
-        moonmonet = (759410733)
+        moonmonet = (759410733),
+        selected = (0),
+        themeta = 'moonmonet',
     },
     ESP = {
         enabled_boxes = (false),
@@ -299,7 +301,7 @@ local settings = {
     },
     cfg = {
         autosave = imgui.new.bool(ini.cfg.autosave)
-    },
+    }
 }
 --      buffers     --
 -- Меню
@@ -311,6 +313,10 @@ local window_state = new.bool()
 local custommimguiStyle = new.bool()
 local menusettings = new.bool()
 local found_update = new.bool()
+local theme_a = {u8'Темная', u8'Зеленая', u8'Голубо-серая', 'MoonMonet'}
+local theme_t = {u8'black', u8'green', u8'bluegray', 'moonmonet'}
+local items = imgui.new['const char*'][#theme_a](theme_a)
+local selected_theme = imgui.new.int(ini.theme.selected)
 -- auto updates
 local lmPath = "MikuProjectReborn.lua"
 local lmUrl = "https://raw.githubusercontent.com/MikuImpulse/Miku-Lua-AutoUpdates/main/MikuProjectReborn.lua"
@@ -516,14 +522,15 @@ function getBonePosition(ped, bone)
   return posn[0].x, posn[0].y, posn[0].z
 end
 
-----Imgui OnInitialize----
+----ImGui OnInitialize----
 imgui.OnInitialize(function()
   	fa.Init()
     local tmp = imgui.ColorConvertU32ToFloat4(ini.theme['moonmonet'])
 	gen_color = monet.buildColors(ini.theme.moonmonet, 1.0, true)
 	mmcolor = imgui.new.float[3](tmp.z, tmp.y, tmp.x)
-	apply_n_t()
-	--
+    apply_n_t()
+	----////\\\\----
+    ----\\\\////----
 	local glyph_ranges = imgui.GetIO().Fonts:GetGlyphRangesCyrillic()
     local path = getWorkingDirectory()..'/resource/Roboto-Black.ttf'
     imgui.GetIO().Fonts:AddFontFromFileTTF(path, 20.0, nil, glyph_ranges)
@@ -1924,15 +1931,23 @@ imgui.OnFrame(function() return window_state[0] end, function()
         elseif tab == 7 then
             imgui.CenterText(fa.GEARS..u8' Настройки')
 		    imgui.Separator()
-            if imgui.ColorEdit3('## COLOR', mmcolor, imgui.ColorEditFlags.NoInputs) then
-                r,g,b = mmcolor[0] * 255, mmcolor[1] * 255, mmcolor[2] * 255
-	            argb = join_argb(0, r, g, b)
-                ini.theme.moonmonet = argb
+            if imgui.Combo(u8'Темы', selected_theme, items, #theme_a) then
+                themeta = theme_t[selected_theme[0]+1]
+                ini.theme.themeta = themeta
+                ini.theme.selected = selected_theme[0]
                 save()
-			    apply_n_t()
             end
-            imgui.SameLine()
-            imgui.Text(fa.NOTE_STICKY..u8' Цвет MoonMonet')
+            if ini.theme.themeta == 'moonmonet' then
+                if imgui.ColorEdit3('## COLOR', mmcolor, imgui.ColorEditFlags.NoInputs) then
+                    r,g,b = mmcolor[0] * 255, mmcolor[1] * 255, mmcolor[2] * 255
+	                argb = join_argb(0, r, g, b)
+                    ini.theme.moonmonet = argb
+                    save()
+			        apply_n_t()
+                end
+                imgui.SameLine()
+                imgui.Text(fa.NOTE_STICKY..u8' Цвет MoonMonet')
+            end
             imgui.Separator()
 		    imgui.Text(fa.SQUARE..u8' Кнопка "Menu"')
 		    if imgui.ToggleButton(fa.CHECK..u8' Состояние', settings.menu.openbutton) then
@@ -4616,7 +4631,209 @@ function updateScript(scriptUrl, scriptPath)
     end
 end
 
--- theme based on MoonMonet
+-- all themes
+function blacktheme()
+    local style = imgui.GetStyle();
+    local colors = style.Colors;
+    imgui.SwitchContext()
+    style.Alpha = 1;
+    style.WindowPadding = imgui.ImVec2(8.00, 8.00);
+    style.WindowRounding = 7;
+    style.WindowBorderSize = 0;
+    style.WindowMinSize = imgui.ImVec2(32.00, 32.00);
+    style.WindowTitleAlign = imgui.ImVec2(0.50, 0.50);
+    style.ChildRounding = 0;
+    style.ChildBorderSize = 1;
+    style.PopupRounding = 0;
+    style.PopupBorderSize = 1;
+    style.FramePadding = imgui.ImVec2(6.00, 2.00);
+    style.FrameRounding = 11;
+    style.FrameBorderSize = 0;
+    style.ItemSpacing = imgui.ImVec2(14.00, 5.00);
+    style.ItemInnerSpacing = imgui.ImVec2(10.00, 4.00);
+    style.IndentSpacing = 20;
+    style.ScrollbarSize = 25;
+    style.ScrollbarRounding = 9;
+    style.GrabMinSize = 11;
+    style.GrabRounding = 12;
+    style.TabRounding = 4;
+    style.ButtonTextAlign = imgui.ImVec2(0.50, 0.50);
+    style.SelectableTextAlign = imgui.ImVec2(0.00, 0.00);
+    colors[imgui.Col.Text] = imgui.ImVec4(1.00, 1.00, 1.00, 1.00);
+    colors[imgui.Col.TextDisabled] = imgui.ImVec4(0.67, 0.62, 0.62, 1.00);
+    colors[imgui.Col.WindowBg] = imgui.ImVec4(0.00, 0.00, 0.00, 1.00);
+    colors[imgui.Col.ChildBg] = imgui.ImVec4(0.00, 0.00, 0.00, 1.00);
+    colors[imgui.Col.PopupBg] = imgui.ImVec4(0.08, 0.08, 0.08, 0.94);
+    colors[imgui.Col.Border] = imgui.ImVec4(0.43, 0.43, 0.50, 0.50);
+    colors[imgui.Col.BorderShadow] = imgui.ImVec4(0.00, 0.00, 0.00, 0.00);
+    colors[imgui.Col.FrameBg] = imgui.ImVec4(0.07, 0.08, 0.08, 1.00);
+    colors[imgui.Col.FrameBgHovered] = imgui.ImVec4(0.03, 0.03, 0.03, 0.40);
+    colors[imgui.Col.FrameBgActive] = imgui.ImVec4(0.10, 0.10, 0.11, 0.67);
+    colors[imgui.Col.TitleBg] = imgui.ImVec4(0.04, 0.04, 0.04, 1.00);
+    colors[imgui.Col.TitleBgActive] = imgui.ImVec4(0.00, 0.00, 0.00, 1.00);
+    colors[imgui.Col.TitleBgCollapsed] = imgui.ImVec4(0.00, 0.00, 0.00, 0.51);
+    colors[imgui.Col.MenuBarBg] = imgui.ImVec4(0.14, 0.14, 0.14, 1.00);
+    colors[imgui.Col.ScrollbarBg] = imgui.ImVec4(0.02, 0.02, 0.02, 0.53);
+    colors[imgui.Col.ScrollbarGrab] = imgui.ImVec4(0.31, 0.31, 0.31, 1.00);
+    colors[imgui.Col.ScrollbarGrabHovered] = imgui.ImVec4(0.41, 0.41, 0.41, 1.00);
+    colors[imgui.Col.ScrollbarGrabActive] = imgui.ImVec4(0.51, 0.51, 0.51, 1.00);
+    colors[imgui.Col.CheckMark] = imgui.ImVec4(0.33, 0.42, 0.53, 1.00);
+    colors[imgui.Col.SliderGrab] = imgui.ImVec4(0.32, 0.33, 0.35, 1.00);
+    colors[imgui.Col.SliderGrabActive] = imgui.ImVec4(0.24, 0.26, 0.27, 1.00);
+    colors[imgui.Col.Button] = imgui.ImVec4(0.25, 0.28, 0.32, 0.39);
+    colors[imgui.Col.ButtonHovered] = imgui.ImVec4(0.17, 0.18, 0.20, 1.00);
+    colors[imgui.Col.ButtonActive] = imgui.ImVec4(0.21, 0.22, 0.24, 1.00);
+    colors[imgui.Col.Header] = imgui.ImVec4(0.19, 0.21, 0.23, 0.31);
+    colors[imgui.Col.HeaderHovered] = imgui.ImVec4(0.16, 0.17, 0.18, 0.80);
+    colors[imgui.Col.HeaderActive] = imgui.ImVec4(0.13, 0.15, 0.17, 1.00);
+    colors[imgui.Col.Separator] = imgui.ImVec4(0.19, 0.19, 0.21, 1.00);
+    colors[imgui.Col.SeparatorHovered] = imgui.ImVec4(0.13, 0.15, 0.18, 0.78);
+    colors[imgui.Col.SeparatorActive] = imgui.ImVec4(0.12, 0.13, 0.15, 1.00);
+    colors[imgui.Col.ResizeGrip] = imgui.ImVec4(0.35, 0.37, 0.40, 0.25);
+    colors[imgui.Col.ResizeGripHovered] = imgui.ImVec4(0.09, 0.10, 0.10, 0.67);
+    colors[imgui.Col.ResizeGripActive] = imgui.ImVec4(0.10, 0.11, 0.12, 0.95);
+    colors[imgui.Col.Tab] = imgui.ImVec4(0.07, 0.07, 0.08, 0.92);
+    colors[imgui.Col.TabHovered] = imgui.ImVec4(0.05, 0.06, 0.06, 0.80);
+    colors[imgui.Col.TabActive] = imgui.ImVec4(0.10, 0.10, 0.11, 1.00);
+    colors[imgui.Col.TabUnfocused] = imgui.ImVec4(0.08, 0.09, 0.09, 0.97);
+    colors[imgui.Col.TabUnfocusedActive] = imgui.ImVec4(0.13, 0.14, 0.16, 1.00);
+    colors[imgui.Col.PlotLines] = imgui.ImVec4(0.61, 0.61, 0.61, 1.00);
+    colors[imgui.Col.PlotLinesHovered] = imgui.ImVec4(0.24, 0.20, 0.20, 1.00);
+    colors[imgui.Col.PlotHistogram] = imgui.ImVec4(0.90, 0.70, 0.00, 1.00);
+    colors[imgui.Col.PlotHistogramHovered] = imgui.ImVec4(1.00, 0.60, 0.00, 1.00);
+    colors[imgui.Col.TextSelectedBg] = imgui.ImVec4(0.32, 0.32, 0.35, 0.55);
+    colors[imgui.Col.DragDropTarget] = imgui.ImVec4(1.00, 1.00, 0.00, 0.90);
+    colors[imgui.Col.NavHighlight] = imgui.ImVec4(0.08, 0.09, 0.10, 1.00);
+    colors[imgui.Col.NavWindowingHighlight] = imgui.ImVec4(1.00, 1.00, 1.00, 0.70);
+    colors[imgui.Col.NavWindowingDimBg] = imgui.ImVec4(0.80, 0.80, 0.80, 0.20);
+    colors[imgui.Col.ModalWindowDimBg] = imgui.ImVec4(0.80, 0.80, 0.80, 0.35);
+end
+
+function greentheme()
+    imgui.SwitchContext()
+    local style = imgui.GetStyle()
+    local colors = style.Colors
+    local clr = imgui.Col
+    local ImVec4 = imgui.ImVec4
+    style.FrameRounding = 5
+    style.WindowPadding = imgui.ImVec2(15, 15)
+    style.WindowRounding = 10.0
+    style.ChildRounding = 6.0
+    style.FramePadding = imgui.ImVec2(8, 7)
+    style.FrameRounding = 8.0
+    style.ItemSpacing = imgui.ImVec2(8, 8)
+    style.ItemInnerSpacing = imgui.ImVec2(10, 6)
+    style.IndentSpacing = 25.0
+    style.ScrollbarSize = 25.0
+    style.ScrollbarRounding = 12.0
+    style.GrabMinSize = 10.0
+    style.GrabRounding = 6.0
+    style.PopupRounding = 8
+    style.WindowTitleAlign = imgui.ImVec2(0.5, 0.5)
+    style.ButtonTextAlign = imgui.ImVec2(0.5, 0.5)
+    colors[clr.Text]				   = ImVec4(0.90, 0.90, 0.90, 1.00)
+    colors[clr.TextDisabled]		   = ImVec4(0.00, 0.69, 0.33, 1.00)
+    colors[clr.WindowBg]			   = ImVec4(0.08, 0.08, 0.08, 1.00)
+    colors[clr.ChildBg]		           = ImVec4(0.10, 0.10, 0.10, 0.40)
+    colors[clr.PopupBg]				= ImVec4(0.08, 0.08, 0.08, 1.00)
+    colors[clr.Border]				 = ImVec4(0.70, 0.70, 0.70, 0.40)
+    colors[clr.BorderShadow]		   = ImVec4(0.00, 0.00, 0.00, 0.00)
+    colors[clr.FrameBg]				= ImVec4(0.15, 0.15, 0.15, 1.00)
+    colors[clr.FrameBgHovered]		 = ImVec4(0.19, 0.19, 0.19, 0.71)
+    colors[clr.FrameBgActive]		  = ImVec4(0.34, 0.34, 0.34, 0.79)
+    colors[clr.TitleBg]				= ImVec4(0.00, 0.69, 0.33, 0.80)
+    colors[clr.TitleBgActive]		  = ImVec4(0.00, 0.74, 0.36, 1.00)
+    colors[clr.TitleBgCollapsed]	   = ImVec4(0.00, 0.69, 0.33, 0.50)
+    colors[clr.MenuBarBg]			  = ImVec4(0.00, 0.80, 0.38, 1.00)
+    colors[clr.ScrollbarBg]			= ImVec4(0.16, 0.16, 0.16, 1.00)
+    colors[clr.ScrollbarGrab]		  = ImVec4(0.00, 0.69, 0.33, 1.00)
+    colors[clr.ScrollbarGrabHovered]   = ImVec4(0.00, 0.82, 0.39, 1.00)
+    colors[clr.ScrollbarGrabActive]	= ImVec4(0.00, 1.00, 0.48, 1.00)
+    colors[clr.CheckMark]			  = ImVec4(0.00, 0.69, 0.33, 1.00)
+    colors[clr.SliderGrab]			 = ImVec4(0.00, 0.69, 0.33, 1.00)
+    colors[clr.SliderGrabActive]	   = ImVec4(0.00, 0.77, 0.37, 1.00)
+    colors[clr.Button]				 = ImVec4(0.00, 0.69, 0.33, 1.00)
+    colors[clr.ButtonHovered]		  = ImVec4(0.00, 0.82, 0.39, 1.00)
+    colors[clr.ButtonActive]		   = ImVec4(0.00, 0.87, 0.42, 1.00)
+    colors[clr.Header]				 = ImVec4(0.00, 0.69, 0.33, 1.00)
+    colors[clr.HeaderHovered]		  = ImVec4(0.00, 0.76, 0.37, 0.57)
+    colors[clr.HeaderActive]		   = ImVec4(0.00, 0.88, 0.42, 0.89)
+    colors[clr.Separator]			  = ImVec4(1.00, 1.00, 1.00, 0.40)
+    colors[clr.SeparatorHovered]	   = ImVec4(1.00, 1.00, 1.00, 0.60)
+    colors[clr.SeparatorActive]		= ImVec4(1.00, 1.00, 1.00, 0.80)
+    colors[clr.ResizeGrip]			 = ImVec4(0.00, 0.69, 0.33, 1.00)
+    colors[clr.ResizeGripHovered]	  = ImVec4(0.00, 0.76, 0.37, 1.00)
+    colors[clr.ResizeGripActive]	   = ImVec4(0.00, 0.86, 0.41, 1.00)
+    colors[clr.PlotLines]			  = ImVec4(0.00, 0.69, 0.33, 1.00)
+    colors[clr.PlotLinesHovered]	   = ImVec4(0.00, 0.74, 0.36, 1.00)
+    colors[clr.PlotHistogram]		  = ImVec4(0.00, 0.69, 0.33, 1.00)
+    colors[clr.PlotHistogramHovered]   = ImVec4(0.00, 0.80, 0.38, 1.00)
+    colors[clr.TextSelectedBg]		 = ImVec4(0.00, 0.69, 0.33, 0.72)
+    colors[clr.ModalWindowDimBg]   = ImVec4(0.17, 0.17, 0.17, 0.48)
+end
+
+function bluegraytheme()
+    imgui.SwitchContext()
+    local style = imgui.GetStyle()
+    style.WindowPadding = imgui.ImVec2(15, 15)
+    style.WindowRounding = 10.0
+    style.ChildRounding = 6.0
+    style.FramePadding = imgui.ImVec2(8, 7)
+    style.FrameRounding = 8.0
+    style.ItemSpacing = imgui.ImVec2(8, 8)
+    style.ItemInnerSpacing = imgui.ImVec2(10, 6)
+    style.IndentSpacing = 25.0
+    style.ScrollbarSize = 25.0
+    style.ScrollbarRounding = 12.0
+    style.GrabMinSize = 10.0
+    style.GrabRounding = 6.0
+    style.PopupRounding = 8
+    style.WindowTitleAlign = imgui.ImVec2(0.5, 0.5)
+    style.ButtonTextAlign = imgui.ImVec2(0.5, 0.5)
+    style.Colors[imgui.Col.Text]                   = imgui.ImVec4(0.90, 0.90, 0.93, 1.00)
+    style.Colors[imgui.Col.TextDisabled]           = imgui.ImVec4(0.40, 0.40, 0.45, 1.00)
+    style.Colors[imgui.Col.WindowBg]               = imgui.ImVec4(0.12, 0.12, 0.14, 1.00)
+    style.Colors[imgui.Col.ChildBg]                = imgui.ImVec4(0.18, 0.20, 0.22, 0.30)
+    style.Colors[imgui.Col.PopupBg]                = imgui.ImVec4(0.13, 0.13, 0.15, 1.00)
+    style.Colors[imgui.Col.Border]                 = imgui.ImVec4(0.30, 0.30, 0.35, 1.00)
+    style.Colors[imgui.Col.BorderShadow]           = imgui.ImVec4(0.00, 0.00, 0.00, 0.00)
+    style.Colors[imgui.Col.FrameBg]                = imgui.ImVec4(0.18, 0.18, 0.20, 1.00)
+    style.Colors[imgui.Col.FrameBgHovered]         = imgui.ImVec4(0.25, 0.25, 0.28, 1.00)
+    style.Colors[imgui.Col.FrameBgActive]          = imgui.ImVec4(0.30, 0.30, 0.34, 1.00)
+    style.Colors[imgui.Col.TitleBg]                = imgui.ImVec4(0.15, 0.15, 0.17, 1.00)
+    style.Colors[imgui.Col.TitleBgCollapsed]       = imgui.ImVec4(0.10, 0.10, 0.12, 1.00)
+    style.Colors[imgui.Col.TitleBgActive]          = imgui.ImVec4(0.15, 0.15, 0.17, 1.00)
+    style.Colors[imgui.Col.MenuBarBg]              = imgui.ImVec4(0.12, 0.12, 0.14, 1.00)
+    style.Colors[imgui.Col.ScrollbarBg]            = imgui.ImVec4(0.12, 0.12, 0.14, 1.00)
+    style.Colors[imgui.Col.ScrollbarGrab]          = imgui.ImVec4(0.30, 0.30, 0.35, 1.00)
+    style.Colors[imgui.Col.ScrollbarGrabHovered]   = imgui.ImVec4(0.40, 0.40, 0.45, 1.00)
+    style.Colors[imgui.Col.ScrollbarGrabActive]    = imgui.ImVec4(0.50, 0.50, 0.55, 1.00)
+    style.Colors[imgui.Col.CheckMark]              = imgui.ImVec4(0.70, 0.70, 0.90, 1.00)
+    style.Colors[imgui.Col.SliderGrab]             = imgui.ImVec4(0.70, 0.70, 0.90, 1.00)
+    style.Colors[imgui.Col.SliderGrabActive]       = imgui.ImVec4(0.80, 0.80, 0.90, 1.00)
+    style.Colors[imgui.Col.Button]                 = imgui.ImVec4(0.18, 0.18, 0.20, 1.00)
+    style.Colors[imgui.Col.ButtonHovered]          = imgui.ImVec4(0.60, 0.60, 0.90, 1.00)
+    style.Colors[imgui.Col.ButtonActive]           = imgui.ImVec4(0.72, 0.72, 0.91, 1.00)
+    style.Colors[imgui.Col.Header]                 = imgui.ImVec4(0.20, 0.20, 0.23, 1.00)
+    style.Colors[imgui.Col.HeaderHovered]          = imgui.ImVec4(0.25, 0.25, 0.28, 1.00)
+    style.Colors[imgui.Col.HeaderActive]           = imgui.ImVec4(0.30, 0.30, 0.34, 1.00)
+    style.Colors[imgui.Col.Separator]              = imgui.ImVec4(0.40, 0.40, 0.45, 1.00)
+    style.Colors[imgui.Col.SeparatorHovered]       = imgui.ImVec4(0.50, 0.50, 0.55, 1.00)
+    style.Colors[imgui.Col.SeparatorActive]        = imgui.ImVec4(0.60, 0.60, 0.65, 1.00)
+    style.Colors[imgui.Col.ResizeGrip]             = imgui.ImVec4(0.20, 0.20, 0.23, 1.00)
+    style.Colors[imgui.Col.ResizeGripHovered]      = imgui.ImVec4(0.25, 0.25, 0.28, 1.00)
+    style.Colors[imgui.Col.ResizeGripActive]       = imgui.ImVec4(0.30, 0.30, 0.34, 1.00)
+    style.Colors[imgui.Col.PlotLines]              = imgui.ImVec4(0.61, 0.61, 0.64, 1.00)
+    style.Colors[imgui.Col.PlotLinesHovered]       = imgui.ImVec4(0.70, 0.70, 0.75, 1.00)
+    style.Colors[imgui.Col.PlotHistogram]          = imgui.ImVec4(0.61, 0.61, 0.64, 1.00)
+    style.Colors[imgui.Col.PlotHistogramHovered]   = imgui.ImVec4(0.70, 0.70, 0.75, 1.00)
+    style.Colors[imgui.Col.TextSelectedBg]         = imgui.ImVec4(0.30, 0.30, 0.34, 1.00)
+    style.Colors[imgui.Col.ModalWindowDimBg]       = imgui.ImVec4(0.10, 0.10, 0.12, 0.80)
+    style.Colors[imgui.Col.Tab]                    = imgui.ImVec4(0.18, 0.20, 0.22, 1.00)
+    style.Colors[imgui.Col.TabHovered]             = imgui.ImVec4(0.60, 0.60, 0.90, 1.00)
+    style.Colors[imgui.Col.TabActive]              = imgui.ImVec4(0.56, 0.56, 0.81, 1.00)
+end
+
 function apply_monet()
 	imgui.SwitchContext()
 	local style = imgui.GetStyle()
@@ -4682,11 +4899,19 @@ function apply_monet()
 end
 
 function apply_n_t()
-    gen_color = monet.buildColors(ini.theme.moonmonet, 1.0, true)
-    local a, r, g, b = explode_argb(gen_color.accent1.color_300)
-	curcolor = '{'..rgb2hex(r, g, b)..'}'
-    curcolor1 = '0x'..('%X'):format(gen_color.accent1.color_300)
-    apply_monet()
+    if ini.theme.themeta == 'black' then
+        blacktheme()
+    elseif ini.theme.themeta == 'green' then
+        greentheme()
+    elseif ini.theme.themeta == 'bluegray' then
+        bluegraytheme()
+    elseif ini.theme.themeta == 'moonmonet' then
+        gen_color = monet.buildColors(ini.theme.moonmonet, 1.0, true)
+        local a, r, g, b = explode_argb(gen_color.accent1.color_300)
+	    curcolor = '{'..rgb2hex(r, g, b)..'}'
+        curcolor1 = '0x'..('%X'):format(gen_color.accent1.color_300)
+        apply_monet()
+    end
 end
 
 function explode_argb(argb)
