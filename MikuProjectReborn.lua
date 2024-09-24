@@ -92,6 +92,9 @@ local ini = inicfg.load({
         cjrun = (false),
         autoplusc = (false),
         infiniterun = (false),
+        autousedrugs = (false),
+        auhp = (20),
+        audrugs = (3)
     },
     car = {
         godmode2_enabled = (false),
@@ -228,7 +231,10 @@ local settings = {
         skinid = imgui.new.int(ini.ped.skinid),
         cjrun = imgui.new.bool(ini.ped.cjrun),
         autoplusc = imgui.new.bool(ini.ped.autoplusc),
-        infiniterun = imgui.new.bool(ini.ped.infiniterun)
+        infiniterun = imgui.new.bool(ini.ped.infiniterun),
+        autousedrugs = imgui.new.bool(ini.ped.autousedrugs),
+        auhp = imgui.new.int(ini.ped.auhp),
+        audrugs = imgui.new.int(ini.ped.audrugs)
     },
     car = {
         godmode2_enabled = imgui.new.bool(ini.car.godmode2_enabled),
@@ -1484,6 +1490,24 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 end
             end
             imgui.Separator()
+            imgui.CenterText(fa.VIRUS..u8' Автоюз нарко')
+            imgui.Separator()
+            if imgui.ToggleButton(fa.VIRUS..u8' Включено', settings.ped.autousedrugs) then
+                if settings.cfg.autosave[0] then
+                    ini.ped.autousedrugs = settings.ped.autousedrugs[0]
+                end
+            end
+            if imgui.SliderInt(fa.HEART..u8' ХП (ниже значения = хилит)', settings.ped.auhp, 1, 160) then
+                if settings.cfg.autosave[0] then
+                    ini.ped.auhp = settings.ped.auhp[0]
+                end
+            end
+            if imgui.SliderInt(fa.HEART_PULSE..u8' Кол-во нарко', settings.ped.audrugs, 1, 160) then
+                if settings.cfg.autosave[0] then
+                    ini.ped.audrugs = settings.ped.audrugs[0]
+                end
+            end
+            imgui.Separator()
             if imgui.Button(fa.USER..u8' Бот завод') then
                 sampProcessChatInput('/armbot '..krugibota[0])
             end
@@ -2106,6 +2130,9 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.ped.cjrun = settings.ped.cjrun[0]
                     ini.ped.autoplusc = settings.ped.autoplusc[0]
                     ini.ped.infiniterun = settings.ped.infiniterun[0]
+                    ini.ped.autousedrugs = settings.ped.autousedrugs[0]
+                    ini.ped.auhp = settings.ped.auhp[0]
+                    ini.ped.audrugs = settings.ped.audrugs[0]
                     ini.car.godmode2_enabled = settings.car.godmode2_enabled[0]
                     ini.car.flycar = settings.car.flycar[0]
                     ini.car.nobike = settings.car.nobike[0]
@@ -2558,6 +2585,12 @@ function main()
 	end)
 	statusbot = lua_thread.create_suspended(botwork)
     while true do wait(0)
+        if settings.ped.autousedrugs[0] then
+            local outhp = getCharHealth(PLAYER_PED)
+            if outhp < settings.ped.auhp[0] then
+                sampSendChat('/usedrugs '..settings.ped.audrugs[0])
+            end
+        end
         if wwwflycar then
             FlyCar.processFlyCar()
         end
@@ -4974,3 +5007,7 @@ end
 local function ARGBtoRGB(color)
     return bit.band(color, 0xFFFFFF)
 end
+
+--[[
+Хач охуел
+]]
