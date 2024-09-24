@@ -4195,7 +4195,7 @@ function runToPoint(tox, toy)
 			armorbotalt = true
 			notf('—даЄм...')
 			repeat sendKey(1024) wait(math.random(75, 150)) until not armorbotalt or not armorbotstate
-			sampAddChatMessage(currentrounds..' круг..', -1)
+			notf(currentrounds..' круг..')
 			point = 0
 			break
 		end
