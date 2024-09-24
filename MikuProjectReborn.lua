@@ -1,6 +1,6 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.8.7')
+script_version('0.8.8')
 script_author('@mikureborn - main dev / @TheopkaStudio - autoupdates / @tglangera - help in development')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channeI: t.me/mikureborn')
 --------Библиотеки--------
@@ -78,7 +78,9 @@ local ini = inicfg.load({
         gzname = (false),
         offdontflood = (false),
         radiuslavki = (false),
-        antimask = (false)
+        antimask = (false),
+        timeblockserv = (false),
+        weatherblockserv = (false)
     },
     ped = {
         godmode_enabled = (false),
@@ -219,7 +221,9 @@ local settings = {
         gzname = imgui.new.bool(ini.main.gzname),
         offdontflood = imgui.new.bool(ini.main.offdontflood),
         radiuslavki = imgui.new.bool(ini.main.radiuslavki),
-        antimask = imgui.new.bool(ini.main.antimask)
+        antimask = imgui.new.bool(ini.main.antimask),
+        timeblockserv = imgui.new.bool(ini.main.timeblockserv),
+        weatherblockserv = imgui.new.bool(ini.main.weatherblockserv)
     },
     ped = {
         godmode_enabled = imgui.new.bool(ini.ped.godmode_enabled),
@@ -1163,6 +1167,13 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 end
             end
             imgui.PopItemWidth()
+            imgui.SameLine()
+            if imgui.ToggleButton(fa.XMARK..u8' Блокировать погоду сервера', settings.main.weatherblockserv) then
+                if settings.cfg.autosave[0] then
+                    ini.main.weatherblockserv = settings.main.weatherblockserv[0]
+                    save()
+                end
+            end
             if imgui.Button(fa.MOON..u8' Установить время') then
                 if WeatherAndTime.thread ~= nil then
                     WeatherAndTime.thread:terminate()
@@ -1189,6 +1200,13 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 end
             end
             imgui.PopItemWidth()
+            imgui.SameLine()
+            if imgui.ToggleButton(fa.XMARK..u8' Блокировать время сервера', settings.main.timeblockserv) then
+                if settings.cfg.autosave[0] then
+                    ini.main.timeblockserv = settings.main.timeblockserv[0]
+                    save()
+                end
+            end
             imgui.Separator()
             imgui.CenterText(fa.MAGNIFYING_GLASS..u8' Рендер на объекты')
             imgui.Separator()
@@ -2129,6 +2147,8 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.main.gzname = settings.main.gzname[0]
                     ini.main.radiuslavki = settings.main.radiuslavki[0]
                     ini.main.antimask = settings.main.antimask[0]
+                    ini.main.timeblockserv = settings.main.timeblockserv[0]
+                    ini.main.weatherblockserv = settings.main.weatherblockserv[0]
                     ini.ped.godmode_enabled = settings.ped.godmode_enabled[0]
                     ini.ped.noreload = settings.ped.noreload[0]
                     ini.ped.setskills = settings.ped.setskills[0]
@@ -2596,6 +2616,23 @@ function main()
 	end)
 	statusbot = lua_thread.create_suspended(botwork)
     while true do wait(0)
+        if settings.main.timeblockserv[0] then
+            if WeatherAndTime.thread ~= nil then
+                WeatherAndTime.thread:terminate()
+            end
+            WeatherAndTime.locked_time = WeatherAndTime.time[0]
+            WeatherAndTime.thread = lua_thread.create(function()
+                WeatherAndTime.new_time = false
+                while not WeatherAndTime.new_time do
+                    setTimeOfDay(WeatherAndTime.locked_time, 0)
+                    wait(0)
+                end
+                WeatherAndTime.new_time = false
+            end)
+        end
+        if settings.main.weatherblockserv[0] then
+            forceWeatherNow(WeatherAndTime.weather[0])
+        end
         if settings.ped.autousedrugs[0] then
             local outhp = getCharHealth(PLAYER_PED)
             if outhp < settings.ped.auhp[0] then
