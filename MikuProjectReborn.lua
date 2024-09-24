@@ -1,6 +1,6 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.8.6')
+script_version('0.8.7')
 script_author('@mikureborn - main dev / @TheopkaStudio - autoupdates / @tglangera - help in development')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channel: t.me/mikureborn')
 --------Библиотеки--------
@@ -1502,7 +1502,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.ped.auhp = settings.ped.auhp[0]
                 end
             end
-            if imgui.SliderInt(fa.HEART_PULSE..u8' Кол-во нарко', settings.ped.audrugs, 1, 160) then
+            if imgui.SliderInt(fa.HEART_PULSE..u8' Кол-во нарко', settings.ped.audrugs, 1, 3) then
                 if settings.cfg.autosave[0] then
                     ini.ped.audrugs = settings.ped.audrugs[0]
                 end
@@ -5016,4 +5016,13 @@ end
 к
 к
 кю
+
+лвлыд
+ы
+дыд
+ыд
+ыд
+д
+ы
+дв
 ]]
