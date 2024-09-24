@@ -1,8 +1,8 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.8.7')
+script_version('0.8.6')
 script_author('@mikureborn - main dev / @TheopkaStudio - autoupdates / @tglangera - help in development')
-script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channel: t.me/mikureborn')
+script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channeI: t.me/mikureborn')
 --------Библиотеки--------
 local imgui = require 'mimgui'
 local fa = require 'fAwesome6_solid'
@@ -23,7 +23,7 @@ local http = require 'socket.http'
 local encoding = require 'encoding'
 encoding.default = 'CP1251'
 local u8 = encoding.UTF8
---------Конфиг--------
+---------Конфиг---------
 local directIni = 'MikuProject.ini'
 local ini = inicfg.load({
     silent = {
@@ -5009,20 +5009,13 @@ local function ARGBtoRGB(color)
 end
 
 --[[
-Хач охуел
-юазыжпжыжажв
-вдвю
-вюу
-к
-к
-кю
-
+охуел
 лвлыд
 ы
-дыд
+дыдв8оииозыилз
 ыд
-ыд
-д
+ыдв8нм8инвм9нв9гр
+дврщмвизовмзовоиз
 ы
-дв
+двр8мвищовмщрврмщ
 ]]
