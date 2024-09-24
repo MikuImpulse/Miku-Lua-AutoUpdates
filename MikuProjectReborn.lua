@@ -340,10 +340,6 @@ local skip = {}
 -- togglebutton
 local AI_TOGGLE = {}
 local ToU32 = imgui.ColorConvertFloat4ToU32
--- tir bot
-local tirst = false
-local sight = false
-local targets = {}
 -- green zone render
 local gzfont = renderCreateFont("Arial", settings.main.gzsize[0], 5)
 local gz = '65535'
@@ -1546,9 +1542,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 imgui.Text(fa.INFO..u8' | Можно использовать /armbot *кол-во кругов*')
                 imgui.Text(fa.INFO..u8' | 0 - бесконечность кругов')
             end
-            if imgui.Button(fa.GUN..u8' Бот тир') then
-                sampProcessChatInput('/ytir')
-            end
             imgui.Separator()
             imgui.CenterText(fa.LOCATION_CROSSHAIRS..u8' Silent by Langer (v2.1.1)')
             imgui.Separator()
@@ -2065,7 +2058,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 imgui.Text(u8'/tpc - телепорт метка (для нубо рп, моментальный)')
                 imgui.Text(u8'/piss {ms} - начать ссать, если мс не указан, то бесконечно')
                 imgui.Text(u8'/unpiss - перестать ссать')
-                imgui.Text(u8'/ytir - бот тир')
                 imgui.Text(u8'/rc - реконнект')
                 imgui.Text(u8'/mine - Mine Time Render')
                 if imgui.Button(fa.XMARK..u8' Закрыть') then
@@ -2450,54 +2442,6 @@ function main()
         sampSetSpecialAction(68)
     end)
     sampRegisterChatCommand('unpiss', function() sampSetSpecialAction(0) end)
-    sampRegisterChatCommand('ytir', function()
-        tirst = not tirst
-        printStringNow(tirst and 'tir bot ~g~enabled' or 'tir bot ~r~disabled', 2000)
-	    lua_thread.create(function()
-	        while tirst do
-		        local gun = getCurrentCharWeapon(PLAYER_PED)
-			    if gun > 0 then
-			        local myY = select(2, getCharCoordinates(PLAYER_PED))
-				    local yMin, yMax = myY-0.65, myY + 0.85
-				    local brk = false
-				    for id = 0, 1000 do
-				        local handle = sampGetObjectHandleBySampId(id)
-					    if doesObjectExist(handle) then
-					        local result, x, y, z = getObjectCoordinates(handle)
-					        if result then
-						        local model = getObjectModel(handle)
-							    for i = 1588, 1592 do
-							        if model == i and y < yMax and y > yMin then
-									    printString("Shot!", 500)
-								  	    brk = true
-									    local sync = samp_create_sync_data("player")
-									    sync.keys.secondaryFire_shoot = 1
-									    sync.keys.aim = 1
-									    sync.send()
-										
-									    local px, py, pz = getCharCoordinates(1)
-										
-									    sync = samp_create_sync_data("bullet")
-									    sync.targetType = 3
-									    sync.targetId = id
-									    sync.center = {x = math.random(-0.3, 0.3), y = math.random(-0.3, 0.3), z = math.random(-0.3, 0.3)}
-									    sync.origin = {x = px + math.random(-0.3, 0.3), y = py + math.random(-0.3, 0.3), z = pz + math.random(-0.3, 0.3)}
-									    sync.target = {x = x + math.random(-0.3, 0.3), y = y + math.random(-0.3, 0.3), z = z + math.random(-0.3, 0.3)}
-									    sync.weaponId = gun
-									    sync.send()
-									    addAmmoToChar(1, gun, -1)
-									    break
-								    end
-							    end
-						    end
-					    end
-					    if brk then break end
-				    end
-			    end
-			    wait(gunsWait[gun])
-		    end
-	    end)
-    end)
     sampRegisterChatCommand('rc', Reconnect.activate)
     sampRegisterChatCommand('mine', function() 
         mtract = not mtract
@@ -2586,7 +2530,7 @@ function main()
     end)
     sampRegisterChatCommand('armbot', function(round) 
 		if not round:match('%d+') or round:match('[-/*+!#$%%^&()]') then
-			notf('Неправильно указано количество кругов. ', -1)
+			notf('Неправильно указано количество кругов. ')
 			if armorbotstate then
 				armorbotstate = false
 				statusbot: terminate()
@@ -2605,17 +2549,36 @@ function main()
 				end
 				currentrounds = 0
 				statusbot: run()
-				notf('Активирован.', -1)
+				notf('Активирован.')
 			else
 				armorbotalt = false
 				point = 0
 				statusbot: terminate()
-				notf('Деактивирован.', -1)
+				notf('Деактивирован.')
 			end
 		end
 	end)
 	statusbot = lua_thread.create_suspended(botwork)
+	statusbot = lua_thread.create_suspended(botwork)
     while true do wait(0)
+        if armorbotstate then
+			local x, y, z = getCharCoordinates(PLAYER_PED)
+			if currentrounds == setrounds or z > 1044.125 then
+				notf('Бот завершил работу.')
+				armorbotstate = false
+				armorbotalt = false
+				point = 0
+				currentrounds = 0
+				statusbot: terminate()
+			end
+			if detal1 ~= -1 then
+				wait(math.random(450, 550))
+				sampSendClickTextdraw(detal1)
+				wait(math.random(450, 550))
+				sampSendClickTextdraw(detal2)
+				detal1, detal2 = -1, -1
+			end
+		end
         if settings.main.timeblockserv[0] then
             if WeatherAndTime.thread ~= nil then
                 WeatherAndTime.thread:terminate()
@@ -2859,24 +2822,6 @@ function main()
 		    end
 		    widgetatr = was_pressed_menu
 	    end
-		if armorbotstate then
-			local x, y, z = getCharCoordinates(PLAYER_PED)
-			if currentrounds == setrounds or z > 1044.125 then
-				notf('Бот завершил работу.', -1)
-				armorbotstate = false
-				armorbotalt = false
-				point = 0
-				currentrounds = 0
-				statusbot: terminate()
-			end
-			if detal1 ~= -1 then
-				wait(math.random(450, 550))
-				sampSendClickTextdraw(detal1)
-				wait(math.random(450, 550))
-				sampSendClickTextdraw(detal2)
-				detal1, detal2 = -1, -1
-			end
-		end
         weapon = getCurrentCharWeapon(PLAYER_PED)
 		local result = isCharShooting(PLAYER_PED)
 		if autopc == true and result and weapon == 24 then
@@ -3392,21 +3337,6 @@ function events.onSendVehicleSync(data)
     end
 end
 
-function events.onShowDialog(dlgid, stl, tlt, b1, b2, text)
-	if armorbotstate and string.find(text, 'Администратор') or string.find(text, 'телепортированы') then
-		sampAddChatMessage('{FF0000}[WARNING] {FFFFFF}Вам написал администратор, закругляемся...', -1)
-		lua_thread.create(function()
-			wait(math.random(1470, 1955))
-			point = 0
-			armorbotstate = false
-			statusbot: terminate()
-		end)	
-	end
-    if zettp and zettpincar and id == 26263 then
-        return false
-    end
-end
-
 function events.onServerMessage(color, text)
 	if settings.tglogger.state[0] then
 	    getLastUpdate()
@@ -3426,25 +3356,6 @@ function events.onServerMessage(color, text)
     if settings.main.offdontflood[0] and text:find('Не флуди!') then
         return false
     end
-    if armorbotstate then
-		if string.find(txt, 'Вы сделали бракованную деталь') then
-			lua_thread.create(function()
-				wait(math.random(200, 300))
-				point = 0
-				statusbot: terminate()
-				wait(100)
-				statusbot: run()
-			end)
-		end
-		if string.find(txt, 'ответил вам') or string.find(txt, 'телепортированы') then	
-			sampAddChatMessage('{FF0000}[WARNING] {FFFFFF}Вам написал администратор, закругляемся...', -1)
-			lua_thread.create(function()
-				wait(math.random(1470, 1955))
-				point = 0
-				statusbot: terminate()
-			end)	
-		end
-	end
 end
 
 function events.onSendPlayerSync(data)
@@ -4240,6 +4151,12 @@ function math.calculate(MinInt, MaxInt, MinFloat, MaxFloat, CurrentFloat)
     return res4 + MinInt
 end
 
+function events.onShowDialog(dlgid, stl, tlt, b1, b2, text)
+    if zettp and zettpincar and id == 26263 then
+        return false
+    end
+end
+
 -- Бот для завода
 function botwork() 
 	while armorbotstate do
@@ -4262,23 +4179,23 @@ function runToPoint(tox, toy)
         angle = getHeadingFromVector2d(tox - x, toy - y)
         setCameraPositionUnfixed(xAngle, math.rad(angle - 90))
 		if point == 0 and getDistanceBetweenCoords2d(x, y, 2558.9885253906, -1287.6723632813) < 1 then
-			notf('Берём детали...', -1)
+			notf('Берём детали...')
 			wait(1500)
 			point = point + 1
 			break
 		end
 		if point == 1 and getDistanceBetweenCoords2d(x, y, 2558.4392089844, -1291.0050048828) < 1 then
 			armorbotalt = true
-			notf('Изготавливаем...', -1)
+			notf('Изготавливаем...')
 			repeat sendKey(1024) wait(math.random(75, 150)) until not armorbotalt or not armorbotstate
 			point = point + 1
 			break
 		end
 		if point == 2 and getDistanceBetweenCoords2d(x, y, 2564.4611816406, -1292.9296875) < 1 then
 			armorbotalt = true
-			notf('Сдаём...', -1)
+			notf('Сдаём...')
 			repeat sendKey(1024) wait(math.random(75, 150)) until not armorbotalt or not armorbotstate
-			notf(''..currentrounds..' круг..', -1)
+			sampAddChatMessage(currentrounds..' круг..', -1)
 			point = 0
 			break
 		end
@@ -4311,6 +4228,28 @@ function events.onShowTextDraw(id, data)
 	end
 end
 
+function events.onServerMessage(clr, txt) 
+	if armorbotstate then
+		if string.find(txt, 'Вы сделали бракованную деталь') then
+			lua_thread.create(function()
+				wait(math.random(200, 300))
+				point = 0
+				statusbot: terminate()
+				wait(100)
+				statusbot: run()
+			end)
+		end
+		if string.find(txt, 'ответил вам') or string.find(txt, 'телепортированы') then	
+		    notf('Вам написал администратор, закругляемся...')
+			lua_thread.create(function()
+				wait(math.random(1470, 1955))
+				point = 0
+				statusbot: terminate()
+			end)	
+		end
+	end
+end
+
 function events.onSetPlayerAttachedObject(playerId, index, create, data)
 	if armorbotstate then
 		if playerId == idb and data.modelId == 1279 then
@@ -4319,6 +4258,18 @@ function events.onSetPlayerAttachedObject(playerId, index, create, data)
 				armorbotalt = false
 			end)
 		end
+	end
+end
+
+function events.onShowDialog(dlgid, stl, tlt, b1, b2, text)
+	if armorbotstate and string.find(text, 'Администратор') or string.find(text, 'телепортированы') then
+		notf('Вам написал администратор, закругляемся...')
+		lua_thread.create(function()
+			wait(math.random(1470, 1955))
+			point = 0
+			armorbotstate = false
+			statusbot: terminate()
+		end)	
 	end
 end
 
@@ -4509,18 +4460,6 @@ addEventHandler("onTouch", function (type, id, x, y)
         window_state[0] = not window_state[0]
     end
 end)
-
--- tir bot
-gunsWait = {
-	[24] = 150, -- deagle
-	[31] = 50, -- m4
-	[30] = 50, -- ak47
-	[22] = 300, -- pistols
-	[23] = 300, -- tazer
-	[25] = 1050, -- shotgun
-	[28] = 100, -- uzi
-	[29] = 100 -- mp5
-}
 
 -- tg chat logger
 function threadHandle(runner, url, args, resolve, reject)
