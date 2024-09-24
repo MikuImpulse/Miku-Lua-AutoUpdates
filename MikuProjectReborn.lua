@@ -19,11 +19,11 @@ local memory = require 'memory'
 local raknet = require 'samp.raknet'
 local ltn12 = require 'ltn12'
 local http = require 'socket.http'
--------Кодировка-------
+--------Кодировка--------
 local encoding = require 'encoding'
 encoding.default = 'CP1251'
 local u8 = encoding.UTF8
----------Конфиг---------
+----------Конфиг----------
 local directIni = 'MikuProject.ini'
 local ini = inicfg.load({
     silent = {
@@ -5069,10 +5069,5 @@ local function ARGBtoRGB(color)
 end
 
 --[[
-eshkere eshkere eshkere eshkere 
-eshkere eshkere eshkere eshkere 
-eshkere eshkere eshkere eshkere 
-eshkere eshkere eshkere eshkere 
-eshkere eshkere eshkere eshkere 
-eshkere eshkere eshkere eshkere
+dollar хуй хуй хуй $$$$
 ]]
