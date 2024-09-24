@@ -4610,7 +4610,7 @@ end
 
 -- message form
 function notf(text)
-    sampAddChatMessage('{008080}[Miku Mobile Project] {FFFFFF}'..text,0xFF9C00)
+    sampAddChatMessage('{008080}[Miku Project] {FFFFFF}'..text,0xFF9C00)
 end
 
 -- anti lomka
