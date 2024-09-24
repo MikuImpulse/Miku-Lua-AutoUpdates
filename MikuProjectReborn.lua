@@ -5007,15 +5007,3 @@ end
 local function ARGBtoRGB(color)
     return bit.band(color, 0xFFFFFF)
 end
-
---[[
-מץףוכ
-כגכûה
-û
-הûהג8מטטמחûטכח
-ûה
-ûהג8םל8טםגל9םג9דנ
-הגנשלגטחמגלחמגמטח
-û
-הגנ8לגטשמגלשנגנלש
-]]
