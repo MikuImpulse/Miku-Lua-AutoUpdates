@@ -1,6 +1,6 @@
 --------Î ñêğèïòå--------
 script_name('Miku Project Reborn')
-script_version('0.8.6')
+script_version('0.8.7')
 script_author('@mikureborn - main dev / @TheopkaStudio - autoupdates / @tglangera - help in development')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channeI: t.me/mikureborn')
 --------Áèáëèîòåêè--------
@@ -19,7 +19,7 @@ local memory = require 'memory'
 local raknet = require 'samp.raknet'
 local ltn12 = require 'ltn12'
 local http = require 'socket.http'
---------Êîäèğîâêà--------
+-------Êîäèğîâêà-------
 local encoding = require 'encoding'
 encoding.default = 'CP1251'
 local u8 = encoding.UTF8
@@ -77,7 +77,8 @@ local ini = inicfg.load({
         gzsize = (13),
         gzname = (false),
         offdontflood = (false),
-        radiuslavki = (false)
+        radiuslavki = (false),
+        antimask = (false)
     },
     ped = {
         godmode_enabled = (false),
@@ -217,7 +218,8 @@ local settings = {
         gzsize = imgui.new.int(ini.main.gzsize),
         gzname = imgui.new.bool(ini.main.gzname),
         offdontflood = imgui.new.bool(ini.main.offdontflood),
-        radiuslavki = imgui.new.bool(ini.main.radiuslavki)
+        radiuslavki = imgui.new.bool(ini.main.radiuslavki),
+        antimask = imgui.new.bool(ini.main.antimask)
     },
     ped = {
         godmode_enabled = imgui.new.bool(ini.ped.godmode_enabled),
@@ -1052,6 +1054,12 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     save()
                 end
             end
+            if imgui.ToggleButton(fa.USER_SECRET..u8' Àíòè-ìàñêà', settings.main.antimask) then
+                if settings.cfg.autosave[0] then
+                    ini.main.antimask = settings.main.antimask[0]
+                    save()
+                end
+            end
             if imgui.ToggleButton(fa.CLIPBOARD..u8' Quit Informer', settings.main.quitinformer) then
                 if settings.cfg.autosave[0] then
                     ini.main.quitinformer = settings.main.quitinformer[0]
@@ -1495,11 +1503,13 @@ imgui.OnFrame(function() return window_state[0] end, function()
             if imgui.ToggleButton(fa.VIRUS..u8' Âêëş÷åíî', settings.ped.autousedrugs) then
                 if settings.cfg.autosave[0] then
                     ini.ped.autousedrugs = settings.ped.autousedrugs[0]
+                    save()
                 end
             end
             if imgui.SliderInt(fa.HEART..u8' ÕÏ (íèæå çíà÷åíèÿ = õèëèò)', settings.ped.auhp, 1, 160) then
                 if settings.cfg.autosave[0] then
                     ini.ped.auhp = settings.ped.auhp[0]
+                    save()
                 end
             end
             if imgui.SliderInt(fa.HEART_PULSE..u8' Êîë-âî íàğêî', settings.ped.audrugs, 1, 3) then
@@ -2118,6 +2128,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.main.offdontflood = settings.main.offdontflood[0]
                     ini.main.gzname = settings.main.gzname[0]
                     ini.main.radiuslavki = settings.main.radiuslavki[0]
+                    ini.main.antimask = settings.main.antimask[0]
                     ini.ped.godmode_enabled = settings.ped.godmode_enabled[0]
                     ini.ped.noreload = settings.ped.noreload[0]
                     ini.ped.setskills = settings.ped.setskills[0]
@@ -4626,6 +4637,55 @@ function notf(text)
     sampAddChatMessage('{008080}[Miku Mobile Project] {FFFFFF}'..text,0xFF9C00)
 end
 
+-- anti lomka
+function events.onSetPlayerDrunk(drunkLevel)
+    return {1}
+end
+
+-- antimask
+function events.onPlayerStreamIn(id, team, model, position, rotation, color, fight)
+    if settings.main.antimask[0] then
+        local r, g, b, a = explode_rgba(color)
+        if a >= 0 and a <= 4 then
+            return {id, team, model, position, rotation, join_rgba(r, g, b, 0xAA), fight}
+        end
+    end
+end
+
+function setPlayerColor(id, color)
+    local bs = raknetNewBitStream()
+    raknetBitStreamWriteInt16(bs, id)
+    raknetBitStreamWriteInt32(bs, color)
+    raknetEmulRpcReceiveBitStream(72, bs)
+    raknetDeleteBitStream(bs)
+end
+
+function events.onSetPlayerColor(id, color)
+    if settings.main.antimask[0] then
+        local r, g, b, a = explode_rgba(color)
+        if a >= 0 and a <= 4 then
+            setPlayerColor(id, join_rgba(r, g, b, 0xAA))
+            return false
+        end
+    end
+end
+
+function explode_rgba(rgba)
+    local r = bit.band(bit.rshift(rgba, 24), 0xFF)
+    local g = bit.band(bit.rshift(rgba, 16), 0xFF)
+    local b = bit.band(bit.rshift(rgba, 8), 0xFF)
+    local a = bit.band(rgba, 0xFF)
+    return r, g, b, a
+end
+
+function join_rgba(r, g, b, a)
+    local rgba = a  -- b
+    rgba = bit.bor(rgba, bit.lshift(b, 8))
+    rgba = bit.bor(rgba, bit.lshift(g, 16))
+    rgba = bit.bor(rgba, bit.lshift(r, 24))
+    return rgba
+end
+
 -- auto updates
 function downloadFile(url, path)
     local response = {}
@@ -5007,3 +5067,12 @@ end
 local function ARGBtoRGB(color)
     return bit.band(color, 0xFFFFFF)
 end
+
+--[[
+eshkere eshkere eshkere eshkere 
+eshkere eshkere eshkere eshkere 
+eshkere eshkere eshkere eshkere 
+eshkere eshkere eshkere eshkere 
+eshkere eshkere eshkere eshkere 
+eshkere eshkere eshkere eshkere
+]]
