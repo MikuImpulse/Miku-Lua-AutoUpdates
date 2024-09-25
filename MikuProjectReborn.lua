@@ -106,8 +106,7 @@ local ini = inicfg.load({
         drift = (false),
         slappower2 = (0),
         atrradius = (150),
-        atractive = (false),
-        antisync = (false)
+        atractive = (false)
     },
     render = {
         ruda = (false),
@@ -249,8 +248,7 @@ local settings = {
         drift = imgui.new.bool(ini.car.drift),
         slappower2 = imgui.new.int(ini.car.slappower2),
         atrradius = imgui.new.int(ini.car.atrradius),
-        atractive = imgui.new.bool(ini.car.atractive),
-        antisync = imgui.new.bool(ini.car.antisync)
+        atractive = imgui.new.bool(ini.car.atractive)
     },
     render = {
         ruda = imgui.new.bool(ini.render.ruda),
@@ -614,11 +612,7 @@ FlyCar.processFlyCar = function()
     if result then
         local var_1 = var_1 / -64.0
         local var_2 = var_2 / 64.0
-        if isCharInAnyCar(PLAYER_PED) then
-            setCarRotationVelocity(car, var_2, 0.0, var_1)
-        else
-            FlyCar.cars = 0
-        end
+        setCarRotationVelocity(car, var_2, 0.0, var_1)
     end
     if isWidgetPressed(WIDGET_ACCELERATE) and speed <= 200.0 then
         FlyCar.cars = FlyCar.cars + 0.4
@@ -629,18 +623,10 @@ FlyCar.processFlyCar = function()
     end
     if isWidgetPressed(WIDGET_HANDBRAKE) then
         FlyCar.cars = 0
-        if isCharInAnyCar(PLAYER_PED) then
-            setCarRotationVelocity(car, 0.0, 0.0, 0.0)
-            setCarRoll(car, 0.0)
-        else
-            FlyCar.cars = 0
-        end
+        setCarRotationVelocity(car, 0.0, 0.0, 0.0)
+        setCarRoll(car, 0.0)
     end
-    if isCharInAnyCar(PLAYER_PED) then
-        setCarForwardSpeed(car, FlyCar.cars)
-    else
-        FlyCar.cars = 0
-    end
+    setCarForwardSpeed(car, FlyCar.cars)
 end
 
 -- NoBike
@@ -1706,12 +1692,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 end
                 if settings.cfg.autosave[0] then
                     ini.car.nobike = settings.car.nobike[0]
-                    save()
-                end
-            end
-            if imgui.ToggleButton(fa.CAR..u8' Анти отправка синхры (fake afk)', settings.car.antisync) then
-                if settings.cfg.autosave[0] then
-                    ini.car.antisync = settings.car.antisync[0]
                     save()
                 end
             end
@@ -3332,7 +3312,7 @@ function events.onSendVehicleSync(data)
     if tpclick then 
         return false
 	end
-    if nop and settings.car.antisync[0] then
+    if nop then
         return false
     end
 end
