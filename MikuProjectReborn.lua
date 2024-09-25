@@ -3323,25 +3323,20 @@ function events.onServerMessage(color, text)
         sendTelegramNotification('[' .. os.date("%x") .. ']  ' .. text)
  	    lua_thread.create(get_telegram_updates)
  	end
-    if settings.main.offdontflood[0] and text:find('Не флуди!') then
-        return false
-    end
-end
-
--- ##
-function events.onServerMessage(color, text)
-    if text:find('g_player_data[playerid]') and color == -16776961 then
+ 	if text:find('E_CURRENT_AREA_TYPE_INDEX') and color == -16776961 then
 		return false
 	end
-    if text:find('g_player_data[playerid]') then
+	if text:find('E_AREA_TYPE_ID') and color == -16776961 then
 		return false
 	end
     if text:find('current gz index: (.+)') and color == -16776961 then
         gz = text:match('current gz index: (.+)')
         return false
     end
+    if settings.main.offdontflood[0] and text:find('Не флуди!') then
+        return false
+    end
 end
--- ##
 
 function events.onSendPlayerSync(data)
     if enabledair then
