@@ -1,6 +1,6 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.9.0')
+script_version('0.9.1')
 script_author('@mikureborn - main dev / @TheopkaStudio - autoupdates / @tglangera - help in development')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channeI: t.me/mikureborn')
 --------Библиотеки--------
@@ -16,6 +16,7 @@ local inicfg = require 'inicfg'
 local Vector3D = require 'vector3d'
 local widgets = require 'widgets'
 local memory = require 'memory'
+local samem = require 'SAMemory'
 local raknet = require 'samp.raknet'
 local ltn12 = require 'ltn12'
 local http = require 'socket.http'
@@ -107,7 +108,12 @@ local ini = inicfg.load({
         drift = (false),
         slappower2 = (0),
         atrradius = (150),
-        atractive = (false)
+        atractive = (false),
+        speedhack = (false),
+        limit = (1.25),
+	    mult = (1.02),
+		timestep = (0.03),
+		safe_train_speed = (true)
     },
     render = {
         ruda = (false),
@@ -250,7 +256,12 @@ local settings = {
         drift = imgui.new.bool(ini.car.drift),
         slappower2 = imgui.new.int(ini.car.slappower2),
         atrradius = imgui.new.int(ini.car.atrradius),
-        atractive = imgui.new.bool(ini.car.atractive)
+        atractive = imgui.new.bool(ini.car.atractive),
+        speedhack = imgui.new.bool(ini.car.speedhack),
+        slider_mult = imgui.new.float(ini.car.mult),
+        slider_limit = imgui.new.float(ini.car.limit),
+        slider_timestep = imgui.new.float(ini.car.timestep),
+        safe_train_speed = imgui.new.bool(ini.car.safe_train_speed)
     },
     render = {
         ruda = imgui.new.bool(ini.render.ruda),
@@ -329,6 +340,8 @@ local theme_a = {u8'Темная', u8'Зеленая', u8'Голубо-серая', u8'Вишнёвая', 'MoonM
 local theme_t = {u8'black', u8'green', u8'bluegray', u8'cherry', 'moonmonet'}
 local items = imgui.new['const char*'][#theme_a](theme_a)
 local selected_theme = imgui.new.int(ini.theme.selected)
+-- speedhack
+local player_vehicle = samem.cast('CVehicle **', samem.player_vehicle)
 -- auto updates
 local lmPath = "MikuProjectReborn.lua"
 local lmUrl = "https://raw.githubusercontent.com/MikuImpulse/Miku-Lua-AutoUpdates/main/MikuProjectReborn.lua"
@@ -1760,10 +1773,49 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 end
             end
             imgui.PopItemWidth()
+            imgui.Separator()
+            if imgui.ToggleButton(fa.FORWARD..u8' Speedhack', settings.car.speedhack) then
+                if settings.cfg.autosave[0] then
+                    ini.car.speedhack = settings.car.speedhack[0]
+                    save()
+                end
+            end
+            if imgui.Button(fa.GEARS..u8' Настройки спидхака '..fa.CAR) then
+                imgui.OpenPopup(fa.GEARS..u8' Настройки спидхака '..fa.CAR)
+            end
+            if imgui.BeginPopupModal(fa.GEARS..u8' Настройки спидхака '..fa.CAR, _, imgui.WindowFlags.AlwaysAutoResize) then
+                if imgui.SliderFloat(fa.PLUG..u8' Сила ускорения', settings.car.slider_mult, 0.001, 100.0) then
+			        if settings.cfg.autosave[0] then
+			            ini.car.mult = settings.car.slider_mult[0]
+			            save()
+			        end
+		        end
+	        	if imgui.SliderFloat(fa.FORWARD..u8' Максимальная скорость', settings.car.slider_limit, 0.01, 1000.0) then
+			        if settings.cfg.autosave[0] then
+			            ini.car.limit = settings.car.slider_limit[0]
+			            save()
+			        end
+		        end
+		        if imgui.SliderFloat(fa.SHOE_PRINTS..u8' Шаг (мс)', settings.car.slider_timestep, 0.0, 1.0) then
+			        if settings.cfg.autosave[0] then  
+			            ini.car.timestep = settings.car.slider_timestep[0]
+			            save()
+			        end
+		        end
+		        if imgui.ToggleButton(fa.TRAIN..u8' Безопасная скорость поезда', settings.car.safe_train_speed) then
+			        if settings.cfg.autosave[0] then 
+			            ini.car.safe_train_speed = settings.car.safe_train_speed[0]
+			            save()
+			        end
+	        	end
+                if imgui.Button(fa.XMARK..u8' Закрыть') then
+                    imgui.CloseCurrentPopup()
+                end
+                imgui.EndPopup()
+            end
         elseif tab == 4 then
             imgui.CenterText(fa.EYE..u8' Подсветка (ESP)')
             imgui.Separator()
-            imgui.PushItemWidth(250)
             if imgui.ToggleButton(fa.BOX..u8' Коробки', settings.ESP.enabled_boxes) then
                 if settings.cfg.autosave[0] then
                     ini.ESP.enabled_boxes = settings.ESP.enabled_boxes[0]
@@ -1779,7 +1831,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
             if imgui.ToggleButton(fa.BONE..u8' Скелеты', settings.ESP.enabled_bones) then
                 if settings.cfg.autosave[0] then
                     ini.ESP.enabled_bones = settings.ESP.enabled_bones[0]
-                    save()
+                    ini.car.speedhack = settings.car.speedhack[0]
                 end
             end
             if imgui.ToggleButton(fa.LINES_LEANING..u8' Линии', settings.ESP.enabled_lines) then
@@ -1818,7 +1870,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     save()
                 end
             end
-            imgui.PopItemWidth()
             if settings.menu.showinfo[0] then
                 imgui.Text(fa.INFO..u8' | Для применения размера ников, нужно сохранить конфиг')
                 imgui.Text(fa.INFO..u8' | и перезагрузить скрипт')
@@ -2157,6 +2208,11 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.car.slappower2 = settings.car.slappower2[0]
                     ini.car.atractive = settings.car.atractive[0]
                     ini.car.atrradius = settings.car.atrradius[0]
+                    ini.car.speedhack = settings.car.speedhack[0]
+                    ini.car.mult = settings.car.slider_mult[0]
+                    ini.car.timestep = settings.car.slider_timestep[0]
+                    ini.car.limit = settings.car.slider_limit[0]
+                    ini.car.safe_train_speed = settings.car.safe_train_speed[0]
                     ini.render.ruda = settings.render.ruda[0]
                     ini.render.narkotiki = settings.render.narkotiki[0]
                     ini.render.podarok = settings.render.podarok[0]
@@ -2555,6 +2611,38 @@ function main()
 	statusbot = lua_thread.create_suspended(botwork)
 	statusbot = lua_thread.create_suspended(botwork)
     while true do wait(0)
+        if settings.car.speedhack[0] then
+            local veh = player_vehicle[0]
+	        if isCharInAnyCar(PLAYER_PED) then
+	            if isWidgetPressed(WIDGET_ACCELERATE) then
+				    if timerprocess(settings.car.slider_timestep[0]) then
+				    	if veh.nVehicleClass == 6 then
+					    	local train = samem.cast('CTrain *', veh)
+					    	while train ~= samem.nullptr do
+						    	local new_speed = train.fTrainSpeed * settings.car.slider_mult[0]
+						    	if settings.car.safe_train_speed[0] then
+							    	if new_speed >= 0.99 then
+								    	new_speed = 0.9
+							    	end
+						    	end
+						    	if new_speed <= settings.car.slider_limit[0] then
+							    	train.fTrainSpeed = new_speed
+						    	end
+						    	train = train.pNextCarriage
+					    	end
+				    	else
+					    	while veh ~= samem.nullptr do
+						    	local new_speed = veh.vMoveSpeed * settings.car.slider_mult[0]
+						    	if new_speed:magnitude() <= settings.car.slider_limit[0] then
+							    	veh.vMoveSpeed = new_speed
+						    	end
+						    	veh = veh.pTrailer
+					    	end
+				    	end
+			    	end
+		    	end
+		    end
+		end
         if armorbotstate then
 			local x, y, z = getCharCoordinates(PLAYER_PED)
 			if currentrounds == setrounds or z > 1044.125 then
@@ -4726,6 +4814,20 @@ function onSendPacket(id, bs)
             return false
         end
     end
+end
+
+-- speedhack
+local timer = {
+	prev_time = 0;
+}
+
+function timerprocess(timestep)
+	local curr_time = os.clock()
+	if (curr_time - timer.prev_time) >= timestep then
+		timer.prev_time = curr_time
+		return true
+	end
+	return false
 end
 
 -- all themes
