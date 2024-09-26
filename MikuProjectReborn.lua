@@ -1,6 +1,6 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.8.9')
+script_version('0.9.0')
 script_author('@mikureborn - main dev / @TheopkaStudio - autoupdates / @tglangera - help in development')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channeI: t.me/mikureborn')
 --------Библиотеки--------
@@ -97,7 +97,8 @@ local ini = inicfg.load({
         infiniterun = (false),
         autousedrugs = (false),
         auhp = (20),
-        audrugs = (3)
+        audrugs = (3),
+        killbots1hit = (false),
     },
     car = {
         godmode2_enabled = (false),
@@ -239,7 +240,8 @@ local settings = {
         infiniterun = imgui.new.bool(ini.ped.infiniterun),
         autousedrugs = imgui.new.bool(ini.ped.autousedrugs),
         auhp = imgui.new.int(ini.ped.auhp),
-        audrugs = imgui.new.int(ini.ped.audrugs)
+        audrugs = imgui.new.int(ini.ped.audrugs),
+        killbots1hit = imgui.new.bool(ini.ped.killbots1hit)
     },
     car = {
         godmode2_enabled = imgui.new.bool(ini.car.godmode2_enabled),
@@ -1420,6 +1422,14 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     save()
                 end
             end
+            imgui.SameLine()
+            imgui.SetCursorPosX(740)
+            if imgui.ToggleButton(u8'Убивать ботов с 1 патрона', settings.ped.killbots1hit) then
+                if settings.cfg.autosave[0] then
+                    ini.ped.killbots1hit = settings.ped.killbots1hit[0]
+                    save()
+                end
+            end
             if imgui.ToggleButton(fa.REPEAT..u8' No Reload', settings.ped.noreload) then
                 if settings.cfg.autosave[0] then
                     ini.ped.noreload = settings.ped.noreload[0]
@@ -2139,6 +2149,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.ped.autousedrugs = settings.ped.autousedrugs[0]
                     ini.ped.auhp = settings.ped.auhp[0]
                     ini.ped.audrugs = settings.ped.audrugs[0]
+                    ini.ped.killbots1hit = settings.ped.killbots1hit[0]
                     ini.car.godmode2_enabled = settings.car.godmode2_enabled[0]
                     ini.car.flycar = settings.car.flycar[0]
                     ini.car.nobike = settings.car.nobike[0]
@@ -4694,6 +4705,29 @@ function updateScript(scriptUrl, scriptPath)
     end
 end
 
+-- kill custom bots in 1 hit
+function onSendPacket(id, bs)
+    if settings.ped.killbots1hit[0] and id == 221 then
+        raknetBitStreamSetReadOffset(bs, 8)
+        if raknetBitStreamReadInt16(bs) == 73 then
+            local data = {}
+            for i = 1, (raknetBitStreamGetNumberOfUnreadBits(bs)/8) do table.insert(data, raknetBitStreamReadInt8(bs)) end
+            local damage_bs = raknetNewBitStream()
+            raknetBitStreamWriteInt8(damage_bs, 221)
+            raknetBitStreamWriteInt16(damage_bs, 73)
+            for i = 1, 2 do raknetBitStreamWriteInt8(damage_bs, data[i]) end
+            raknetBitStreamWriteInt8(damage_bs, 0)
+            raknetBitStreamWriteInt8(damage_bs, 6)
+            raknetBitStreamWriteInt8(damage_bs, 62)
+            raknetBitStreamWriteInt8(damage_bs, 62)
+            for i = 7, #data do raknetBitStreamWriteInt8(damage_bs, data[i]) end
+            raknetSendBitStreamEx(damage_bs, 1, 7, 1)
+            raknetDeleteBitStream(damage_bs)
+            return false
+        end
+    end
+end
+
 -- all themes
 function blacktheme()
     local style = imgui.GetStyle();
@@ -5084,10 +5118,6 @@ function join_argb(a, r, g, b)
     return argb
 end
 
-local function ARGBtoRGB(color)
+function ARGBtoRGB(color)
     return bit.band(color, 0xFFFFFF)
 end
-
---[[
-dollar хуй хуй хуй $$$$
-]]
