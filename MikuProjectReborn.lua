@@ -1424,7 +1424,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
             end
             imgui.SameLine()
             imgui.SetCursorPosX(740)
-            if imgui.ToggleButton(u8'Убивать ботов с 1 патрона', settings.ped.killbots1hit) then
+            if imgui.ToggleButton(fa.GUN..u8' Убивать ботов с 1 патрона', settings.ped.killbots1hit) then
                 if settings.cfg.autosave[0] then
                     ini.ped.killbots1hit = settings.ped.killbots1hit[0]
                     save()
