@@ -1,6 +1,6 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.9.1')
+script_version('0.9.2')
 script_author('@mikureborn - main dev / @TheopkaStudio - autoupdates / @tglangera - help in development')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channeI: t.me/mikureborn')
 --------Библиотеки--------
@@ -72,12 +72,6 @@ local ini = inicfg.load({
         clickwarpcoord = (false),
         quitinformer = (false),
         informerinstream = (false),
-        gzinfo = (false),
-        gzposx = (30),
-        gzposy = (500),
-        gzsize = (13),
-        gzname = (false),
-        offdontflood = (false),
         radiuslavki = (false),
         antimask = (false),
         timeblockserv = (false),
@@ -127,6 +121,7 @@ local ini = inicfg.load({
         derevovishkac = (false),
         semena = (false),
         graffiti = (false),
+        lenhlopok = (false),
         rtime = (370),
         mtrsize = (10)
     },
@@ -174,12 +169,6 @@ local ini = inicfg.load({
         autormcell = (false),
         autormdoors = (false),
         autormfence = (false)
-    },
-    tglogger = {
-        state = (false),
-        chat_id = (''),
-        token = (''),
-        updateid = ('')
     }
 }, directIni)
 inicfg.save(ini, directIni)
@@ -222,10 +211,6 @@ local settings = {
         clickwarpcoord = imgui.new.bool(ini.main.clickwarpcoord),
         quitinformer = imgui.new.bool(ini.main.quitinformer),
         informerinstream = imgui.new.bool(ini.main.informerinstream),
-        gzinfo = imgui.new.bool(ini.main.gzinfo),
-        gzsize = imgui.new.int(ini.main.gzsize),
-        gzname = imgui.new.bool(ini.main.gzname),
-        offdontflood = imgui.new.bool(ini.main.offdontflood),
         radiuslavki = imgui.new.bool(ini.main.radiuslavki),
         antimask = imgui.new.bool(ini.main.antimask),
         timeblockserv = imgui.new.bool(ini.main.timeblockserv),
@@ -275,6 +260,7 @@ local settings = {
         derevovishkac = imgui.new.bool(ini.render.derevovishkac),
         semena = imgui.new.bool(ini.render.semena),
         graffiti = imgui.new.bool(ini.render.graffiti),
+        lenhlopok = imgui.new.bool(ini.render.lenhlopok),
         rtime = imgui.new.int(ini.render.rtime),
         mtrsize = imgui.new.int(ini.render.mtrsize)
     },
@@ -319,9 +305,6 @@ local settings = {
         autormdoors = imgui.new.bool(ini.tsr.autormdoors),
         autormfence = imgui.new.bool(ini.tsr.autormfence)
     },
-    tglogger = {
-        state = imgui.new.bool(ini.tglogger.state)
-    },
     cfg = {
         autosave = imgui.new.bool(ini.cfg.autosave)
     }
@@ -353,9 +336,6 @@ local skip = {}
 -- togglebutton
 local AI_TOGGLE = {}
 local ToU32 = imgui.ColorConvertFloat4ToU32
--- green zone render
-local gzfont = renderCreateFont("Arial", settings.main.gzsize[0], 5)
-local gz = '65535'
 -- tsr rage bot
 local tsrragebot = imgui.new.bool(false)
 local botstep = -1
@@ -526,6 +506,11 @@ local graffity = {
     [18666] = 'Граффити',
     [18667] = 'Граффити'
 }
+
+local lenxlopok = {
+    [819] = 'Хлопок',
+    [865] = 'Лен'
+}
 -- ffi get handle bones
 local gta = ffi.load('GTASA')
 ffi.cdef[[
@@ -553,7 +538,7 @@ imgui.OnInitialize(function()
 	----////\\\\----
     ----\\\\////----
 	local glyph_ranges = imgui.GetIO().Fonts:GetGlyphRangesCyrillic()
-    local path = getWorkingDirectory()..'/resource/Roboto-Black.ttf'
+    local path = getWorkingDirectory()..'/resource/Zekton-Font.ttf'
     imgui.GetIO().Fonts:AddFontFromFileTTF(path, 20.0, nil, glyph_ranges)
     updfont[20] = imgui.GetIO().Fonts:AddFontFromFileTTF(path, 20.0, nil, glyph_ranges)
     updfont[25] = imgui.GetIO().Fonts:AddFontFromFileTTF(path, 25.0, nil, glyph_ranges)
@@ -1038,20 +1023,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     save()
                 end
             end
-            if imgui.ToggleButton(fa.COMMENT..u8' Telegram Chat Logger', settings.tglogger.state) then
-                if settings.cfg.autosave[0] then
-                    ini.tglogger.state = settings.tglogger.state[0]
-                    save()
-                end
-            end
-            if settings.menu.showinfo[0] then
-                imgui.SameLine()
-                imgui.Text(fa.INFO..u8' | t.me/tgloggermikututorxd/2')
-                imgui.SameLine()
-                if imgui.Button(fa.CLIPBOARD..u8' Copy') then
-                    setClipboardText('t.me/tgloggermikututorxd/2')
-                end
-            end
             if imgui.ToggleButton(fa.FROG..u8' ClickCoordMobile', settings.main.clickwarpcoord) then
                 if settings.cfg.autosave[0] then
                     ini.main.clickwarpcoord = settings.main.clickwarpcoord[0]
@@ -1080,52 +1051,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         save()
                     end
                 end
-            end
-            if imgui.ToggleButton(fa.CLIPBOARD_CHECK..u8' Чекер зелёной зоны', settings.main.gzinfo) then
-                if settings.cfg.autosave[0] then
-                    ini.main.gzinfo = settings.main.gzinfo[0]
-                    save()
-                end
-            end
-            if settings.main.gzinfo[0] then
-                imgui.Text(u8'   '..fa.ARROW_TREND_DOWN)
-                imgui.SameLine()
-                imgui.SetCursorPosX(60)
-                if imgui.Button(fa.UP_DOWN_LEFT_RIGHT..u8' Изменить позицию') then
-                    gzpos = not gzpos
-                    window_state[0] = not window_state[0]
-                    notf('Меню скрыто до момента, пока не сохраните позицию')
-                    notf('Нажмите на место, куда хотите переместить текст' or 'Перемещение текста отключено')
-                end
-                imgui.Text(u8'   '..fa.ARROW_TREND_DOWN)
-                imgui.SameLine()
-                imgui.SetCursorPosX(60)
-                if imgui.ToggleButton(fa.SIGNATURE..u8' Показывать название ЗЗ вместо "Да"', settings.main.gzname) then
-                    if settings.cfg.autosave[0] then
-                        ini.main.gzname = settings.main.gzname[0]
-                        save()
-                    end
-                end
-                imgui.Text(u8'   '..fa.ARROW_TREND_DOWN)
-                imgui.SameLine()
-                imgui.SetCursorPosX(60)
-                if imgui.ToggleButton(fa.XMARK..u8' Отключить "[Ошибка] Не флуди!"', settings.main.offdontflood) then
-                    if settings.cfg.autosave[0] then
-                        ini.main.offdontflood = settings.main.offdontflood[0]
-                        save()
-                    end
-                end
-                imgui.Text(u8'   '..fa.ARROW_TREND_DOWN)
-                imgui.SameLine()
-                imgui.SetCursorPosX(60)
-                imgui.PushItemWidth(180)
-                if imgui.SliderInt(fa.EXPAND..u8' Размер текста', settings.main.gzsize, 5, 30) then
-                    if settings.cfg.autosave[0] then
-                        ini.main.gzsize = settings.main.gzsize[0]
-                        save()
-                    end
-                end
-                imgui.PopItemWidth()
             end
             if imgui.ToggleButton(fa.CIRCLE_NOTCH..u8' Радиус лавки (ЦР)', settings.main.radiuslavki) then
                 if settings.cfg.autosave[0] then
@@ -1267,6 +1192,12 @@ imgui.OnFrame(function() return window_state[0] end, function()
             if imgui.ToggleButton(fa.SPRAY_CAN..u8' Граффити', settings.render.graffiti) then
                 if settings.cfg.autosave[0] then
                     ini.render.graffiti = settings.render.graffiti[0]
+                    save()
+                end
+            end
+            if imgui.ToggleButton(fa.INBOX..u8' Лен и хлопок', settings.render.lenhlopok) then
+                if settings.cfg.autosave[0] then
+                    ini.render.lenhlopok = settings.render.lenhlopok[0]
                     save()
                 end
             end
@@ -1544,15 +1475,23 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 end
             end
             imgui.Separator()
+            imgui.CenterText(fa.ROBOT..u8' Боты')
+            imgui.Separator()
             if imgui.Button(fa.USER..u8' Бот завод') then
                 sampProcessChatInput('/armbot '..krugibota[0])
             end
             imgui.PushItemWidth(250)
-            imgui.SliderInt(fa.ARROWS_SPIN..u8' Количество кругов', krugibota, 0, 50)
+            imgui.SliderInt(fa.ARROWS_SPIN..u8' Количество кругов (завод)', krugibota, 0, 50)
             imgui.PopItemWidth()
             if settings.menu.showinfo[0] then
                 imgui.Text(fa.INFO..u8' | Можно использовать /armbot *кол-во кругов*')
                 imgui.Text(fa.INFO..u8' | 0 - бесконечность кругов')
+            end
+            if imgui.Button(fa.FISH..u8' Бот рыбалка') then
+                sampProcessChatInput('/fishbot')
+            end
+            if settings.menu.showinfo[0] then
+                imgui.Text(fa.INFO..u8' | Можно использовать /fishbot')
             end
             imgui.Separator()
             imgui.CenterText(fa.LOCATION_CROSSHAIRS..u8' Silent by Langer (v2.1.1)')
@@ -2177,10 +2116,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.main.clickwarpcoord = settings.main.clickwarpcoord[0]
                     ini.main.quitinformer = settings.main.quitinformer[0]
                     ini.main.informerinstream = settings.main.informerinstream[0]
-                    ini.main.gzsize = settings.main.gzsize[0]
-                    ini.main.gzinfo = settings.main.gzinfo[0]
-                    ini.main.offdontflood = settings.main.offdontflood[0]
-                    ini.main.gzname = settings.main.gzname[0]
                     ini.main.radiuslavki = settings.main.radiuslavki[0]
                     ini.main.antimask = settings.main.antimask[0]
                     ini.main.timeblockserv = settings.main.timeblockserv[0]
@@ -2226,6 +2161,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.render.graffiti = settings.render.graffiti[0]
                     ini.render.rtime = settings.render.rtime[0]
                     ini.render.mtrsize = settings.render.mtrsize[0]
+                    ini.render.lenhlopok = settings.render.lenhlopok[0]
                     ini.menu.slideropenbuttonwidth = settings.menu.slideropenbuttonwidth[0]
                     ini.menu.slideropenbuttonheight = settings.menu.slideropenbuttonheight[0]
                     ini.menu.openbutton = settings.menu.openbutton[0]
@@ -2257,7 +2193,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.tsr.autormcell = settings.tsr.autormcell[0]
                     ini.tsr.autormdoors = settings.tsr.autormdoors[0]
                     ini.tsr.autormfence = settings.tsr.autormcell[0]
-                    ini.tglogger.state = settings.tglogger.state[0]
                     save()
                     notf('Настройки сохранены!', -1)
                     imgui.CloseCurrentPopup()
@@ -2445,6 +2380,11 @@ function main()
     end
     nobike_activate()
     sampRegisterChatCommand('miku', function() window_state[0] = not window_state[0] end)
+    sampRegisterChatCommand('sosopjpjpjpjpjpj', function() fishbot = not fishbot end)
+    sampRegisterChatCommand('fishbot', function() 
+        floodfish = not floodfish
+        notf(floodfish and 'FishBot включен' or 'FishBot выключен')
+    end)
     sampRegisterChatCommand("tpall", function()
         tpidstate = not tpidstate
         sampAddChatMessage(tpidstate and "on" or "off", -1)
@@ -2611,6 +2551,9 @@ function main()
 	statusbot = lua_thread.create_suspended(botwork)
 	statusbot = lua_thread.create_suspended(botwork)
     while true do wait(0)
+        if floodfish then
+            sampProcessChatInput('/sosopjpjpjpjpjpj')
+        end
         if settings.car.speedhack[0] then
             local veh = player_vehicle[0]
 	        if isCharInAnyCar(PLAYER_PED) then
@@ -2785,11 +2728,6 @@ function main()
                 nop = false
                 printStringNow("Try found a player", 100)
             end
-        end
-        if settings.main.gzinfo[0] then
-            lua_thread.create(function()
-                renderFontDrawText(gzfont, string.format("{00FF00}Зелёная зона: {FF0000}%s", gz == '65535' and 'Нет' or (settings.main.gzname[0] and gz or 'Да')), ini.main.gzposx, ini.main.gzposy, 0xFFFFFFFF)
-            end)
         end
         if settings.objects.autormlsa[0] then
             lua_thread.create(function()  
@@ -3389,20 +3327,28 @@ function main()
                 end
             end
         end
-    end
-end
-lua_thread.create(function()
-    while not isSampAvailable() do wait(0) end
-    while true do
-        wait(200)
-        if settings.main.gzinfo[0] then
-            local spawnchecked = sampIsLocalPlayerSpawned()
-            if spawnchecked then 
-                sampSendChat('/gzinfo')
+        if settings.render.lenhlopok[0] then
+            for _, obj_hand in pairs(getAllObjects()) do
+                local modelid = getObjectModel(obj_hand)
+                local _obj = lenxlopok[modelid]
+                if _obj then
+                    if isObjectOnScreen(obj_hand) then
+                        local x,y,z = getCharCoordinates(PLAYER_PED)
+                        local res,x1,y1,z1 = getObjectCoordinates(obj_hand)
+                        if res then
+                            local dist = math.floor(getDistanceBetweenCoords3d(x,y,z,x1,y1,z1))
+                            local c1,c2 = convert3DCoordsToScreen(x,y,z)
+                            local o1,o2 = convert3DCoordsToScreen(x1,y1,z1)
+                            local text = '{87CEEB}'.._obj..'\n{87CEEB}DIST: '..dist..'m.'
+                            renderDrawLine(c1,c2,o1,o2,1, 0xB8B8FCFF)
+                            renderFontDrawText(font,text,o1,o2,-1)
+                        end
+                    end
+                end
             end
         end
     end
-end)
+end
 
 --      Общие эвенты        --
 function events.onSendVehicleSync(data)
@@ -3419,27 +3365,6 @@ function events.onSendVehicleSync(data)
     end
 end
 
-function events.onServerMessage(color, text)
-	if settings.tglogger.state[0] then
-	    getLastUpdate()
-        sendTelegramNotification('[' .. os.date("%x") .. ']  ' .. text)
- 	    lua_thread.create(get_telegram_updates)
- 	end
- 	if text:find('E_CURRENT_AREA_TYPE_INDEX') and color == -16776961 then
-		return false
-	end
-	if text:find('E_AREA_TYPE_ID') and color == -16776961 then
-		return false
-	end
-    if text:find('current gz index: (.+)') and color == -16776961 then
-        gz = text:match('current gz index: (.+)')
-        return false
-    end
-    if settings.main.offdontflood[0] and text:find('Не флуди!') then
-        return false
-    end
-end
-
 function events.onSendPlayerSync(data)
     if enabledair then
         local mx, my = getMoveSpeed(getCharHeading(PLAYER_PED), speed > 1 and 1 or speed)
@@ -3449,6 +3374,18 @@ function events.onSendPlayerSync(data)
     if tpclick then
         return false
 	end
+	if fishbot then
+        lua_thread.create(function()
+            data.keys.secondaryFire_shoot = 1
+            wait(500)
+            data.keys.secondaryFire_shoot = 0
+            wait(500)
+            return
+        end)
+    end
+    if fishbot == false then
+        data.keys.secondaryFire_shoot = 0
+    end
 end
 
 function setPlayerCarCoordinatesFixed(x, y, z)
@@ -4526,13 +4463,6 @@ end
 
 -- ontouch change position
 addEventHandler("onTouch", function (type, id, x, y)
-    if gzpos then
-        ini.main.gzposx = x
-        ini.main.gzposy = y
-        save()
-        gzpos = false
-        window_state[0] = not window_state[0]
-    end
     if editposs then
         ini.teleport.x = x
         ini.teleport.y = y
@@ -4542,112 +4472,6 @@ addEventHandler("onTouch", function (type, id, x, y)
         window_state[0] = not window_state[0]
     end
 end)
-
--- tg chat logger
-function threadHandle(runner, url, args, resolve, reject)
-    if not resolve or type(resolve) ~= "function" then
-        error("The 'resolve' parameter must be a valid function.")
-    end
-
-    if not reject or type(reject) ~= "function" then
-        error("The 'reject' parameter must be a valid function.")
-    end
-
-    local t = runner(url, args)
-    if not t then
-        reject("Failed to create runner thread")
-        return
-    end
-
-    local get_result = function()
-        local r = t:get(0)
-        while not r do
-            r = t:get(0)
-            wait(0)
-        end
-        return r
-    end
-
-    local status = t:status()
-    local r = get_result()
-    
-    if status == 'completed' then
-        local ok, result = r[1], r[2]
-        if ok then 
-            resolve(result)
-        else 
-            reject(result)
-        end
-    elseif status == 'canceled' then
-        reject("Operation was canceled.")
-    else
-        reject("Unexpected error: " .. tostring(status))
-    end
-    
-    t:cancel(0)
-end
-
-function requestRunner()
-    return effil.thread(function(u, a)
-        local https = require 'ssl.https'
-        local ok, result = pcall(https.request, u, a)
-        if ok then
-            return {true, result}
-        else
-            return {false, result}
-        end
-    end)
-end
-
-function async_http_request(url, args, resolve, reject)
-    local runner = requestRunner()
-    if not reject then reject = function() end end
-    lua_thread.create(function()
-        threadHandle(runner, url, args, resolve, reject)
-    end)
-end
-
-function encodeUrl(str)
-    str = str:gsub(' ', '%+')
-    str = str:gsub('\n', '%%0A')
-    return u8:encode(str, 'CP1251')
-end
-
-function sendTelegramNotification(msg) -- функция для отправки сообщения юзеру
-    msg = msg:gsub('{......}', '') --тут типо убираем цвет
-    msg = encodeUrl(msg) -- ну тут мы закодируем строку
-    async_http_request('https://api.telegram.org/bot' .. ini.tglogger.token .. '/sendMessage?chat_id=' .. ini.tglogger.chat_id .. '&text='..msg,'', function(result) end) -- а тут уже отправка
-end
-
-function get_telegram_updates() -- функция получения сообщений от юзера
-    while not updateid do wait(1) end -- ждем пока не узнаем последний ID
-    local runner = requestRunner()
-    local reject = function() end
-    local args = ''
-    while true do
-        url = 'https://api.telegram.org/bot'..ini.tglogger.token..'/getUpdates?chat_id='..ini.tglogger.chat_id..'&offset=-1' -- создаем ссылку
-        threadHandle(runner, url, args, processing_telegram_messages, reject)
-        wait(0)
-    end
-end
-
-function getLastUpdate() -- тут мы получаем последний ID сообщения, если же у вас в коде будет настройка токена и chat_id, вызовите эту функцию для того чтоб получить последнее сообщение
-    async_http_request('https://api.telegram.org/bot'..ini.tglogger.token..'/getUpdates?chat_id='..ini.tglogger.chat_id..'&offset=-1','',function(result)
-        if result then
-            local proc_table = decodeJson(result)
-            if proc_table.ok then
-                if #proc_table.result > 0 then
-                    local res_table = proc_table.result[1]
-                    if res_table then
-                        updateid = res_table.update_id
-                    end
-                else
-                    updateid = 1 -- тут зададим значение 1, если таблица будет пустая
-                end
-            end
-        end
-    end)
-end
 
 -- tpall
 function getPlayerStream(distance) 
