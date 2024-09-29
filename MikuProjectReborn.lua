@@ -1,6 +1,6 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.9.2')
+script_version('0.9.3')
 script_author('@mikureborn - main dev / @TheopkaStudio - autoupdates / @tglangera - help in development')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channeI: t.me/mikureborn')
 --------Библиотеки--------
@@ -106,7 +106,9 @@ local ini = inicfg.load({
         limit = (1.25),
 	    mult = (1.02),
 		timestep = (0.03),
-		safe_train_speed = (true)
+		safe_train_speed = (true),
+		fastenter = (false),
+		infinitefuel = (false)
     },
     render = {
         ruda = (false),
@@ -245,7 +247,9 @@ local settings = {
         slider_mult = imgui.new.float(ini.car.mult),
         slider_limit = imgui.new.float(ini.car.limit),
         slider_timestep = imgui.new.float(ini.car.timestep),
-        safe_train_speed = imgui.new.bool(ini.car.safe_train_speed)
+        safe_train_speed = imgui.new.bool(ini.car.safe_train_speed),
+        fastenter = imgui.new.bool(ini.car.fastenter),
+        infinitefuel = imgui.new.bool(ini.car.infinitefuel)
     },
     render = {
         ruda = imgui.new.bool(ini.render.ruda),
@@ -1659,13 +1663,25 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     save()
                 end
             end
+            if imgui.ToggleButton(fa.GAS_PUMP..u8' Бесконечное топливо', settings.car.infinitefuel) then
+                if settings.cfg.autosave[0] then
+                    ini.car.infinitefuel = settings.car.infinitefuel[0]
+                    save()
+                end
+            end
+            if imgui.ToggleButton(fa.DOOR_OPEN..u8' Быстрая посадка в авто', settings.car.fastenter) then
+                if settings.cfg.autosave[0] then
+                    ini.car.fastenter = settings.car.fastenter[0]
+                    save()
+                end
+            end
             if imgui.ToggleButton(fa.CAR..u8' Гидравлика (неконтролируемая)', settings.car.drift) then
                 if settings.cfg.autosave[0] then
                     ini.car.drift = settings.car.drift[0]
                     save()
                 end
             end
-	        if imgui.Button(fa.PLANE..u8' ТП игроков к себе (включите антисинхру') then
+	        if imgui.Button(fa.PLANE..u8' ТП игроков к себе') then
 	            sampProcessChatInput('/tpall')
 	        end
 	        if imgui.Button(fa.RIGHT_FROM_BRACKET..u8' Быстрый выход') then
@@ -2147,6 +2163,8 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.car.timestep = settings.car.slider_timestep[0]
                     ini.car.limit = settings.car.slider_limit[0]
                     ini.car.safe_train_speed = settings.car.safe_train_speed[0]
+                    ini.car.fastenter = settings.car.fastenter[0]
+                    ini.car.infinitefuel = settings.car.infinitefuel[0]
                     ini.render.ruda = settings.render.ruda[0]
                     ini.render.narkotiki = settings.render.narkotiki[0]
                     ini.render.podarok = settings.render.podarok[0]
@@ -2550,6 +2568,11 @@ function main()
 	statusbot = lua_thread.create_suspended(botwork)
 	statusbot = lua_thread.create_suspended(botwork)
     while true do wait(0)
+        if settings.car.infinitefuel[0] then
+            if isCharInAnyCar(PLAYER_PED) then
+                switchCarEngine(storeCarCharIsInNoSave(PLAYER_PED), true)
+            end
+        end
         if floodfish then
             sampProcessChatInput('/sosopjpjpjpjpjpj')
         end
@@ -4651,6 +4674,19 @@ function timerprocess(timestep)
 		return true
 	end
 	return false
+end
+
+-- fast enter vehicle
+function events.onSendEnterVehicle(vehicleId, passenger)
+    lua_thread.create(function()
+        if settings.car.fastenter[0] and passenger == false then
+            wait(300)
+            warpCharIntoCar(PLAYER_PED, select(2, sampGetCarHandleBySampVehicleId(vehicleId)))
+        elseif settings.car.fastenter[0] and passenger == true then
+            wait(300)
+            warpCharIntoCarAsPassenger(PLAYER_PED, select(2, sampGetCarHandleBySampVehicleId(vehicleId)), 2)
+        end
+    end)
 end
 
 -- all themes
