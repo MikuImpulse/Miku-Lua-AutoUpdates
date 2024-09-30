@@ -146,7 +146,8 @@ local ini = inicfg.load({
         showinfo = (true),
         samelinetabs = (false),
         tabswidth = (140),
-        tabsheight = (40)
+        tabsheight = (40),
+        window_scale = (1.0)
     },
     dgun = {
         gunsList = (0),
@@ -287,7 +288,8 @@ local settings = {
         showinfo = imgui.new.bool(ini.menu.showinfo),
         samelinetabs = imgui.new.bool(ini.menu.samelinetabs),
         tabswidth = imgui.new.int(ini.menu.tabswidth),
-        tabsheight = imgui.new.int(ini.menu.tabsheight)
+        tabsheight = imgui.new.int(ini.menu.tabsheight),
+        window_scale = imgui.new.float(ini.menu.window_scale)
     },
     dgun = {
         gunsList = imgui.new.int(ini.dgun.gunsList),
@@ -947,6 +949,12 @@ imgui.OnFrame(function() return menusettings[0] end, function()
             save()
         end
     end
+    if imgui.SliderFloat(fa.MAXIMIZE..u8' Размер шрифта', settings.menu.window_scale, 1 / MONET_DPI_SCALE, 3.0) then
+        if settings.cfg.autosave[0] then
+            ini.menu.window_scale = settings.menu.window_scale[0]
+            save()
+        end
+    end
     imgui.Separator()
     imgui.CenterText(fa.HANDSHAKE_ANGLE..u8' Взаимодействие')
     imgui.Separator()
@@ -971,6 +979,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
     imgui.SetNextWindowPos(imgui.ImVec2(1100 * MONET_DPI_SCALE, 500 * MONET_DPI_SCALE), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
     imgui.SetNextWindowSize(imgui.ImVec2(settings.menu.menuwidth[0] * MONET_DPI_SCALE, settings.menu.menuheight[0] * MONET_DPI_SCALE), imgui.Cond.Always)
     imgui.Begin(fa.STAR_OF_LIFE..u8' Miku Project Reborn '..fa.STAR_OF_LIFE, window_state, imgui.WindowFlags.NoResize)
+    imgui.SetWindowFontScale(settings.menu.window_scale[0])
     imgui.SetCursorPos(imgui.ImVec2(settings.menu.onechildposx[0] * MONET_DPI_SCALE, settings.menu.onechildposy[0] * MONET_DPI_SCALE))
     if imgui.BeginChild('Tabs##'..tab, imgui.ImVec2(settings.menu.onechildwidth[0] * MONET_DPI_SCALE, settings.menu.onechildheight[0] * MONET_DPI_SCALE), true) then
         if imgui.Button(fa.FIRE..u8' Основное', imgui.ImVec2(settings.menu.tabswidth[0], settings.menu.tabsheight[0])) then
