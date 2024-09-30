@@ -2208,6 +2208,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.menu.samelinetabs = settings.menu.samelinetabs[0]
                     ini.menu.tabswidth = settings.menu.tabswidth[0]
                     ini.menu.tabsheight = settings.menu.tabsheight[0]
+                    ini.menu.window_scale = settings.menu.window_scale[0]
                     ini.teleport.tpwait = settings.teleport.tpwait[0]
                     ini.teleport.infosize = settings.teleport.infosize[0]
                     ini.teleport.tpbar = tpbar
