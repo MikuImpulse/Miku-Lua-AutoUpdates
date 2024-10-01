@@ -6,6 +6,7 @@ script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to op
 --------Библиотеки--------
 local imgui = require 'mimgui'
 local fa = require 'fAwesome6_solid'
+local faicons = require 'fAwesome6'
 local mem = require 'memory'
 local events = require 'samp.events'
 local ffi = require 'ffi'
@@ -69,9 +70,6 @@ local ini = inicfg.load({
     main = {
         airbrakewidget = (false),
         clickwarpcoord = (false),
-        quitinformer = (false),
-        informerinstream = (false),
-        radiuslavki = (false),
         antimask = (false),
         timeblockserv = (false),
         weatherblockserv = (false)
@@ -88,18 +86,12 @@ local ini = inicfg.load({
         skinid = (0),
         cjrun = (false),
         autoplusc = (false),
-        infiniterun = (false),
-        autousedrugs = (false),
-        auhp = (20),
-        audrugs = (3),
-        killbots1hit = (false),
+        infiniterun = (false)
     },
     car = {
         godmode2_enabled = (false),
         flycar = (false),
         nobike = (false),
-        drift = (false),
-        slappower2 = (0),
         atrradius = (150),
         atractive = (false),
         speedhack = (false),
@@ -121,10 +113,7 @@ local ini = inicfg.load({
         kokosi = (false),
         derevovishkac = (false),
         semena = (false),
-        graffiti = (false),
-        lenhlopok = (false),
-        rtime = (370),
-        mtrsize = (10)
+        graffiti = (false)
     },
     menu = {
         slideropenbuttonwidth = (100),
@@ -152,14 +141,6 @@ local ini = inicfg.load({
     dgun = {
         gunsList = (0),
         ammo = (500)
-    },
-    teleport = {
-        tpwait = (1000),
-        tpbar = (true),
-        infosize = (12),
-        tpwaiting = (1000),
-        x = (10),
-        y = (400)
     },
     objects = {
         autormlsa = (false),
@@ -211,9 +192,6 @@ local settings = {
     main = {
         airbrakewidget = imgui.new.bool(ini.main.airbrakewidget),
         clickwarpcoord = imgui.new.bool(ini.main.clickwarpcoord),
-        quitinformer = imgui.new.bool(ini.main.quitinformer),
-        informerinstream = imgui.new.bool(ini.main.informerinstream),
-        radiuslavki = imgui.new.bool(ini.main.radiuslavki),
         antimask = imgui.new.bool(ini.main.antimask),
         timeblockserv = imgui.new.bool(ini.main.timeblockserv),
         weatherblockserv = imgui.new.bool(ini.main.weatherblockserv)
@@ -230,18 +208,12 @@ local settings = {
         skinid = imgui.new.int(ini.ped.skinid),
         cjrun = imgui.new.bool(ini.ped.cjrun),
         autoplusc = imgui.new.bool(ini.ped.autoplusc),
-        infiniterun = imgui.new.bool(ini.ped.infiniterun),
-        autousedrugs = imgui.new.bool(ini.ped.autousedrugs),
-        auhp = imgui.new.int(ini.ped.auhp),
-        audrugs = imgui.new.int(ini.ped.audrugs),
-        killbots1hit = imgui.new.bool(ini.ped.killbots1hit)
+        infiniterun = imgui.new.bool(ini.ped.infiniterun)
     },
     car = {
         godmode2_enabled = imgui.new.bool(ini.car.godmode2_enabled),
         flycar = imgui.new.bool(ini.car.flycar),
         nobike = imgui.new.bool(ini.car.nobike),
-        drift = imgui.new.bool(ini.car.drift),
-        slappower2 = imgui.new.int(ini.car.slappower2),
         atrradius = imgui.new.int(ini.car.atrradius),
         atractive = imgui.new.bool(ini.car.atractive),
         speedhack = imgui.new.bool(ini.car.speedhack),
@@ -263,10 +235,7 @@ local settings = {
         kokosi = imgui.new.bool(ini.render.kokosi),
         derevovishkac = imgui.new.bool(ini.render.derevovishkac),
         semena = imgui.new.bool(ini.render.semena),
-        graffiti = imgui.new.bool(ini.render.graffiti),
-        lenhlopok = imgui.new.bool(ini.render.lenhlopok),
-        rtime = imgui.new.int(ini.render.rtime),
-        mtrsize = imgui.new.int(ini.render.mtrsize)
+        graffiti = imgui.new.bool(ini.render.graffiti)
     },
     menu = {
         slideropenbuttonwidth = imgui.new.int(ini.menu.slideropenbuttonwidth),
@@ -295,10 +264,6 @@ local settings = {
         gunsList = imgui.new.int(ini.dgun.gunsList),
         ammo = imgui.new.int(ini.dgun.ammo)
     },
-    teleport = {
-        tpwait = imgui.new.int(ini.teleport.tpwait),
-        infosize = imgui.new.int(ini.teleport.infosize)
-    },
     objects = {
         autormlsa = imgui.new.bool(ini.objects.autormlsa),
         autormsfa = imgui.new.bool(ini.objects.autormsfa),
@@ -324,20 +289,44 @@ local window_state = new.bool()
 local custommimguiStyle = new.bool()
 local menusettings = new.bool()
 local found_update = new.bool()
+local flycar_window = new.bool(true)
 local theme_a = {u8'Темная', u8'Зеленая', u8'Голубо-серая', u8'Вишнёвая', 'MoonMonet'}
 local theme_t = {u8'black', u8'green', u8'bluegray', u8'cherry', 'moonmonet'}
 local items = imgui.new['const char*'][#theme_a](theme_a)
 local selected_theme = imgui.new.int(ini.theme.selected)
+-- notify
+Notifications = {
+  _version = '0.2',
+  _list = {},
+  _COLORS = {
+    [0] = {back = {0.26, 0.71, 0.81, 1},    text = {1, 1, 1, 1}, icon = {1, 1, 1, 1}, border = {1, 0, 0, 0}},
+    [1] = {back = {0.26, 0.81, 0.31, 1},    text = {1, 1, 1, 1}, icon = {1, 1, 1, 1}, border = {1, 0, 0, 0}},
+    [2] = {back = {1, 0.39, 0.39, 1},       text = {1, 1, 1, 1}, icon = {1, 1, 1, 1}, border = {1, 0, 0, 0}},
+    [3] = {back = {0.97, 0.57, 0.28, 1},    text = {1, 1, 1, 1}, icon = {1, 1, 1, 1}, border = {1, 0, 0, 0}},
+    [4] = {back = {0, 0, 0, 1},             text = {1, 1, 1, 1}, icon = {1, 1, 1, 1}, border = {1, 0, 0, 0}},
+  },
+
+  TYPE = {
+      INFO = 0,
+      OK = 1,
+      ERROR = 2,
+      WARN = 3,
+      DEBUG = 4
+  },
+  ICON = {
+      [0] = faicons('CIRCLE_INFO'),
+      [1] = faicons('CHECK'),
+      [2] = faicons('XMARK'),
+      [3] = faicons('EXCLAMATION'),
+      [4] = faicons('WRENCH')
+  }
+}
 -- speedhack
 local player_vehicle = samem.cast('CVehicle **', samem.player_vehicle)
 -- auto updates
 local lmPath = "MikuProjectReborn.lua"
 local lmUrl = "https://raw.githubusercontent.com/MikuImpulse/Miku-Lua-AutoUpdates/main/MikuProjectReborn.lua"
 local updfont = {}
--- tpall
-local nop = false
-local tpidstate = false
-local skip = {}
 -- togglebutton
 local AI_TOGGLE = {}
 local ToU32 = imgui.ColorConvertFloat4ToU32
@@ -345,25 +334,8 @@ local ToU32 = imgui.ColorConvertFloat4ToU32
 local tsrragebot = imgui.new.bool(false)
 local botstep = -1
 local box = 0
--- quit informer
-reasons = {
-    [0] = 'потеря связи/краш',
-    [1] = '/q',
-    [2] = 'кикнул сервер/забанил'
-}
--- mine time render (mtr)
-local rtime = settings.render.rtime[0]
-local mtrfont, mtract,start,resources,pool_mrkr, pool_marker, pool_chkpnt = renderCreateFont('Arial', settings.render.mtrsize[0], 5), false, nil, {}, {}, {}, {}
 -- attach trailer
 atrtrailer = nil
--- zTeleport
-local zettp = false
-local tp_dist = 175
-local waiting = ini.teleport.tpwaiting
-local percent = 0
-local tpfont = renderCreateFont('NAMU PRO', settings.teleport.infosize[0], 4)
-local zettpincar, tpbar = false, ini.teleport.tpbar
-local editposs = false
 -- hpbar
 activebar = 1
 -- dgun combo
@@ -512,11 +484,7 @@ local graffity = {
     [18667] = 'Граффити'
 }
 
-local lenxlopok = {
-    [819] = 'Хлопок',
-    [865] = 'Лен'
-}
--- ffi get handle bones
+-- ffi get ped bones position
 local gta = ffi.load('GTASA')
 ffi.cdef[[
   typedef struct RwV3d {
@@ -582,7 +550,7 @@ Reconnect.activate = function()
         if ms <= 0 then
             ms = 100
         end
-        notf('Реконнектимся..', -1)
+        notf1(u8'Реконнектимся...')
         Reconnect.waiting = true
         while ms > 0 do
             if ms <= 500 then
@@ -799,6 +767,15 @@ local newFrame2 = imgui.OnFrame(
         imgui.End()
     end
 )
+-- flycar window
+imgui.OnFrame(function() return flycar_window[0] and not isGamePaused() and isCharInAnyCar(PLAYER_PED) end, function()
+    imgui.Begin('     ', flycar_window, imgui.WindowFlags.AlwaysAutoResize + imgui.WindowFlags.NoTitleBar)
+    if imgui.Button(fa.CAR..u8' FlyCar', imgui.ImVec2(120, 50)) then
+        wwwflycar = not wwwflycar
+        printStringNow(wwwflycar and 'FlyCar ~g~activated' or 'FlyCar ~r~deactivated', 300)
+    end
+    imgui.End()
+end)
 -- found update window
 imgui.OnFrame(function() return found_update[0] end, function()
     local scrx, scry = getScreenResolution()
@@ -828,7 +805,7 @@ imgui.OnFrame(function() return found_update[0] end, function()
     end
     if imgui.Button(fa.FORWARD..u8' ПРОПУСТИТЬ', imgui.ImVec2(650, 40)) then
        found_update[0] = not found_update[0]
-       notf('Обновление скрипта пропущено.')
+       notf2(u8'Обновление скрипта пропущено')
     end
     imgui.End()
 end)
@@ -1047,29 +1024,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     save()
                 end
             end
-            if imgui.ToggleButton(fa.CLIPBOARD..u8' Quit Informer', settings.main.quitinformer) then
-                if settings.cfg.autosave[0] then
-                    ini.main.quitinformer = settings.main.quitinformer[0]
-                    save()
-                end
-            end
-            if settings.main.quitinformer[0] then
-                imgui.Text(u8'   '..fa.ARROW_TREND_DOWN)
-                imgui.SameLine()
-                imgui.SetCursorPosX(60)
-                if imgui.ToggleButton(fa.SHEKEL_SIGN..u8' Informer в зоне стрима', settings.main.informerinstream) then
-                    if settings.cfg.autosave[0] then
-                        ini.main.informerinstream = settings.main.informerinstream[0]
-                        save()
-                    end
-                end
-            end
-            if imgui.ToggleButton(fa.CIRCLE_NOTCH..u8' Радиус лавки (ЦР)', settings.main.radiuslavki) then
-                if settings.cfg.autosave[0] then
-                    ini.main.radiuslavki = settings.main.radiuslavki[0]
-                    save()
-                end
-            end
             if imgui.Button(fa.TOILET..u8' Начать ссать') then
                 sampSetSpecialAction(68)
             end
@@ -1207,102 +1161,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     save()
                 end
             end
-            if imgui.ToggleButton(fa.INBOX..u8' Лен и хлопок', settings.render.lenhlopok) then
-                if settings.cfg.autosave[0] then
-                    ini.render.lenhlopok = settings.render.lenhlopok[0]
-                    save()
-                end
-            end
-            imgui.Separator()
-            if imgui.Button(fa.GEM..u8' Mine Time Render') then
-                mtract = not mtract
-                for i = 1, 3000 do
-                    resources[i] = {}
-                    for a = 1, 4 do
-                        resources[i][a] = 0
-                    end
-                end
-	    	    start = mtract and os.time() or nil
-	    	    notf(mtract and "{FFC300}Mine Time Render {FFFFFF}включен!" or '{FFC300}Mine Time Render {FFFFFF}выключен!',-1)
-            end
-            imgui.PushItemWidth(250)
-            if imgui.SliderInt(fa.STAR_OF_LIFE..u8' Секунд на руду', settings.render.rtime, 1, 550) then
-                if settings.cfg.autosave[0] then
-                    ini.render.rtime = settings.render.rtime[0]
-                    save()
-                end
-            end
-            if imgui.SliderInt(fa.STAR_OF_LIFE..u8' Размер текста рендера', settings.render.mtrsize, 1, 30) then
-                if settings.cfg.autosave[0] then
-                    ini.render.mtrsize = settings.render.mtrsize[0]
-                    save()
-                end
-            end
-            imgui.PopItemWidth()
-            if settings.menu.showinfo[0] then
-                imgui.Text(fa.INFO..u8' | Можно использовать /mine для включения')
-                imgui.Text(fa.INFO..u8' | Для применения размера текста необходимо')
-                imgui.Text(fa.INFO..u8' | сохранить конфиг и перезагрузить скрипт')
-            end
-            imgui.Separator()
-            imgui.CenterText(fa.PLANE_UP..u8' zTeleport by Mintha (v3)')
-            imgui.Separator()
-            if imgui.Button(fa.PLANE_DEPARTURE..u8' Телепорт (метка)') then
-                sampProcessChatInput('/tpz')
-            end
-            if imgui.Button(fa.RECEIPT..u8' Отображать информацию слева') then
-                tpbar = not tpbar
-                if settings.cfg.autosave[0] then
-                    ini.teleport.tpbar = tpbar
-                    save()
-                end
-            end
-            if imgui.Button(fa.UP_DOWN_LEFT_RIGHT..u8' Изменить позицию инфы') then
-                editposs = not editposs
-                window_state[0] = not window_state[0]
-                notf('Меню скрыто до момента, пока не сохраните позицию')
-                notf('Для изменения положения нажми на экран в любом месте' or 'Отменено')
-            end
-            if imgui.Button(fa.WRENCH..u8' Установить задержку') then
-                sampProcessChatInput('/tpz waiting '..settings.teleport.tpwait[0])
-            end
-            if imgui.SliderInt(fa.HOURGLASS_HALF..u8' Зaдeржка', settings.teleport.tpwait, 0, 10000) then
-                if settings.cfg.autosave[0] then
-                    ini.teleport.tpwait = settings.teleport.tpwait[0]
-                    save()
-                end
-            end
-            if imgui.SliderInt(fa.MAXIMIZE..u8' Размер инфы слева', settings.teleport.infosize, 2, 30) then
-                if settings.cfg.autosave[0] then
-                    ini.teleport.infosize = settings.teleport.infosize[0]
-                    save()
-                end
-            end
-            if settings.menu.showinfo[0] then
-                imgui.Text(fa.INFO..u8' | Для применения размера нужно сохранить настройки')
-                imgui.Text(fa.INFO..u8' | и перезагрузить скрипт')
-            end
-            imgui.Separator()
-            if settings.menu.showinfo[0] then
-                if imgui.Button(fa.INFO..u8' | Спойлер: Чат-команды') then
-                    tpchatcmds = not tpchatcmds
-                end
-                if tpchatcmds then
-                    imgui.Text(fa.INFO..u8' | /tpz - телепорт по метке')
-                    imgui.Text(fa.INFO..u8' | /tpz waiting *целое число* - установить задержку')
-                    imgui.Text(fa.INFO..u8' | /tpz view - отображение информации слева')
-                end
-            end
-            imgui.Separator()
-            imgui.Text(fa.PLANE..u8' Моментальный ТП для бонусников')
-            imgui.Separator()
-            if imgui.Button(fa.PLANE_DEPARTURE..u8' ТП по метке') then
-                sampProcessChatInput('/tpc')
-            end
-            if settings.menu.showinfo[0] then 
-                imgui.Separator()
-                imgui.Text(fa.INFO..u8' | Можно использовать /tpc')
-            end
             imgui.Separator()
             imgui.CenterText(fa.DIAGRAM_PROJECT..u8' Объекты')
             imgui.Separator()
@@ -1375,14 +1233,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
             if imgui.ToggleButton(fa.PERSON_RUNNING..u8' Бег CJ', settings.ped.cjrun) then
                 if settings.cfg.autosave[0] then
                     ini.ped.cjrun = settings.ped.cjrun[0]
-                    save()
-                end
-            end
-            imgui.SameLine()
-            imgui.SetCursorPosX(740)
-            if imgui.ToggleButton(fa.GUN..u8' Убивать ботов с 1 патрона', settings.ped.killbots1hit) then
-                if settings.cfg.autosave[0] then
-                    ini.ped.killbots1hit = settings.ped.killbots1hit[0]
                     save()
                 end
             end
@@ -1464,26 +1314,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 if settings.cfg.autosave[0] then
                     ini.ped.skinid = settings.ped.skinid[0]
                     save()
-                end
-            end
-            imgui.Separator()
-            imgui.CenterText(fa.VIRUS..u8' Автоюз нарко')
-            imgui.Separator()
-            if imgui.ToggleButton(fa.VIRUS..u8' Включено', settings.ped.autousedrugs) then
-                if settings.cfg.autosave[0] then
-                    ini.ped.autousedrugs = settings.ped.autousedrugs[0]
-                    save()
-                end
-            end
-            if imgui.SliderInt(fa.HEART..u8' ХП (ниже значения = хилит)', settings.ped.auhp, 1, 160) then
-                if settings.cfg.autosave[0] then
-                    ini.ped.auhp = settings.ped.auhp[0]
-                    save()
-                end
-            end
-            if imgui.SliderInt(fa.HEART_PULSE..u8' Кол-во нарко', settings.ped.audrugs, 1, 3) then
-                if settings.cfg.autosave[0] then
-                    ini.ped.audrugs = settings.ped.audrugs[0]
                 end
             end
             imgui.Separator()
@@ -1684,15 +1514,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     save()
                 end
             end
-            if imgui.ToggleButton(fa.CAR..u8' Гидравлика (неконтролируемая)', settings.car.drift) then
-                if settings.cfg.autosave[0] then
-                    ini.car.drift = settings.car.drift[0]
-                    save()
-                end
-            end
-	        if imgui.Button(fa.PLANE..u8' ТП игроков к себе') then
-	            sampProcessChatInput('/tpall')
-	        end
 	        if imgui.Button(fa.RIGHT_FROM_BRACKET..u8' Быстрый выход') then
                 if isCharInAnyCar(PLAYER_PED) then
                      local posX, posY, posZ = getCarCoordinates(storeCarCharIsInNoSave(PLAYER_PED))
@@ -1706,21 +1527,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     setCarCoordinates(veh, x, y, z)
                 end
             end
-            if imgui.Button(fa.ARROW_UP..u8' Слап') then
-                if isCharInAnyCar(PLAYER_PED) then    
-                    local veh = storeCarCharIsInNoSave(PLAYER_PED)
-                    local x, y, z = getCarCoordinates(veh)
-                    setCarCoordinates(veh, x, y, z+settings.car.slappower2[0])
-                end
-            end
-            imgui.PushItemWidth(250)
-            if imgui.SliderInt(fa.PLUG..u8' Сила слапa', settings.car.slappower2, 3, 37) then
-                if settings.cfg.autosave[0] then
-                    ini.car.slappower2 = settings.car.slappower2[0]
-                    save()
-                end
-            end
-            imgui.PopItemWidth()
             imgui.Separator()
             if imgui.ToggleButton(fa.CAR..u8' Attach Trailer', settings.car.atractive) then
                 if settings.cfg.autosave[0] then
@@ -2059,14 +1865,10 @@ imgui.OnFrame(function() return window_state[0] end, function()
             if imgui.BeginPopupModal(fa.STAR_OF_LIFE..u8' Команды скрипта '..fa.STAR_OF_LIFE, _, imgui.WindowFlags.AlwaysAutoResize) then
                 imgui.Text(u8'/miku - основное меню скрипта')
                 imgui.Text(u8'/armbot - бот на завод')
-                imgui.Text(u8'/tpall - телепорт ближайших игроков к себе')
-                imgui.Text(u8'/tpa {id} - телепорт игроков по айди к себе')
-                imgui.Text(u8'/tpz - телепорт метка (zTeleport)')
                 imgui.Text(u8'/tpc - телепорт метка (для нубо рп, моментальный)')
                 imgui.Text(u8'/piss {ms} - начать ссать, если мс не указан, то бесконечно')
                 imgui.Text(u8'/unpiss - перестать ссать')
                 imgui.Text(u8'/rc - реконнект')
-                imgui.Text(u8'/mine - Mine Time Render')
                 if imgui.Button(fa.XMARK..u8' Закрыть') then
                     imgui.CloseCurrentPopup()
                 end
@@ -2090,7 +1892,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
             end
             imgui.SameLine()
             if imgui.Button(fa.ROTATE_RIGHT, imgui.ImVec2(40 * MONET_DPI_SCALE, 40 * MONET_DPI_SCALE)) then
-                notf('Скрипт перезагружен!', -1)
+                notf1(u8'Скрипт перезагружен!')
                 thisScript():reload()
             end
             if imgui.IsItemHovered() then
@@ -2138,9 +1940,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.ESP.linethinkness = settings.ESP.linethinkness[0]
                     ini.main.airbrakewidget = settings.main.airbrakewidget[0]
                     ini.main.clickwarpcoord = settings.main.clickwarpcoord[0]
-                    ini.main.quitinformer = settings.main.quitinformer[0]
-                    ini.main.informerinstream = settings.main.informerinstream[0]
-                    ini.main.radiuslavki = settings.main.radiuslavki[0]
                     ini.main.antimask = settings.main.antimask[0]
                     ini.main.timeblockserv = settings.main.timeblockserv[0]
                     ini.main.weatherblockserv = settings.main.weatherblockserv[0]
@@ -2156,15 +1955,9 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.ped.cjrun = settings.ped.cjrun[0]
                     ini.ped.autoplusc = settings.ped.autoplusc[0]
                     ini.ped.infiniterun = settings.ped.infiniterun[0]
-                    ini.ped.autousedrugs = settings.ped.autousedrugs[0]
-                    ini.ped.auhp = settings.ped.auhp[0]
-                    ini.ped.audrugs = settings.ped.audrugs[0]
-                    ini.ped.killbots1hit = settings.ped.killbots1hit[0]
                     ini.car.godmode2_enabled = settings.car.godmode2_enabled[0]
                     ini.car.flycar = settings.car.flycar[0]
                     ini.car.nobike = settings.car.nobike[0]
-                    ini.car.drift = settings.car.drift[0]
-                    ini.car.slappower2 = settings.car.slappower2[0]
                     ini.car.atractive = settings.car.atractive[0]
                     ini.car.atrradius = settings.car.atrradius[0]
                     ini.car.speedhack = settings.car.speedhack[0]
@@ -2185,9 +1978,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.render.derevovishkac = settings.render.derevovishkac[0]
                     ini.render.semena = settings.render.semena[0]
                     ini.render.graffiti = settings.render.graffiti[0]
-                    ini.render.rtime = settings.render.rtime[0]
-                    ini.render.mtrsize = settings.render.mtrsize[0]
-                    ini.render.lenhlopok = settings.render.lenhlopok[0]
                     ini.menu.slideropenbuttonwidth = settings.menu.slideropenbuttonwidth[0]
                     ini.menu.slideropenbuttonheight = settings.menu.slideropenbuttonheight[0]
                     ini.menu.openbutton = settings.menu.openbutton[0]
@@ -2209,10 +1999,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.menu.tabswidth = settings.menu.tabswidth[0]
                     ini.menu.tabsheight = settings.menu.tabsheight[0]
                     ini.menu.window_scale = settings.menu.window_scale[0]
-                    ini.teleport.tpwait = settings.teleport.tpwait[0]
-                    ini.teleport.infosize = settings.teleport.infosize[0]
-                    ini.teleport.tpbar = tpbar
-                    ini.teleport.tpwaiting = waiting
                     ini.objects.autormlsa = settings.objects.autormlsa[0]
                     ini.objects.autormsfa = settings.objects.autormsfa[0]
                     ini.objects.autormblockpost = settings.objects.autormblockpost[0]
@@ -2221,7 +2007,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.tsr.autormdoors = settings.tsr.autormdoors[0]
                     ini.tsr.autormfence = settings.tsr.autormcell[0]
                     save()
-                    notf('Настройки сохранены!', -1)
+                    notf1(u8'Настройки сохранены!')
                     imgui.CloseCurrentPopup()
                 end
                 if imgui.ToggleButton(fa.CHECK..u8' Автосохранение', settings.cfg.autosave) then
@@ -2410,45 +2196,16 @@ function main()
     sampRegisterChatCommand('sosopjpjpjpjpjpj', function() fishbot = not fishbot end)
     sampRegisterChatCommand('fishbot', function() 
         floodfish = not floodfish
-        notf(floodfish and 'FishBot включен' or 'FishBot выключен')
-    end)
-    sampRegisterChatCommand("tpall", function()
-        tpidstate = not tpidstate
-        sampAddChatMessage(tpidstate and "on" or "off", -1)
-    end)
-    sampRegisterChatCommand("tpa", function(arg)
-        lua_thread.create(function()
-            if arg then
-                local arg = tonumber(arg)
-                local data = samp_create_sync_data("vehicle")
-                local _, handl = sampGetCharHandleBySampPlayerId(arg)
-                if _ then
-                    local mx, my, mz = getCharCoordinates(PLAYER_PED)
-                    local x, y, z = getCharCoordinates(handl)
-                    if getDistanceBetweenCoords3d(mx, my, mz, x, y, z) >= 38 then
-                        return sampAddChatMessage('далеко', -1)
-                    else
-                        sampAddChatMessage('13', -1)
-                        nop = true
-                        for i = 1, 5 do
-                            data.position = {x, y, z-0.4}
-                            data.moveSpeed = {0, 0, 0.05}
-                            data.send()
-                            wait(15)
-                        end
-                        wait(50)
-                        nop = false
-                    end
-                else
-                    sampAddChatMessage('игрок за зоной стрима', -1)
-                end 
-            end
-        end)
+        if floodfish then
+            notf1(u8'FishBot включен')
+        else
+            notf3(u8'FishBot выключен')
+        end
     end)
     sampRegisterChatCommand('piss', function(pisssec)
         if tonumber(pisssec) then
             local pisssec = tonumber(pisssec)
-            notf('Вы будете ссать '..pisssec..' ms')
+            notf1(u8'Вы будете ссать '..pisssec..' ms')
             lua_thread.create(function()
                 sampSetSpecialAction(68)
                 wait(pisssec)
@@ -2460,94 +2217,13 @@ function main()
     end)
     sampRegisterChatCommand('unpiss', function() sampSetSpecialAction(0) end)
     sampRegisterChatCommand('rc', Reconnect.activate)
-    sampRegisterChatCommand('mine', function() 
-        mtract = not mtract
-		for i = 1, 3000 do
-            resources[i] = {}
-            for a = 1, 4 do
-                resources[i][a] = 0
-            end
-        end
-		start = mtract and os.time() or nil
-		notf(mtract and "{FFC300}Mine Time Render {FFFFFF}включен!" or '{FFC300}Mine Time Render{FFFFFF} выключен!',-1)
-    end)
     sampRegisterChatCommand('tpc', function()
         result, x, y, z = getTargetBlipCoordinatesFixed()
         if result then setCharCoordinates(PLAYER_PED, x, y, z) end
     end)
-    sampRegisterChatCommand("tpz", function(args)
-        lua_thread.create(function()
-            local bool, bx,by,bz = getTargetBlipCoordinatesFixed()
-            if zettp then
-                sampAddChatMessage('Ошибка. {6495ed}Уже телепортируемся.', -1)
-                return
-            end
-            if args ~= nil and args:match('%w+ %d+') then
-                local biber, dolik = args:match('(%w+) (%d+)')
-                if biber == 'waiting' then
-                    waiting = tonumber(dolik)
-                    return sampAddChatMessage('Успешно. {6495ed}Задержка: '..waiting, -1)
-                end
-            elseif args == "view" then
-                tpbar = not tpbar
-                return
-            elseif args == "" then
-            else
-                sampAddChatMessage('Неизвестная команда! {6495ed}Используйте /tpz', -1)
-                return
-            end
-            if bool then
-                percent = 0
-                zettp = true
-                if zettpincar then
-                    freezeCarPosition(storeCarCharIsInNoSave(PLAYER_PED), true)
-                else
-                    freezeCharPosition(PLAYER_PED, true)
-                end
-                local x, y, z = getCharCoordinates(PLAYER_PED)
-                local nx, ny, nz = x,y,z
-                local dist = getDistanceBetweenCoords2d(x,y,bx,by)
-                local angle = -math.rad(getHeadingFromVector2d(bx - x, by - y))
-                local data = samp_create_sync_data(zettpincar and "vehicle" or "player")
-                setCharCoordinates(PLAYER_PED, bx, by, bz)
-                if dist > tp_dist then
-                    for ds = dist-tp_dist, 0, -tp_dist do
-                        data.moveSpeed = {0, 0, zettpincar and -0.1 or -0.7}
-                        for i = nz, -135, -25 do
-                            data.position = {nx, ny, i}
-                            data.send()
-                            wait(50) -- 200 ms / 150ms
-                        end
-                        data.moveSpeed = {0, 0, 0}
-                        nx, ny, nz = nx + math.sin(angle) * tp_dist, ny + math.cos(angle) * tp_dist, -60
-                        data.position = {nx, ny, nz}
-                        data.send()
-                        percent = math.calculate(0,100,dist,0,ds)
-                        wait(waiting)
-                    end
-                end
-                data.moveSpeed = {0, 0, zettpincar and -0.1 or -0.7}
-                for i = nz, -135, -25 do
-                    data.position = {nx, ny, i}
-                    data.send()
-                    wait(50)
-                end
-                data.position = {bx,by,bz}
-                data.send()
-                setCharCoordinates(PLAYER_PED, bx, by, bz)
-                if zettpincar then
-                    freezeCarPosition(storeCarCharIsInNoSave(PLAYER_PED), false)
-                else
-                    freezeCharPosition(PLAYER_PED, false)
-                end
-                sampAddChatMessage('Успех. {6495ed}Телепортировались', -1)
-                zettp = false
-            end
-        end)
-    end)
     sampRegisterChatCommand('armbot', function(round) 
 		if not round:match('%d+') or round:match('[-/*+!#$%%^&()]') then
-			notf('Неправильно указано количество кругов. ')
+			notf3(u8'Неправильно указано количество кругов. ')
 			if armorbotstate then
 				armorbotstate = false
 				statusbot: terminate()
@@ -2566,12 +2242,12 @@ function main()
 				end
 				currentrounds = 0
 				statusbot: run()
-				notf('Активирован.')
+				notf1(u8'Активирован.')
 			else
 				armorbotalt = false
 				point = 0
 				statusbot: terminate()
-				notf('Деактивирован.')
+				notf3(u8'Деактивирован.')
 			end
 		end
 	end)
@@ -2621,7 +2297,7 @@ function main()
         if armorbotstate then
 			local x, y, z = getCharCoordinates(PLAYER_PED)
 			if currentrounds == setrounds or z > 1044.125 then
-				notf('Бот завершил работу.')
+				notf2(u8'Бот завершил работу.')
 				armorbotstate = false
 				armorbotalt = false
 				point = 0
@@ -2653,113 +2329,11 @@ function main()
         if settings.main.weatherblockserv[0] then
             forceWeatherNow(WeatherAndTime.weather[0])
         end
-        if settings.ped.autousedrugs[0] then
-            local outhp = getCharHealth(PLAYER_PED)
-            if outhp < settings.ped.auhp[0] then
-                sampSendChat('/usedrugs '..settings.ped.audrugs[0])
-            end
-        end
         if wwwflycar then
             FlyCar.processFlyCar()
         end
         if not wwwflycar then
             FlyCar.cars = 0
-        end
-        if settings.car.flycar[0] then
-            if isCharInAnyCar(PLAYER_PED) then
-                if isWidgetPressed(WIDGET_VIDEO_POKER_DEAL) then 
-                     wwwflycar = not wwwflycar
-                     printStringNow(wwwflycar and 'FlyCar ~g~activated' or 'FlyCar ~r~deactivated', 300)
-                end
-            end
-        end
-        if mtract then
-			if not isCharInArea3d(PLAYER_PED, 393.10, 716.46, 15, 769.71, 1017.04, -55, false) then
-				notf("Вы вышли с шахты, поэтому {FFC300}Mine Time Render {FFFFFF}выключен!",-1)
-				mtract = false
-				for i = 1, 3000 do
-					resources[i] = {}
-					for a = 1, 4 do
-						resources[i][a] = 0
-					end
-				end
-			end
-			if os.time() - start >= 1 then
-				start = os.time()
-				for i = 1, 3000 do
-					if resources[i][4] > 0 then
-						resources[i][4] = resources[i][4] - 1
-						if resources[i][4] == 15 then
-							metka(resources[i][1],resources[i][2],resources[i][3])
-							local pX,pY,pZ = getCharCoordinates(1)
-							local dist = math.floor(getDistanceBetweenCoords3d(pX,pY,pZ, resources[i][1],resources[i][2],resources[i][3]))
-							notf("{FFC300}MTR: {FFFFFF}Через ~15 секунд, в "..dist.." метрах от вас, появится руда!",-1)
-						elseif resources[i][4] == 0 then
-							for a = 1, 4 do
-								resources[i][a] = 0
-							end
-						end
-					end
-				end
-            end
-			for i = 1, 3000 do
-				if resources[i][4] > 0 then
-					local obX, obY, obZ = resources[i][1],resources[i][2],resources[i][3]
-					if isPointOnScreen(obX, obY, obZ, 0.0) then
-						local wX, wY = convert3DCoordsToScreen(obX, obY, obZ)
-						local timer = changetime(resources[i][4])
-						renderFontDrawText(mtrfont, "Появится через "..timer.."!", wX, wY, -1)
-					end
-				end
-			end
-		end
-        zettpincar = isCharInAnyCar(PLAYER_PED)
-        if tpbar then
-            if zettp then
-                renderFontDrawText(tpfont, '{6495ed}| {ffffff}Teleporting:{6495ed} [' .. ("%0.1f"):format(percent) .. '%]\n| {ffffff}Wait:{6495ed} '..waiting, ini.teleport.x, ini.teleport.y, -1)
-            else
-                renderFontDrawText(tpfont, '{6495ed}| {ffffff}Mode: {6495ed}'..(zettpincar and 'Vehicle' or 'Onfoot')..'\n| {ffffff}Wait:{6495ed} '..waiting, ini.teleport.x, ini.teleport.y, -1)
-            end
-        end
-        if settings.main.radiuslavki[0] then
-            lua_thread.create(function()
-                for IDTEXT = 0, 2048 do
-                    if sampIs3dTextDefined(IDTEXT) then
-                        local text, color, posX, posY, posZ, distance, ignoreWalls, player, vehicle = sampGet3dTextInfoById(IDTEXT)
-                        if text ==  "Управления товарами." and not isCentralMarket(posX, posY) then
-                            local myPos = {getCharCoordinates(1)}
-                            drawCircleIn3d(posX,posY,posZ-1.3,5,36,1.5,	getDistanceBetweenCoords3d(posX,posY,0,myPos[1],myPos[2],0) > 5 and 0xFFFFFFFF or 0xFFFF0000)
-                        end
-                    end
-                end
-            end)
-        end
-        if tpidstate then
-            local data = samp_create_sync_data("vehicle")
-            local streamresult, handl, arg = getPlayerStream(25)
-            if streamresult then
-                local mx, my, mz = getCharCoordinates(PLAYER_PED)
-                local x, y, z = getCharCoordinates(handl)
-                local nickname = sampGetPlayerNickname(arg)
-                nop = true
-                for i = 1, 5 do
-                    data.position = {x, y, z-0.4}
-                    data.moveSpeed.z = 0.05
-                    data.send()
-                    wait(15)
-                end
-                wait(20)
-                for i = 1, 3 do
-                    data.position = {mx, my, mz}
-                    data.moveSpeed.z = 0.05
-                    data.send()
-                    wait(15)
-                end
-                printStringNow("Teleport a player: "..nickname.."["..arg.."]", 100)
-            else
-                nop = false
-                printStringNow("Try found a player", 100)
-            end
         end
         if settings.objects.autormlsa[0] then
             lua_thread.create(function()  
@@ -3128,17 +2702,6 @@ function main()
                 end
             end)
         end
-        if settings.car.drift[0] then
-            if isCharInAnyCar(playerPed) then 
-                local car = storeCarCharIsInNoSave(playerPed)
-                local speed = getCarSpeed(car)
-                isCarInAirProper(car)
-                setCarCollision(car, true)
-                if isVehicleOnAllWheels(car) and doesVehicleExist(car) and speed > 5.0 then
-                    setCarCollision(car, false)
-                end
-            end
-        end
         if settings.render.ruda[0] then
             for _, obj_hand in pairs(getAllObjects()) do
                 local modelid = getObjectModel(obj_hand)
@@ -3343,26 +2906,6 @@ function main()
             for _, obj_hand in pairs(getAllObjects()) do
                 local modelid = getObjectModel(obj_hand)
                 local _obj = graffity[modelid]
-                if _obj then
-                    if isObjectOnScreen(obj_hand) then
-                        local x,y,z = getCharCoordinates(PLAYER_PED)
-                        local res,x1,y1,z1 = getObjectCoordinates(obj_hand)
-                        if res then
-                            local dist = math.floor(getDistanceBetweenCoords3d(x,y,z,x1,y1,z1))
-                            local c1,c2 = convert3DCoordsToScreen(x,y,z)
-                            local o1,o2 = convert3DCoordsToScreen(x1,y1,z1)
-                            local text = '{87CEEB}'.._obj..'\n{87CEEB}DIST: '..dist..'m.'
-                            renderDrawLine(c1,c2,o1,o2,1, 0xB8B8FCFF)
-                            renderFontDrawText(font,text,o1,o2,-1)
-                        end
-                    end
-                end
-            end
-        end
-        if settings.render.lenhlopok[0] then
-            for _, obj_hand in pairs(getAllObjects()) do
-                local modelid = getObjectModel(obj_hand)
-                local _obj = lenxlopok[modelid]
                 if _obj then
                     if isObjectOnScreen(obj_hand) then
                         local x,y,z = getCharCoordinates(PLAYER_PED)
@@ -4186,28 +3729,6 @@ function readFile(path)
     return table.concat(lines, "\n")
 end
 
--- zteleport
-local function nop(data)
-    if zettp then return false end
-end
-
-events.onSendPlayerSync = nop
-events.onSendVehicleSync = nop
-
-function math.calculate(MinInt, MaxInt, MinFloat, MaxFloat, CurrentFloat)
-    local res = CurrentFloat - MinFloat
-    local res2 = MaxFloat - MinFloat
-    local res3 = res / res2
-    local res4 = res3 * (MaxInt - MinInt)
-    return res4 + MinInt
-end
-
-function events.onShowDialog(dlgid, stl, tlt, b1, b2, text)
-    if zettp and zettpincar and id == 26263 then
-        return false
-    end
-end
-
 -- Бот для завода
 function botwork() 
 	while armorbotstate do
@@ -4230,23 +3751,23 @@ function runToPoint(tox, toy)
         angle = getHeadingFromVector2d(tox - x, toy - y)
         setCameraPositionUnfixed(xAngle, math.rad(angle - 90))
 		if point == 0 and getDistanceBetweenCoords2d(x, y, 2558.9885253906, -1287.6723632813) < 1 then
-			notf('Берём детали...')
+			notf1(u8'Берём детали...')
 			wait(1500)
 			point = point + 1
 			break
 		end
 		if point == 1 and getDistanceBetweenCoords2d(x, y, 2558.4392089844, -1291.0050048828) < 1 then
 			armorbotalt = true
-			notf('Изготавливаем...')
+			notf1(u8'Изготавливаем...')
 			repeat sendKey(1024) wait(math.random(75, 150)) until not armorbotalt or not armorbotstate
 			point = point + 1
 			break
 		end
 		if point == 2 and getDistanceBetweenCoords2d(x, y, 2564.4611816406, -1292.9296875) < 1 then
 			armorbotalt = true
-			notf('Сдаём...')
+			notf1(u8'Сдаём...')
 			repeat sendKey(1024) wait(math.random(75, 150)) until not armorbotalt or not armorbotstate
-			notf(currentrounds..' круг..')
+			notf1(currentrounds..u8' круг..')
 			point = 0
 			break
 		end
@@ -4291,7 +3812,7 @@ function events.onServerMessage(clr, txt)
 			end)
 		end
 		if string.find(txt, 'ответил вам') or string.find(txt, 'телепортированы') then	
-		    notf('Вам написал администратор, закругляемся...')
+		    notf2(u8'Вам написал администратор, закругляемся...')
 			lua_thread.create(function()
 				wait(math.random(1470, 1955))
 				point = 0
@@ -4314,7 +3835,7 @@ end
 
 function events.onShowDialog(dlgid, stl, tlt, b1, b2, text)
 	if armorbotstate and string.find(text, 'Администратор') or string.find(text, 'телепортированы') then
-		notf('Вам написал администратор, закругляемся...')
+		notf2(u8'Вам написал администратор, закругляемся...')
 		lua_thread.create(function()
 			wait(math.random(1470, 1955))
 			point = 0
@@ -4388,167 +3909,17 @@ function events.onTogglePlayerControllable(controllable)
 	return false
 end
 
--- mine time render
-function onReceiveRpc(id, bs)
-	if id == 58 and mtract then
-		local tid = raknetBitStreamReadInt16(bs)
-		if sampIs3dTextDefined(tid) then
-			local text, color, posX, posY, posZ, distance, ignoreWalls, playerId, vehicleId = sampGet3dTextInfoById(tid)
-			local pX,pY,pZ = getCharCoordinates(1)
-			if text:find("Месторождение ресурсов") then
-				if getDistanceBetweenCoords3d(pX,pY,pZ,posX, posY, posZ) < 90 then
-					local oid2 = check(posX, posY, posZ)
-					if oid2 == -1 then
-						local tid = tid - 1000
-						resources[tid][1] = posX
-						resources[tid][2] = posY
-						resources[tid][3] = posZ
-						resources[tid][4] = rtime
-					elseif oid2 > -1 then
-						resources[oid2][1] = posX
-						resources[oid2][2] = posY
-						resources[oid2][3] = posZ
-						resources[oid2][4] = rtime
-					end
-				end
-			end
-		end
-		return true
-	elseif id == 47 and mtract then
-		local oid = raknetBitStreamReadInt16(bs)
-		local object = sampGetObjectHandleBySampId(oid)
-		if doesObjectExist(object) then
-			if getObjectModel(object) == 3930 then
-				local res, oX,oY,oZ = getObjectCoordinates(object)
-				local pX,pY,pZ = getCharCoordinates(1)
-				if getDistanceBetweenCoords3d(pX,pY,pZ,oX,oY,oZ) < 45 then
-					local oid2 = check(oX,oY,oZ)
-					if oid2 == -1 then
-						resources[oid][1] = oX
-						resources[oid][2] = oY
-						resources[oid][3] = oZ+1
-						resources[oid][4] = rtime
-					elseif oid2 > -1 then
-						resources[oid2][1] = oX
-						resources[oid2][2] = oY
-						resources[oid2][3] = oZ+1
-						resources[oid2][4] = rtime
-					end
-				end
-			end
-		end
-		return true
-	end
-end
-
-function check(x,y,z)
-	for i = 1, 3000 do
-		if getDistanceBetweenCoords3d(resources[i][1], resources[i][2], resources[i][3], x,y,z) < 2 and resources[i][4] > 0 then
-			return i
-		end
-	end
-	return -1
-end
-
-function changetime(time)
-	local min = math.floor(time/60)
-	local sec = time % 60
-	if min ~= 0 then
-		return "\n  {FF0000}"..min.."{FFFFFF} мин , {FF0000}"..sec.."{FFFFFF} сек"
-	else
-		return "{FF0000}"..sec.."{FFFFFF} сек"
-	end
-end
-
-function metka(x,y,z)
-	local n = #pool_mrkr + 1
-	local g = #pool_chkpnt + 1
-	local h = #pool_marker + 1
-	pool_mrkr[n] = createUser3dMarker(x, y, z + 2, 4)
-	pool_chkpnt[g] = addBlipForCoord(x, y, z)
-	changeBlipColour(pool_chkpnt[g], 0xFF00003FF)
-	pool_marker[h] = createCheckpoint(1, x, y, z, 1, 1, 1, 1.5)
-	lua_thread.create(function()
-	wait(15000)
-	deleteCheckpoint(pool_marker[h])
-    removeBlip(pool_chkpnt[g])
-	removeUser3dMarker(pool_mrkr[n])
-	pool_chkpnt[g] = nil
-	pool_mrkr[n] = nil
-	pool_marker[h] = nil
-	end)
-end
-
--- quit informer
-function events.onPlayerQuit(playerid,reason) -- 0 краш, 1 вышел /q, 2 кикнуло
-    if settings.main.quitinformer[0] then
-        local textadd = 'Игрок {FF9C00}'..sampGetPlayerNickname(playerid)..'['..playerid..'] {ffffff}вышел с сервера. {FF9C00}Причина: {ffffff}'..reasons[reason]
-        if settings.main.informerinstream[0] then
-            if select(1, sampGetCharHandleBySampPlayerId(playerid)) then
-                notf(textadd)
-            end
-        else
-            notf(textadd)
-        end
-    end
-end
-
--- ontouch change position
-addEventHandler("onTouch", function (type, id, x, y)
-    if editposs then
-        ini.teleport.x = x
-        ini.teleport.y = y
-        inicfg.save(ini, directIni)
-        notf('Сохранено')
-        editposs = false
-        window_state[0] = not window_state[0]
-    end
-end)
-
--- tpall
-function getPlayerStream(distance) 
-    math.randomseed(os.time())
-    for i = 0, sampGetMaxPlayerId() do
-        if sampIsPlayerConnected(i) then
-            local streamresult, playerHandle = sampGetCharHandleBySampPlayerId(i)
-            if streamresult and getCharHealth(playerHandle) > 0 and not sampIsPlayerPaused(i) and i ~= sampGetPlayerIdByCharHandle(PLAYER_PED) then 
-                local PLAYER_POS = {getCharCoordinates(PLAYER_PED)}
-                local TARGET_POS = {getCharCoordinates(playerHandle)}
-                local BETWEEN = getDistanceBetweenCoords3d(PLAYER_POS[1], PLAYER_POS[2], PLAYER_POS[3], TARGET_POS[1], TARGET_POS[2], TARGET_POS[3])
-                if BETWEEN < distance then 
-                    return true, playerHandle, i
-                end
-            end
-        end
-    end
-    return false, nil, nil
-end
-
--- radius lavki
-drawCircleIn3d = function(x, y, z, radius, polygons,width,color)
-    local step = math.floor(360 / (polygons or 36))
-    local sX_old, sY_old
-    for angle = 0, 360, step do
-        local lX = radius * math.cos(math.rad(angle)) + x
-        local lY = radius * math.sin(math.rad(angle)) + y
-        local lZ = z
-        local _, sX, sY, sZ, _, _ = convert3DCoordsToScreenEx(lX, lY, lZ)
-        if sZ > 1 then
-            if sX_old and sY_old then
-                renderDrawLine(sX, sY, sX_old, sY_old, width, color)
-            end
-            sX_old, sY_old = sX, sY
-        end
-    end
-end
-
-isCentralMarket = function(x, y)
-	return (x > 1090 and x < 1180 and y > -1550 and y < -1429)
-end
-
 -- message form
-function notf(text)
-    sampAddChatMessage('{008080}[Miku Project] {FFFFFF}'..text,0xFF9C00)
+function notf1(text)
+    Notifications.Show(u8'Miku Project Reborn:\n'..text, Notifications.TYPE.OK)
+end
+
+function notf2(text)
+    Notifications.Show(u8'Miku Project Reborn:\n'..text, Notifications.TYPE.WARN)
+end
+
+function notf3(text)
+    Notifications.Show(u8'Miku Project Reborn:\n'..text, Notifications.TYPE.ERROR)
 end
 
 -- anti lomka
@@ -4619,56 +3990,33 @@ function downloadFile(url, path)
 end
 
 function check_update()
-    notf('Проверка наличия обновлений...')
+    notf2(u8'Проверка наличия обновлений...')
     local currentVersionFile = io.open(lmPath, "r")
     local currentVersion = currentVersionFile:read("*a")
     currentVersionFile:close()
     local response = http.request(lmUrl)
     if response and response ~= currentVersion then
-        notf("Найдено новое обновление! Вывожу окно для загрузки...")
+        notf2(u8"Найдено новое обновление! Вывожу окно для загрузки...")
         found_update[0] = not found_update[0]
     else
-        notf("У вас актуальная версия скрипта.")
+        notf1(u8"У вас актуальная версия скрипта.")
     end
 end
 
 function updateScript(scriptUrl, scriptPath)
-    notf("Проверка наличия обновлений...")
+    notf2(u8"Проверка наличия обновлений...")
     local response = http.request(scriptUrl)
     if response and response ~= currentVersion then
-        notf("Обновление...")
+        notf2(u8"Обновление...")
         local success = downloadFile(scriptUrl, scriptPath)
         if success then
-            notf("Скрипт успешно обновлен. Перезагрузка..")
+            notf1(u8"Скрипт успешно обновлен. Перезагрузка..")
             thisScript():reload()
         else
-            notf("Неизвестная ошибка, не удалось обновить скрипт.")
+            notf3(u8"Неизвестная ошибка, не удалось обновить скрипт.")
         end
     else
-        notf("Скрипт уже является последней версией.")
-    end
-end
-
--- kill custom bots in 1 hit
-function onSendPacket(id, bs)
-    if settings.ped.killbots1hit[0] and id == 221 then
-        raknetBitStreamSetReadOffset(bs, 8)
-        if raknetBitStreamReadInt16(bs) == 73 then
-            local data = {}
-            for i = 1, (raknetBitStreamGetNumberOfUnreadBits(bs)/8) do table.insert(data, raknetBitStreamReadInt8(bs)) end
-            local damage_bs = raknetNewBitStream()
-            raknetBitStreamWriteInt8(damage_bs, 221)
-            raknetBitStreamWriteInt16(damage_bs, 73)
-            for i = 1, 2 do raknetBitStreamWriteInt8(damage_bs, data[i]) end
-            raknetBitStreamWriteInt8(damage_bs, 0)
-            raknetBitStreamWriteInt8(damage_bs, 6)
-            raknetBitStreamWriteInt8(damage_bs, 62)
-            raknetBitStreamWriteInt8(damage_bs, 62)
-            for i = 7, #data do raknetBitStreamWriteInt8(damage_bs, data[i]) end
-            raknetSendBitStreamEx(damage_bs, 1, 7, 1)
-            raknetDeleteBitStream(damage_bs)
-            return false
-        end
+        notf1(u8"Скрипт уже является последней версией.")
     end
 end
 
@@ -5092,3 +4440,103 @@ end
 function ARGBtoRGB(color)
     return bit.band(color, 0xFFFFFF)
 end
+
+-- notifications from script mgr
+Notifications.Show = function(text, type, time, colors)
+    table.insert(Notifications._list, {
+        text = text,
+        type = type or 2,
+        time = time or 4,
+        start = os.clock(),
+        alpha = 0,
+        colors = colors or Notifications._COLORS[type]
+    })
+end
+
+Notifications._TableToImVec = function(tbl)
+    return imgui.ImVec4(tbl[1], tbl[2], tbl[3], tbl[4])
+end
+
+Notifications._BringFloatTo = function(from, to, start_time, duration)
+    local timer = os.clock() - start_time
+    if timer >= 0.00 and timer <= duration then
+        local count = timer / (duration / 100)
+        return from + (count * (to - from) / 100), true
+    end
+    return (timer > duration) and to or from, false
+end
+
+imgui.OnFrame(
+    function() return #Notifications._list > 0 end,
+    function(self)
+        self.HideCursor = true
+        for k, data in ipairs(Notifications._list) do
+            if data.alpha == nil then Notifications._list[k].alpha = 0 end
+            if os.clock() - data.start < 0.5 then
+                Notifications._list[k].alpha = Notifications._BringFloatTo(0, 1, data.start, 0.5)
+            elseif data.time - 0.5 < os.clock() - data.start then
+                Notifications._list[k].alpha = Notifications._BringFloatTo(1, 0, data.start + data.time - 0.5, 0.5)
+            end
+            if os.clock() - data.start > data.time then
+                table.remove(Notifications._list, k)
+            end
+        end
+
+        local resX, resY = getScreenResolution()
+        local sizeX, sizeY = 300 * MONET_DPI_SCALE, 300 * MONET_DPI_SCALE
+        imgui.SetNextWindowPos(imgui.ImVec2(resX * 0.5, resY * 0.5), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+        imgui.SetNextWindowSize(imgui.ImVec2(sizeX, sizeY), imgui.Cond.FirstUseEver)
+        imgui.Begin('notf_window', _, 0
+            + imgui.WindowFlags.AlwaysAutoResize
+            + imgui.WindowFlags.NoTitleBar
+            + imgui.WindowFlags.NoResize
+            + imgui.WindowFlags.NoMove
+            + imgui.WindowFlags.NoBackground
+        )   
+        local fiveSc = 5 * MONET_DPI_SCALE
+        local winSize = imgui.GetWindowSize()
+        imgui.SetWindowPosVec2(imgui.ImVec2(resX - 10 * MONET_DPI_SCALE - winSize.x, resY * 0.4))
+    
+        for k, data in ipairs(Notifications._list) do
+      ------------------------------------------------
+            local default_data = {
+                text = 'text',
+                type = 0,
+                time = 1500
+            }
+            for k, v in pairs(default_data) do
+                if data[k] == nil then
+                    data[k] = v
+                end
+            end
+            local c = imgui.GetCursorPos()
+            local p = imgui.GetCursorScreenPos()
+            local DL = imgui.GetWindowDrawList()
+            local textSize = imgui.CalcTextSize(data.text)
+            local iconSize = imgui.CalcTextSize(Notifications.ICON[data.type] or faicons('XMARK'))
+            local size = imgui.ImVec2(fiveSc + iconSize.x + fiveSc + textSize.x + fiveSc, fiveSc + textSize.y + fiveSc)
+            local winSize = imgui.GetWindowSize()
+            if winSize.x > size.x + 20 * MONET_DPI_SCALE then
+                imgui.SetCursorPosX(winSize.x - size.x - 8 * MONET_DPI_SCALE)
+            end   
+            imgui.PushStyleVarFloat(imgui.StyleVar.Alpha, data.alpha)
+            imgui.PushStyleVarFloat(imgui.StyleVar.ChildRounding, fiveSc)
+            imgui.PushStyleColor(imgui.Col.ChildBg,     Notifications._TableToImVec(data.colors.back or Notifications._COLORS[data.type].back))
+            imgui.PushStyleColor(imgui.Col.Border,      Notifications._TableToImVec(data.colors.border or Notifications._COLORS[data.type].border))
+            imgui.BeginChild('toastNotf:'..tostring(k)..tostring(data.text), size, true, imgui.WindowFlags.NoScrollbar + imgui.WindowFlags.NoScrollWithMouse)
+            imgui.PushStyleColor(imgui.Col.Text,    Notifications._TableToImVec(data.colors.icon or Notifications._COLORS[data.type].icon))
+            imgui.SetCursorPos(imgui.ImVec2(fiveSc, size.y / 2 - iconSize.y / 2))
+            imgui.Text(Notifications.ICON[data.type] or faicons('XMARK'))
+            imgui.PopStyleColor()
+
+            imgui.PushStyleColor(imgui.Col.Text,    Notifications._TableToImVec(data.colors.text or Notifications._COLORS[data.type].text))
+            imgui.SetCursorPos(imgui.ImVec2(fiveSc + iconSize.x + fiveSc, size.y / 2 - textSize.y / 2))
+            imgui.Text(data.text)
+            imgui.PopStyleColor()
+            imgui.EndChild()
+            imgui.PopStyleColor(2)
+            imgui.PopStyleVar(2)
+      ------------------------------------------------
+        end
+    imgui.End()
+end)
