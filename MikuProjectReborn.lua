@@ -43,8 +43,6 @@ local ini = inicfg.load({
         misses = (false),
         miss_ratio = (3),
         removeAmmo = (false),
-        doubledamage = (false),
-        tripledamage = (false),
         offsetx = (0.0),
         offsety = (0.0)
     },
@@ -173,8 +171,6 @@ local settings = {
         misses = imgui.new.bool(ini.silent.misses),
         miss_ratio = imgui.new.int(ini.silent.miss_ratio),
         removeAmmo = imgui.new.bool(ini.silent.removeAmmo),
-        doubledamage = imgui.new.bool(ini.silent.doubledamage),
-        tripledamage = imgui.new.bool(ini.silent.tripledamage),
         offsetx = imgui.new.float(ini.silent.offsetx),
         offsety = imgui.new.float(ini.silent.offsety)
     },
@@ -1434,20 +1430,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 imgui.PopItemWidth()
             end
             imgui.ToggleButton(fa.CAMERA_ROTATE..u8' Изменение камеры', fakemode)
-            if imgui.ToggleButton(fa.HEART_CIRCLE_MINUS..u8' Двойной урон', settings.silent.doubledamage) then
-                if settings.cfg.autosave[0] then
-                    ini.silent.doubledamage = settings.silent.doubledamage[0]
-                    save()
-                end
-            end
-            if settings.silent.doubledamage[0] then
-                if imgui.ToggleButton(fa.HEART_CRACK..u8' Тройной урон', settings.silent.tripledamage) then
-                    if settings.cfg.autosave[0] then
-                        ini.silent.tripledamage = settings.silent.tripledamage[0]
-                        save()
-                    end
-                end
-            end
             imgui.Separator()
             imgui.CenterText(fa.GUN..u8' Оружие')
             imgui.Separator()
@@ -1785,7 +1767,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
             end
             imgui.SameLine()
             if imgui.Button(fa.PERSON_RAYS..u8' Спавн', imgui.ImVec2(150, 80)) then
-                sendSpawn()
+                sampSendTakeDamage(65535, 160, 51, 3)
             end
             imgui.SameLine()
             if imgui.Button(fa.ARROW_UP..u8' Slap up', imgui.ImVec2(150, 40)) then
@@ -1925,8 +1907,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.silent.misses = settings.silent.misses[0]
                     ini.silent.miss_ratio = settings.silent.miss_ratio[0]
                     ini.silent.removeAmmo = settings.silent.removeAmmo[0]
-                    ini.silent.doubledamage = settings.silent.doubledamage[0]
-                    ini.silent.tripledamage = settings.silent.tripledamage[0]
                     ini.silent.offsetx = settings.silent.offsetx[0]
                     ini.silent.offsety = settings.silent.offsety[0]
                     ini.ESP.enabled_boxes = settings.ESP.enabled_boxes[0]
@@ -3036,18 +3016,6 @@ function samp_create_sync_data(sync_type, copy_from_player)
     return setmetatable({send = func_send}, mt)
 end
 
---      spawnself     --
-function sendSpawn()
-	lua_thread.create(function()
-	    nop = true
-        sampSendDeathByPlayer(65535, 51)
-        wait(20)
-        sampRequestClass(1)
-        sampSendSpawn()
-        nop = false
-	end)
-end
-
 --      silent aim      --
 local weapons = {
     {
@@ -3272,15 +3240,6 @@ function events.onSendBulletSync(sync)
                         sync.target = {x = x + rand(), y = y + rand(), z = z + rand()}
                         if settings.silent.removeAmmo[0] then
                             addAmmoToChar(PLAYER_PED, getCurrentCharWeapon(PLAYER_PED), -1)
-                        end
-                        if not miss then
-                            sampSendGiveDamage(targetId, weapon.dmg, getCurrentCharWeapon(PLAYER_PED), 3)
-                            if settings.silent.doubledamage[0] then
-                                sampSendGiveDamage(targetId, weapon.dmg, getCurrentCharWeapon(PLAYER_PED), 3)
-                                if settings.silent.tripledamage[0] then
-                                    sampSendGiveDamage(targetId, weapon.dmg, getCurrentCharWeapon(PLAYER_PED), 3)
-                                end
-                            end
                         end
                         if settings.silent.printString[0] then
                             printStringNow(miss and 'Shot missed' or string.format('Player ~r~%d ~w~damaged', targetId), 500)
