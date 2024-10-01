@@ -1767,7 +1767,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
             end
             imgui.SameLine()
             if imgui.Button(fa.PERSON_RAYS..u8' Спавн', imgui.ImVec2(150, 80)) then
-                sampSendTakeDamage(65535, 160, 51, 3)
+                sendSpawn()
             end
             imgui.SameLine()
             if imgui.Button(fa.ARROW_UP..u8' Slap up', imgui.ImVec2(150, 40)) then
@@ -2941,6 +2941,9 @@ function events.onSendPlayerSync(data)
     if fishbot == false then
         data.keys.secondaryFire_shoot = 0
     end
+    if nop then 
+        return false
+    end
 end
 
 function setPlayerCarCoordinatesFixed(x, y, z)
@@ -4003,6 +4006,16 @@ function events.onSendEnterVehicle(vehicleId, passenger)
             wait(300)
             warpCharIntoCarAsPassenger(PLAYER_PED, select(2, sampGetCarHandleBySampVehicleId(vehicleId)), 2)
         end
+    end)
+end
+
+--  spawnself  --
+function sendSpawn()
+    lua_thread.create(function()
+        nop = true
+        sampSendTakeDamage(65535, 1/0, 51, 3)
+        sampRequestClass(getCharModel(PLAYER_PED))
+        nop = false
     end)
 end
 
