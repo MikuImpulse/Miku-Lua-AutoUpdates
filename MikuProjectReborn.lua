@@ -1,6 +1,6 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.9.4')
+script_version('0.9.5')
 script_author('@mikureborn - main dev / @TheopkaStudio - autoupdates / @tglangera - help in development')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channeI: t.me/mikureborn')
 --------Библиотеки--------
@@ -82,9 +82,9 @@ local ini = inicfg.load({
         rapidfire = (false),
         rapidint = (1),
         skinid = (0),
-        cjrun = (false),
         autoplusc = (false),
-        infiniterun = (false)
+        infiniterun = (false),
+        killbots1hit = (false)
     },
     car = {
         godmode2_enabled = (false),
@@ -202,9 +202,9 @@ local settings = {
         rapidfire = imgui.new.bool(ini.ped.rapidfire),
         rapidint = imgui.new.int(ini.ped.rapidint),
         skinid = imgui.new.int(ini.ped.skinid),
-        cjrun = imgui.new.bool(ini.ped.cjrun),
         autoplusc = imgui.new.bool(ini.ped.autoplusc),
-        infiniterun = imgui.new.bool(ini.ped.infiniterun)
+        infiniterun = imgui.new.bool(ini.ped.infiniterun),
+        killbots1hit = imgui.new.bool(ini.ped.killbots1hit)
     },
     car = {
         godmode2_enabled = imgui.new.bool(ini.car.godmode2_enabled),
@@ -290,6 +290,12 @@ local theme_a = {u8'Темная', u8'Зеленая', u8'Голубо-серая', u8'Вишнёвая', 'MoonM
 local theme_t = {u8'black', u8'green', u8'bluegray', u8'cherry', 'moonmonet'}
 local items = imgui.new['const char*'][#theme_a](theme_a)
 local selected_theme = imgui.new.int(ini.theme.selected)
+-- AirBrake
+local was_doubletapped = false
+local enabledair = false
+local speed = 0.3
+local was_in_car = false
+local last_car
 -- notify
 Notifications = {
   _version = '0.2',
@@ -1226,9 +1232,9 @@ imgui.OnFrame(function() return window_state[0] end, function()
             end
             imgui.SameLine()
             imgui.SetCursorPosX(370)
-            if imgui.ToggleButton(fa.PERSON_RUNNING..u8' Бег CJ', settings.ped.cjrun) then
+            if imgui.ToggleButton(fa.GUN..u8' Убивать ботов с 1 выстрела', settings.ped.killbots1hit) then
                 if settings.cfg.autosave[0] then
-                    ini.ped.cjrun = settings.ped.cjrun[0]
+                    ini.ped.killbots1hit = settings.ped.killbots1hit[0]
                     save()
                 end
             end
@@ -1311,6 +1317,13 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.ped.skinid = settings.ped.skinid[0]
                     save()
                 end
+            end
+            if imgui.Button(fa.PERSON_RUNNING..u8' Включить бег CJ', imgui.ImVec2(275, 35)) then
+                setAnimGroupForChar(PLAYER_PED, "PLAYER")
+            end
+            imgui.SameLine()
+            if imgui.Button(fa.PERSON_RUNNING..u8' Выключить бег CJ', imgui.ImVec2(275, 35)) then
+                setAnimGroupForChar(PLAYER_PED, usePlayerAnimGroup and "PLAYER" or isCharMale(PLAYER_PED) and "MAN" or "WOMAN")
             end
             imgui.Separator()
             imgui.CenterText(fa.ROBOT..u8' Боты')
@@ -1932,9 +1945,9 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.ped.rapidfire = settings.ped.rapidfire[0]
                     ini.ped.rapidint = settings.ped.rapidint[0]
                     ini.ped.skinid = settings.ped.skinid[0]
-                    ini.ped.cjrun = settings.ped.cjrun[0]
                     ini.ped.autoplusc = settings.ped.autoplusc[0]
                     ini.ped.infiniterun = settings.ped.infiniterun[0]
+                    ini.ped.killbots1hit = settings.ped.killbots1hit[0]
                     ini.car.godmode2_enabled = settings.car.godmode2_enabled[0]
                     ini.car.flycar = settings.car.flycar[0]
                     ini.car.nobike = settings.car.nobike[0]
@@ -2543,11 +2556,6 @@ function main()
         else
             setPlayerNeverGetsTired(playerHandle, false)
         end
-        if settings.ped.cjrun[0] then
-			setAnimGroupForChar(PLAYER_PED, "PLAYER")
-		else
-			setAnimGroupForChar(PLAYER_PED, usePlayerAnimGroup and "PLAYER" or isCharMale(PLAYER_PED) and "MAN" or "WOMAN")
-		end
         if floodalt[0] then
             local bs = raknetNewBitStream()
             raknetBitStreamWriteInt8(bs, 220)
@@ -3308,13 +3316,7 @@ function save()
     inicfg.save(ini, directIni)
 end
 
--- AirBrake
-local was_doubletapped = false
-local enabledair = false
-local speed = 0.3
-local was_in_car = false
-local last_car
-
+-- airbrake
 function getMoveSpeed(heading, speed)
     return math.sin(-math.rad(heading)) * speed, math.cos(-math.rad(heading)) * speed
 end
@@ -4512,3 +4514,26 @@ imgui.OnFrame(
         end
     imgui.End()
 end)
+
+-- kill bots 1hit
+function onSendPacket(id, bs)
+    if settings.ped.killbots1hit[0] and id == 221 then
+        raknetBitStreamSetReadOffset(bs, 8)
+        if raknetBitStreamReadInt16(bs) == 73 then
+            local data = {}
+            for i = 1, (raknetBitStreamGetNumberOfUnreadBits(bs)/8) do table.insert(data, raknetBitStreamReadInt8(bs)) end
+            local damage_bs = raknetNewBitStream()
+            raknetBitStreamWriteInt8(damage_bs, 221)
+            raknetBitStreamWriteInt16(damage_bs, 73)
+            for i = 1, 2 do raknetBitStreamWriteInt8(damage_bs, data[i]) end
+            raknetBitStreamWriteInt8(damage_bs, 0)
+            raknetBitStreamWriteInt8(damage_bs, 6)
+            raknetBitStreamWriteInt8(damage_bs, 62)
+            raknetBitStreamWriteInt8(damage_bs, 62)
+            for i = 7, #data do raknetBitStreamWriteInt8(damage_bs, data[i]) end
+            raknetSendBitStreamEx(damage_bs, 1, 7, 1)
+            raknetDeleteBitStream(damage_bs)
+            return false
+        end
+    end
+end
