@@ -285,7 +285,6 @@ local window_state = new.bool()
 local custommimguiStyle = new.bool()
 local menusettings = new.bool()
 local found_update = new.bool()
-local flycar_window = new.bool(true)
 local theme_a = {u8'Темная', u8'Зеленая', u8'Голубо-серая', u8'Вишнёвая', 'MoonMonet'}
 local theme_t = {u8'black', u8'green', u8'bluegray', u8'cherry', 'moonmonet'}
 local items = imgui.new['const char*'][#theme_a](theme_a)
@@ -770,8 +769,8 @@ local newFrame2 = imgui.OnFrame(
     end
 )
 -- flycar window
-imgui.OnFrame(function() return flycar_window[0] and not isGamePaused() and isCharInAnyCar(PLAYER_PED) end, function()
-    imgui.Begin('     ', flycar_window, imgui.WindowFlags.AlwaysAutoResize + imgui.WindowFlags.NoTitleBar)
+imgui.OnFrame(function() return settings.car.flycar[0] and not isGamePaused() and isCharInAnyCar(PLAYER_PED) end, function()
+    imgui.Begin('     ', settings.car.flycar, imgui.WindowFlags.AlwaysAutoResize + imgui.WindowFlags.NoTitleBar)
     if imgui.Button(fa.CAR..u8' FlyCar', imgui.ImVec2(120, 50)) then
         wwwflycar = not wwwflycar
         printStringNow(wwwflycar and 'FlyCar ~g~activated' or 'FlyCar ~r~deactivated', 300)
