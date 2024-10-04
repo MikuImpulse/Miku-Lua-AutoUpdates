@@ -1,7 +1,7 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.9.5')
-script_author('@mikureborn - main dev / @TheopkaStudio - autoupdates / @tglangera - help in development')
+script_version('0.9.6')
+script_author('@mikureborn')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channeI: t.me/mikureborn')
 --------Библиотеки--------
 local imgui = require 'mimgui'
@@ -98,7 +98,8 @@ local ini = inicfg.load({
 		timestep = (0.03),
 		safe_train_speed = (true),
 		fastenter = (false),
-		infinitefuel = (false)
+		infinitefuel = (false),
+		fastexit = (false)
     },
     render = {
         ruda = (false),
@@ -218,7 +219,8 @@ local settings = {
         slider_timestep = imgui.new.float(ini.car.timestep),
         safe_train_speed = imgui.new.bool(ini.car.safe_train_speed),
         fastenter = imgui.new.bool(ini.car.fastenter),
-        infinitefuel = imgui.new.bool(ini.car.infinitefuel)
+        infinitefuel = imgui.new.bool(ini.car.infinitefuel),
+        fastexit = imgui.new.bool(ini.car.fastexit)
     },
     render = {
         ruda = imgui.new.bool(ini.render.ruda),
@@ -1025,12 +1027,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     save()
                 end
             end
-            if imgui.Button(fa.TOILET..u8' Начать ссать') then
-                sampSetSpecialAction(68)
-            end
-            if imgui.Button(fa.TOILET_PAPER..u8' Перестать ссать (или частичный сбив)') then
-                sampSetSpecialAction(0)
-            end
             if imgui.Button(fa.WIFI..u8' Реконнект') and not Reconnect.reconnecting and not Reconnect.waiting then
                 Reconnect.activate()
             end
@@ -1508,10 +1504,10 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     save()
                 end
             end
-	        if imgui.Button(fa.RIGHT_FROM_BRACKET..u8' Быстрый выход') then
-                if isCharInAnyCar(PLAYER_PED) then
-                     local posX, posY, posZ = getCarCoordinates(storeCarCharIsInNoSave(PLAYER_PED))
-                    warpCharFromCarToCoord(PLAYER_PED, posX, posY, posZ)
+	        if imgui.ToggleButton(fa.RIGHT_FROM_BRACKET..u8' Быстрый выход', settings.car.fastexit) then
+                if settings.cfg.autosave[0] then
+                    ini.car.fastexit = settings.car.fastexit[0]
+                    save()
                 end
             end
             if imgui.Button(fa.ARROW_TREND_UP..u8' Флипнуть') then
@@ -1782,12 +1778,17 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 sendSpawn()
             end
             imgui.SameLine()
+            if imgui.Button(fa.PERSON_RUNNING..u8' Вкл. прыжок', imgui.ImVec2(150, 80)) then
+                lua_thread.create(function()
+                    sampSetSpecialAction(68)
+                    wait(400)
+                    sampSetSpecialAction(0)
+                end)
+            end
             if imgui.Button(fa.ARROW_UP..u8' Slap up', imgui.ImVec2(150, 40)) then
                 local x, y, z = getCharCoordinates(PLAYER_PED)
                 setCharCoordinates(PLAYER_PED, x, y, z+5)
             end
-            imgui.SetCursorPosX(487)
-            imgui.SetCursorPosY(93)
             if imgui.Button(fa.ARROW_DOWN..u8' Slap down', imgui.ImVec2(150, 40)) then
                 local x, y, z = getCharCoordinates(PLAYER_PED)
                 setCharCoordinates(PLAYER_PED, x, y, z-5)
@@ -1860,8 +1861,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 imgui.Text(u8'/miku - основное меню скрипта')
                 imgui.Text(u8'/armbot - бот на завод')
                 imgui.Text(u8'/tpc - телепорт метка (для нубо рп, моментальный)')
-                imgui.Text(u8'/piss {ms} - начать ссать, если мс не указан, то бесконечно')
-                imgui.Text(u8'/unpiss - перестать ссать')
+                imgui.Text(u8'/jump - включить прыжок (баг, когда упал и перс не встает)')
                 imgui.Text(u8'/rc - реконнект')
                 if imgui.Button(fa.XMARK..u8' Закрыть') then
                     imgui.CloseCurrentPopup()
@@ -1959,6 +1959,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.car.safe_train_speed = settings.car.safe_train_speed[0]
                     ini.car.fastenter = settings.car.fastenter[0]
                     ini.car.infinitefuel = settings.car.infinitefuel[0]
+                    ini.car.fastexit = settings.car.fastexit[0]
                     ini.render.ruda = settings.render.ruda[0]
                     ini.render.narkotiki = settings.render.narkotiki[0]
                     ini.render.podarok = settings.render.podarok[0]
@@ -2194,20 +2195,13 @@ function main()
             notf3(u8'FishBot выключен')
         end
     end)
-    sampRegisterChatCommand('piss', function(pisssec)
-        if tonumber(pisssec) then
-            local pisssec = tonumber(pisssec)
-            notf1(u8'Вы будете ссать '..pisssec..' ms')
-            lua_thread.create(function()
-                sampSetSpecialAction(68)
-                wait(pisssec)
-                sampSetSpecialAction(0)
-                return
-            end)
-        end
-        sampSetSpecialAction(68)
+    sampRegisterChatCommand('jump', function()
+        lua_thread.create(function()
+            sampSetSpecialAction(68)
+            wait(400)
+            sampSetSpecialAction(0)
+        end)
     end)
-    sampRegisterChatCommand('unpiss', function() sampSetSpecialAction(0) end)
     sampRegisterChatCommand('rc', Reconnect.activate)
     sampRegisterChatCommand('tpc', function()
         result, x, y, z = getTargetBlipCoordinatesFixed()
@@ -2246,6 +2240,14 @@ function main()
 	statusbot = lua_thread.create_suspended(botwork)
 	statusbot = lua_thread.create_suspended(botwork)
     while true do wait(0)
+        if settings.car.fastexit[0] then
+            if isCharInAnyCar(PLAYER_PED) then
+                if isWidgetPressed(WIDGET_ENTER_CAR) then
+                    local posX, posY, posZ = getCarCoordinates(storeCarCharIsInNoSave(PLAYER_PED))
+                    warpCharFromCarToCoord(PLAYER_PED, posX, posY, posZ)
+                end
+            end
+        end
         if settings.car.infinitefuel[0] then
             if isCharInAnyCar(PLAYER_PED) then
                 switchCarEngine(storeCarCharIsInNoSave(PLAYER_PED), true)
