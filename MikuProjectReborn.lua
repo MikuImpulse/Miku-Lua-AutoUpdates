@@ -1944,6 +1944,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.ped.autoplusc = settings.ped.autoplusc[0]
                     ini.ped.infiniterun = settings.ped.infiniterun[0]
                     ini.ped.killbots1hit = settings.ped.killbots1hit[0]
+                    ini.ped.sbiv = settings.ped.sbiv[0]
                     ini.car.godmode2_enabled = settings.car.godmode2_enabled[0]
                     ini.car.flycar = settings.car.flycar[0]
                     ini.car.nobike = settings.car.nobike[0]
