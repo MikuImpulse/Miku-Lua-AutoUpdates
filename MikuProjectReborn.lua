@@ -1,6 +1,6 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.9.6')
+script_version('0.9.7')
 script_author('@mikureborn')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channeI: t.me/mikureborn')
 --------Библиотеки--------
@@ -77,14 +77,14 @@ local ini = inicfg.load({
         noreload = (false),
         setskills = (false),
         animspeed = (false),
-        hpbar = (false),
         speedint = (1),
         rapidfire = (false),
         rapidint = (1),
         skinid = (0),
         autoplusc = (false),
         infiniterun = (false),
-        killbots1hit = (false)
+        killbots1hit = (false),
+        sbiv = (false)
     },
     car = {
         godmode2_enabled = (false),
@@ -198,14 +198,14 @@ local settings = {
         noreload = imgui.new.bool(ini.ped.noreload),
         setskills = imgui.new.bool(ini.ped.setskills),
         animspeed = imgui.new.bool(ini.ped.animspeed),
-        hpbar = imgui.new.bool(ini.ped.hpbar),
         speedint = imgui.new.int(ini.ped.speedint),
         rapidfire = imgui.new.bool(ini.ped.rapidfire),
         rapidint = imgui.new.int(ini.ped.rapidint),
         skinid = imgui.new.int(ini.ped.skinid),
         autoplusc = imgui.new.bool(ini.ped.autoplusc),
         infiniterun = imgui.new.bool(ini.ped.infiniterun),
-        killbots1hit = imgui.new.bool(ini.ped.killbots1hit)
+        killbots1hit = imgui.new.bool(ini.ped.killbots1hit),
+        sbiv = imgui.new.bool(ini.ped.sbiv)
     },
     car = {
         godmode2_enabled = imgui.new.bool(ini.car.godmode2_enabled),
@@ -339,8 +339,6 @@ local botstep = -1
 local box = 0
 -- attach trailer
 atrtrailer = nil
--- hpbar
-activebar = 1
 -- dgun combo
 local item_list = {u8'Кулак', u8'Кастет', u8'Клюшка для гольфа', u8'Полицейская дубинка', u8'Нож', u8'Бейсбольная бита', u8'Лопата', u8'Кий', u8'Катана', u8'Бензопила', u8'Двухсторонний дилдо', u8'Дилдо', u8'Вибратор', u8'Серебряный вибратор', u8'Букет цветов', u8'Трость', u8'Граната', u8'Слезоточивый газ', u8'Коктейль Молотова', u8' ', u8' ', u8' ', u8'Пистолет', u8'USP-S (Тазер)', u8'Desert Eagle', u8'Дробовик', u8'Обрез', u8'Скорострельный дробовик', u8'UZI', u8'MP5', u8'Калаш', u8'М4', u8'TEC-9', u8'Охотничье ружье', u8'Снайперка', u8'РПГ', u8'Самонаводящееся РПГ', u8'Огнемет', u8'Миниган', u8'Сумка с тротилом', u8'Детонатор', u8'Баллончик', u8'Огнетушитель', u8'Фотоаппарат', u8'Очки ночного видения', u8'Тепловизор', u8'Парашют'}
 local ImItems = imgui.new['const char*'][#item_list](item_list)
@@ -1256,9 +1254,9 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     save()
                 end
             end
-            if imgui.ToggleButton(fa.HEART_PULSE..u8' HP Bar', settings.ped.hpbar) then
+            if imgui.ToggleButton(fa.HEART_PULSE..u8' Виджет сбива', settings.ped.sbiv) then
                 if settings.cfg.autosave[0] then
-                    ini.ped.hpbar = settings.ped.hpbar[0]
+                    ini.ped.sbiv = settings.ped.sbiv[0]
                     save()
                 end
             end
@@ -1939,7 +1937,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.ped.noreload = settings.ped.noreload[0]
                     ini.ped.setskills = settings.ped.setskills[0]
                     ini.ped.animspeed = settings.ped.animspeed[0]
-                    ini.ped.hpbar = settings.ped.hpbar[0]
                     ini.ped.speedint = settings.ped.speedint[0]
                     ini.ped.rapidfire = settings.ped.rapidfire[0]
                     ini.ped.rapidint = settings.ped.rapidint[0]
@@ -2240,6 +2237,13 @@ function main()
 	statusbot = lua_thread.create_suspended(botwork)
 	statusbot = lua_thread.create_suspended(botwork)
     while true do wait(0)
+        if settings.ped.sbiv[0] then
+            if not isCharInAnyCar(PLAYER_PED) then
+                if isWidgetPressed(WIDGET_SWAP_WEAPONS) then
+                    clearCharTasksImmediately(PLAYER_PED)
+                end
+            end
+        end
         if settings.car.fastexit[0] then
             if isCharInAnyCar(PLAYER_PED) then
                 if isWidgetPressed(WIDGET_ENTER_CAR) then
@@ -2459,19 +2463,6 @@ function main()
 			autopc = false
 			taskSetIgnoreWeaponRangeFlag(PLAYER_PED, true)
 		end
-        if settings.ped.hpbar[0] then
-            if not isPauseMenuActive() then
-                if activebar == 1 then
-                    local HP = getCharHealth(playerPed)
-                    local arm = getCharArmour(playerPed)
-                    local playerposX, playerposY, playerposZ = getCharCoordinates(playerPed)
-                    local screenX, screenY = convert3DCoordsToScreen(playerposX, playerposY, playerposZ)
-                    local screenYY = screenY + 30
-                    drawBar(screenX - 50, screenY, 100, 20, 0xBFDF0101, 0xBF610B0B, 2, font, HP)
-                    drawBar(screenX - 50, screenYY, 100, 20, -1, 0xBF610B0B, 2, font, arm)
-                end
-            end
-        end
         if settings.main.clickwarpcoord[0] then
             local pressed_menu = isWidgetPressed(WIDGET_KISS)
             if pressed_menu and not was_pressed_menu then
@@ -3428,22 +3419,6 @@ function givePlayerGun(id, ammo)
     requestModel(model)
     loadAllModelsNow()
     giveWeaponToChar(PLAYER_PED, id, ammo)
-end
-
-function drawBar(posX, posY, sizeX, sizeY, color1, color2, borderThickness, font, value)
-    renderDrawBoxWithBorder(posX, posY, sizeX, sizeY, color2, borderThickness, 0xFF000000)
-    renderDrawBox(posX + borderThickness, posY + borderThickness, sizeX / 100 * value - (borderThickness * 2), sizeY - (2 * borderThickness), color1)
-    local textLenght = renderGetFontDrawTextLength(font, tostring(value))
-    local textHeight = renderGetFontDrawHeight(font)
-    renderFontDrawText(font, tostring(value), posX + (sizeX / 2) - (textLenght / 2), posY + (sizeY / 2) - (textHeight / 2), 0xFFFFFFFF)
-end
-
-function activatecmd()
-    if activebar == 0 then
-        activebar = 1
-    else
-        activebar = 0
-    end
 end
 
 -- clickcoordmobile
