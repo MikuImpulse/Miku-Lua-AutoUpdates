@@ -1,6 +1,6 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.9.8F2')
+script_version('0.9.9')
 script_author('@mikureborn')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channeI: t.me/mikureborn')
 --------Библиотеки--------
@@ -43,6 +43,8 @@ local ini = inicfg.load({
         misses = (false),
         miss_ratio = (3),
         removeAmmo = (false),
+        doubledamage = (false),
+        tripledamage = (false),
         offsetx = (0.0),
         offsety = (0.0)
     },
@@ -136,7 +138,8 @@ local ini = inicfg.load({
         samelinetabs = (false),
         tabswidth = (140),
         tabsheight = (40),
-        window_scale = (1.0)
+        window_scale = (1.0),
+        syncwithmoonmonet = (false)
     },
     dgun = {
         gunsList = (0),
@@ -173,6 +176,8 @@ local settings = {
         misses = imgui.new.bool(ini.silent.misses),
         miss_ratio = imgui.new.int(ini.silent.miss_ratio),
         removeAmmo = imgui.new.bool(ini.silent.removeAmmo),
+        doubledamage = imgui.new.bool(ini.silent.doubledamage),
+        tripledamage = imgui.new.bool(ini.silent.tripledamage),
         offsetx = imgui.new.float(ini.silent.offsetx),
         offsety = imgui.new.float(ini.silent.offsety)
     },
@@ -258,7 +263,8 @@ local settings = {
         samelinetabs = imgui.new.bool(ini.menu.samelinetabs),
         tabswidth = imgui.new.int(ini.menu.tabswidth),
         tabsheight = imgui.new.int(ini.menu.tabsheight),
-        window_scale = imgui.new.float(ini.menu.window_scale)
+        window_scale = imgui.new.float(ini.menu.window_scale),
+        syncwithmoonmonet = imgui.new.bool(ini.menu.syncwithmoonmonet)
     },
     dgun = {
         gunsList = imgui.new.int(ini.dgun.gunsList),
@@ -1822,6 +1828,17 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     save()
                 end
             end
+            imgui.SameLine()
+            imgui.Text(u8'(')
+            imgui.SameLine()
+            if imgui.ToggleButton(fa.NOTE_STICKY..u8' Синхронизация цвета с MoonMonet', settings.menu.syncwithmoonmonet) then
+                if settings.cfg.autosave[0] then
+                    ini.menu.syncwithmoonmonet = settings.menu.syncwithmoonmonet[0]
+                    save()
+                end
+            end
+            imgui.SameLine()
+            imgui.Text(u8')')
             if imgui.ToggleButton(fa.CHECK..u8' Кнопка "Menu"', settings.menu.openbutton2) then
                 if settings.cfg.autosave[0] then
                     ini.menu.openbutton2 = settings.menu.openbutton2[0]
@@ -2000,6 +2017,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.menu.tabswidth = settings.menu.tabswidth[0]
                     ini.menu.tabsheight = settings.menu.tabsheight[0]
                     ini.menu.window_scale = settings.menu.window_scale[0]
+                    ini.menu.syncwithmoonmonet = settings.menu.syncwithmoonmonet[0]
                     ini.objects.autormlsa = settings.objects.autormlsa[0]
                     ini.objects.autormsfa = settings.objects.autormsfa[0]
                     ini.objects.autormblockpost = settings.objects.autormblockpost[0]
@@ -3254,6 +3272,15 @@ function events.onSendBulletSync(sync)
                         sync.target = {x = x + rand(), y = y + rand(), z = z + rand()}
                         if settings.silent.removeAmmo[0] then
                             addAmmoToChar(PLAYER_PED, getCurrentCharWeapon(PLAYER_PED), -1)
+                        end
+                        if not miss then
+                            sampSendGiveDamage(targetId, weapon.dmg, getCurrentCharWeapon(PLAYER_PED), 3)
+                            if settings.silent.doubledamage[0] then
+                                sampSendGiveDamage(targetId, weapon.dmg, getCurrentCharWeapon(PLAYER_PED), 3)
+                                if settings.silent.tripledamage[0] then
+                                    sampSendGiveDamage(targetId, weapon.dmg, getCurrentCharWeapon(PLAYER_PED), 3)
+                                end
+                            end
                         end
                         if settings.silent.printString[0] then
                             printStringNow(miss and 'Shot missed' or string.format('Player ~r~%d ~w~damaged', targetId), 500)
@@ -4536,7 +4563,12 @@ imgui.OnFrame(function() return settings.menu.openbutton[0] end, function(self)
     imgui.SetCursorPos(imgui.ImVec2(0, 30))
     local dl = imgui.GetWindowDrawList()
     local p = imgui.GetCursorScreenPos()
-    dl:AddRectFilled(p, imgui.ImVec2(p.x + 293, p.y + 10), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(1.00, 1.00, 1.00, 1.00)), 10, 10)
+    local generated_color = monet.buildColors(ini.theme.moonmonet, 1.0, true)
+    if settings.menu.syncwithmoonmonet[0] then
+        dl:AddRectFilled(p, imgui.ImVec2(p.x + 293, p.y + 10), imgui.ColorConvertFloat4ToU32(ColorAccentsAdapter(generated_color.accent1.color_600):apply_alpha(0xcc):as_vec4()), 10, 10)
+    else
+        dl:AddRectFilled(p, imgui.ImVec2(p.x + 293, p.y + 10), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(1.00, 1.00, 1.00, 1.00)), 10, 10)
+    end
     imgui.SetCursorPos(imgui.ImVec2(0, 0))
     if imgui.InvisibleButton('##hidemenu', imgui.GetWindowSize()) then
         window_state[0] = not window_state[0]
