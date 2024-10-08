@@ -1,6 +1,6 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.9.8')
+script_version('0.9.8F2')
 script_author('@mikureborn')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channeI: t.me/mikureborn')
 --------Библиотеки--------
@@ -118,6 +118,7 @@ local ini = inicfg.load({
         slideropenbuttonwidth = (100),
         slideropenbuttonheight = (95),
         openbutton = (true),
+        openbutton2 = (false),
         onechildwidth = (130),
         onechildheight = (433),
         twochildwidth = (677),
@@ -239,6 +240,7 @@ local settings = {
         slideropenbuttonwidth = imgui.new.int(ini.menu.slideropenbuttonwidth),
         slideropenbuttonheight = imgui.new.int(ini.menu.slideropenbuttonheight),
         openbutton = imgui.new.bool(ini.menu.openbutton),
+        openbutton2 = imgui.new.bool(ini.menu.openbutton2),
         onechildwidth = imgui.new.int(ini.menu.onechildwidth),
         onechildheight = imgui.new.int(ini.menu.onechildheight),
         twochildwidth = imgui.new.int(ini.menu.twochildwidth),
@@ -758,6 +760,17 @@ ragetsrbot = function()
     end)
 end
 
+---------Кнопка Menu---------
+local newFrame2 = imgui.OnFrame(
+    function() return settings.menu.openbutton2[0] end,
+    function(player)
+        imgui.Begin('ZoV', settings.menu.openbutton, imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.AlwaysAutoResize)
+            if imgui.Button(fa.GEARS, imgui.ImVec2(settings.menu.slideropenbuttonwidth[0], settings.menu.slideropenbuttonheight[0])) then
+                window_state[0] = not window_state[0]
+            end
+        imgui.End()
+    end
+)
 -- flycar window
 imgui.OnFrame(function() return settings.car.flycar[0] and not isGamePaused() and isCharInAnyCar(PLAYER_PED) end, function()
     imgui.Begin('     ', settings.car.flycar, imgui.WindowFlags.AlwaysAutoResize + imgui.WindowFlags.NoTitleBar)
@@ -1802,10 +1815,28 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 imgui.Text(fa.NOTE_STICKY..u8' Цвет MoonMonet')
             end
             imgui.Separator()
-		    imgui.Text(fa.SQUARE..u8' Полоска для открытия меню')
-		    if imgui.ToggleButton(fa.CHECK..u8' Состояние', settings.menu.openbutton) then
+		    imgui.Text(fa.SQUARE..u8' Открытие меню')
+		    if imgui.ToggleButton(fa.CHECK..u8' Полоска снизу экрана', settings.menu.openbutton) then
                 if settings.cfg.autosave[0] then
                     ini.menu.openbutton = settings.menu.openbutton[0]
+                    save()
+                end
+            end
+            if imgui.ToggleButton(fa.CHECK..u8' Кнопка "Menu"', settings.menu.openbutton2) then
+                if settings.cfg.autosave[0] then
+                    ini.menu.openbutton2 = settings.menu.openbutton2[0]
+                    save()
+                end
+            end
+		    if imgui.SliderInt(fa.TEXT_WIDTH..u8' Ширина кнопки меню', settings.menu.slideropenbuttonwidth, 30, 150) then
+                if settings.cfg.autosave[0] then
+                    ini.menu.slideropenbuttonwidth = settings.menu.slideropenbuttonwidth[0]
+                    save()
+                end
+            end
+		    if imgui.SliderInt(fa.TEXT_HEIGHT..u8' Высота кнопки меню', settings.menu.slideropenbuttonheight, 30, 150) then
+                if settings.cfg.autosave[0] then
+                    ini.menu.slideropenbuttonheight = settings.menu.slideropenbuttonheight[0]
                     save()
                 end
             end
@@ -1950,6 +1981,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.menu.slideropenbuttonwidth = settings.menu.slideropenbuttonwidth[0]
                     ini.menu.slideropenbuttonheight = settings.menu.slideropenbuttonheight[0]
                     ini.menu.openbutton = settings.menu.openbutton[0]
+                    ini.menu.openbutton2 = settings.menu.openbutton2[0]
                     ini.menu.onechildwidth = settings.menu.onechildwidth[0]
                     ini.menu.onechildheight = settings.menu.onechildheight[0]
                     ini.menu.onechildposx = settings.menu.onechildposx[0]
