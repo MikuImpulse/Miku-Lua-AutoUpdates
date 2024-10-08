@@ -1,6 +1,6 @@
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.9.7')
+script_version('0.9.8')
 script_author('@mikureborn')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channeI: t.me/mikureborn')
 --------Библиотеки--------
@@ -510,6 +510,7 @@ imgui.OnInitialize(function()
 	mmcolor = imgui.new.float[3](tmp.z, tmp.y, tmp.x)
     apply_n_t()
 	----////\\\\----
+	imgui.GetIO().IniFilename = nil
     ----\\\\////----
 	local glyph_ranges = imgui.GetIO().Fonts:GetGlyphRangesCyrillic()
     local path = getWorkingDirectory()..'/resource/Zekton-Font.ttf'
@@ -757,17 +758,6 @@ ragetsrbot = function()
     end)
 end
 
----------Кнопка Menu---------
-local newFrame2 = imgui.OnFrame(
-    function() return settings.menu.openbutton[0] end,
-    function(player)
-        imgui.Begin('ZoV', settings.menu.openbutton, imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.AlwaysAutoResize)
-            if imgui.Button(fa.GEARS, imgui.ImVec2(settings.menu.slideropenbuttonwidth[0], settings.menu.slideropenbuttonheight[0])) then
-                window_state[0] = not window_state[0]
-            end
-        imgui.End()
-    end
-)
 -- flycar window
 imgui.OnFrame(function() return settings.car.flycar[0] and not isGamePaused() and isCharInAnyCar(PLAYER_PED) end, function()
     imgui.Begin('     ', settings.car.flycar, imgui.WindowFlags.AlwaysAutoResize + imgui.WindowFlags.NoTitleBar)
@@ -1812,7 +1802,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 imgui.Text(fa.NOTE_STICKY..u8' Цвет MoonMonet')
             end
             imgui.Separator()
-		    imgui.Text(fa.SQUARE..u8' Кнопка "Menu"')
+		    imgui.Text(fa.SQUARE..u8' Полоска для открытия меню')
 		    if imgui.ToggleButton(fa.CHECK..u8' Состояние', settings.menu.openbutton) then
                 if settings.cfg.autosave[0] then
                     ini.menu.openbutton = settings.menu.openbutton[0]
@@ -4514,3 +4504,25 @@ function onSendPacket(id, bs)
         end
     end
 end
+
+-- полоска
+imgui.OnFrame(function() return settings.menu.openbutton[0] end, function(self)
+    imgui.PushStyleColor(imgui.Col.WindowBg, imgui.ImVec4(0.00, 0.00, 0.00, 0.00))
+    imgui.PushStyleColor(imgui.Col.Border, imgui.ImVec4(0.00, 0.00, 0.00, 0.00))
+    imgui.SetNextWindowSize(imgui.ImVec2(300, 50), imgui.Cond.Always)
+    local scrx, scry = getScreenResolution()
+    imgui.SetNextWindowPos(imgui.ImVec2(scrx / 2, scry - 30), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+    imgui.Begin('##poloska', settings.menu.openbutton, imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoScrollbar + imgui.WindowFlags.NoResize + imgui.WindowFlags.NoMove)
+    imgui.SetCursorPos(imgui.ImVec2(0, 30))
+    local dl = imgui.GetWindowDrawList()
+    local p = imgui.GetCursorScreenPos()
+    dl:AddRectFilled(p, imgui.ImVec2(p.x + 293, p.y + 10), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(1.00, 1.00, 1.00, 1.00)), 10, 10)
+    imgui.SetCursorPos(imgui.ImVec2(0, 0))
+    if imgui.InvisibleButton('##hidemenu', imgui.GetWindowSize()) then
+        window_state[0] = not window_state[0]
+    end
+    imgui.PopStyleColor()
+    imgui.PopStyleColor()
+    imgui.End()
+end)
+    
