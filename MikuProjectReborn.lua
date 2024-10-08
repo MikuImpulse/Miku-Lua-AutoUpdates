@@ -1809,18 +1809,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     save()
                 end
             end
-		    if imgui.SliderInt(fa.TEXT_WIDTH..u8' Ширина', settings.menu.slideropenbuttonwidth, 30, 150) then
-                if settings.cfg.autosave[0] then
-                    ini.menu.slideropenbuttonwidth = settings.menu.slideropenbuttonwidth[0]
-                    save()
-                end
-            end
-		    if imgui.SliderInt(fa.TEXT_HEIGHT..u8' Высота', settings.menu.slideropenbuttonheight, 30, 150) then
-                if settings.cfg.autosave[0] then
-                    ini.menu.slideropenbuttonheight = settings.menu.slideropenbuttonheight[0]
-                    save()
-                end
-            end
 		    imgui.Separator()
 		    imgui.Text(u8'Меню')
 		    if imgui.Button(fa.GEARS..u8' Настройки меню') then
