@@ -510,7 +510,7 @@ imgui.OnInitialize(function()
 	mmcolor = imgui.new.float[3](tmp.z, tmp.y, tmp.x)
     apply_n_t()
 	----////\\\\----
-	imgui.GetIO().IniFilename = nil
+	--imgui.GetIO().IniFilename = nil
     ----\\\\////----
 	local glyph_ranges = imgui.GetIO().Fonts:GetGlyphRangesCyrillic()
     local path = getWorkingDirectory()..'/resource/Zekton-Font.ttf'
