@@ -799,11 +799,11 @@ imgui.OnFrame(function() return settings.car.flycar[0] and not isGamePaused() an
     local dl = imgui.GetWindowDrawList()
     local p = imgui.GetCursorScreenPos()
     if not wwwflycar then
-        dl:AddCircleFilled(p, 35, imgui.ColorConvertFloat4ToU32(imgui.ImVec4(1.00, 0.00, 0.00, 1.00)))
-        dl:AddCircle(p, 40, imgui.ColorConvertFloat4ToU32(imgui.ImVec4(1.00, 0.00, 0.00, 1.00)))
+        dl:AddCircleFilled(p, 33, imgui.ColorConvertFloat4ToU32(imgui.ImVec4(1.00, 0.00, 0.00, 1.00)), 100)
+        dl:AddCircle(p, 38, imgui.ColorConvertFloat4ToU32(imgui.ImVec4(1.00, 0.00, 0.00, 1.00)), 100)
     else
-        dl:AddCircleFilled(p, 35, imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.00, 1.00, 0.00, 1.00)))
-        dl:AddCircle(p, 40, imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.00, 1.00, 0.00, 1.00)))
+        dl:AddCircleFilled(p, 33, imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.00, 1.00, 0.00, 1.00)), 100)
+        dl:AddCircle(p, 38, imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.00, 1.00, 0.00, 1.00)), 100)
     end
     dl:AddText(imgui.ImVec2(p.x - 21, p.y - 9), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(1.00, 1.00, 1.00, 1.00)), 'FlyCar', NULL)
     imgui.SetCursorPos(imgui.ImVec2(10, 10))
