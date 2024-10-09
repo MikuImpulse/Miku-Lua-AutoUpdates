@@ -1,6 +1,8 @@
+-------Версия скрипта--------
+local script_ver = '1.0.0'
 --------О скрипте--------
 script_name('Miku Project Reborn')
-script_version('0.9.9')
+script_version(script_ver)
 script_author('@mikureborn')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channeI: t.me/mikureborn')
 --------Библиотеки--------
@@ -101,7 +103,8 @@ local ini = inicfg.load({
 		safe_train_speed = (true),
 		fastenter = (false),
 		infinitefuel = (false),
-		fastexit = (false)
+		fastexit = (false),
+		fastbrake = (false)
     },
     render = {
         ruda = (false),
@@ -139,7 +142,10 @@ local ini = inicfg.load({
         tabswidth = (140),
         tabsheight = (40),
         window_scale = (1.0),
-        syncwithmoonmonet = (false)
+        syncwithmoonmonet = (false),
+        waterposx = (0),
+        waterposy = (0),
+        notitlebar = (true)
     },
     dgun = {
         gunsList = (0),
@@ -226,7 +232,8 @@ local settings = {
         safe_train_speed = imgui.new.bool(ini.car.safe_train_speed),
         fastenter = imgui.new.bool(ini.car.fastenter),
         infinitefuel = imgui.new.bool(ini.car.infinitefuel),
-        fastexit = imgui.new.bool(ini.car.fastexit)
+        fastexit = imgui.new.bool(ini.car.fastexit),
+        fastbrake = imgui.new.bool(ini.car.fastbrake)
     },
     render = {
         ruda = imgui.new.bool(ini.render.ruda),
@@ -264,7 +271,10 @@ local settings = {
         tabswidth = imgui.new.int(ini.menu.tabswidth),
         tabsheight = imgui.new.int(ini.menu.tabsheight),
         window_scale = imgui.new.float(ini.menu.window_scale),
-        syncwithmoonmonet = imgui.new.bool(ini.menu.syncwithmoonmonet)
+        syncwithmoonmonet = imgui.new.bool(ini.menu.syncwithmoonmonet),
+        waterposx = imgui.new.int(ini.menu.waterposx),
+        waterposy = imgui.new.int(ini.menu.waterposy),
+        notitlebar = imgui.new.bool(ini.menu.notitlebar)
     },
     dgun = {
         gunsList = imgui.new.int(ini.dgun.gunsList),
@@ -299,6 +309,7 @@ local theme_a = {u8'Темная', u8'Зеленая', u8'Голубо-серая', u8'Вишнёвая', 'MoonM
 local theme_t = {u8'black', u8'green', u8'bluegray', u8'cherry', 'moonmonet'}
 local items = imgui.new['const char*'][#theme_a](theme_a)
 local selected_theme = imgui.new.int(ini.theme.selected)
+local test99 = new.bool()
 -- AirBrake
 local was_doubletapped = false
 local enabledair = false
@@ -527,6 +538,7 @@ imgui.OnInitialize(function()
     updfont[25] = imgui.GetIO().Fonts:AddFontFromFileTTF(path, 25.0, nil, glyph_ranges)
     updfont[33] = imgui.GetIO().Fonts:AddFontFromFileTTF(path, 33.0, nil, glyph_ranges)
     updfont[40] = imgui.GetIO().Fonts:AddFontFromFileTTF(path, 40.0, nil, glyph_ranges)
+    updfont[30] = imgui.GetIO().Fonts:AddFontFromFileTTF(path, 30.0, nil, glyph_ranges)
 end)
   
 -- GodMode Car
@@ -779,11 +791,28 @@ local newFrame2 = imgui.OnFrame(
 )
 -- flycar window
 imgui.OnFrame(function() return settings.car.flycar[0] and not isGamePaused() and isCharInAnyCar(PLAYER_PED) end, function()
-    imgui.Begin('     ', settings.car.flycar, imgui.WindowFlags.AlwaysAutoResize + imgui.WindowFlags.NoTitleBar)
-    if imgui.Button(fa.CAR..u8' FlyCar', imgui.ImVec2(120, 50)) then
+    imgui.SetNextWindowSize(imgui.ImVec2(90, 90), imgui.Cond.Always)
+    imgui.PushStyleColor(imgui.Col.WindowBg, imgui.ImVec4(0.00, 0.00, 0.00, 0.00))
+    imgui.PushStyleColor(imgui.Col.Border, imgui.ImVec4(0.00, 0.00, 0.00, 0.00))
+    imgui.Begin('     ', settings.car.flycar, imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoScrollbar + imgui.WindowFlags.NoResize)
+    imgui.SetCursorPos(imgui.ImVec2(45, 45))
+    local dl = imgui.GetWindowDrawList()
+    local p = imgui.GetCursorScreenPos()
+    if not wwwflycar then
+        dl:AddCircleFilled(p, 35, imgui.ColorConvertFloat4ToU32(imgui.ImVec4(1.00, 0.00, 0.00, 1.00)))
+        dl:AddCircle(p, 40, imgui.ColorConvertFloat4ToU32(imgui.ImVec4(1.00, 0.00, 0.00, 1.00)))
+    else
+        dl:AddCircleFilled(p, 35, imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.00, 1.00, 0.00, 1.00)))
+        dl:AddCircle(p, 40, imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.00, 1.00, 0.00, 1.00)))
+    end
+    dl:AddText(imgui.ImVec2(p.x - 21, p.y - 9), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(1.00, 1.00, 1.00, 1.00)), 'FlyCar', NULL)
+    imgui.SetCursorPos(imgui.ImVec2(10, 10))
+    if imgui.InvisibleButton('##flycartoggle', imgui.GetWindowSize()) then
         wwwflycar = not wwwflycar
         printStringNow(wwwflycar and 'FlyCar ~g~activated' or 'FlyCar ~r~deactivated', 300)
-    end
+    end    
+    imgui.PopStyleColor()
+    imgui.PopStyleColor()
     imgui.End()
 end)
 -- found update window
@@ -912,6 +941,26 @@ imgui.OnFrame(function() return menusettings[0] end, function()
             save()
         end
     end
+    if imgui.ToggleButton(fa.TABLE_LIST..u8' Показывать заголовок без названия в меню', settings.menu.notitlebar) then
+        if settings.cfg.autosave[0] then
+            ini.menu.notitlebar = settings.menu.notitlebar[0]
+            save()
+        end
+    end
+    if not settings.menu.notitlebar[0] then
+        if imgui.SliderInt(fa.TEXT_WIDTH..u8' Положение названия X', settings.menu.waterposx, 1, 1000) then
+            if settings.cfg.autosave[0] then
+                ini.menu.waterposx = settings.menu.waterposx[0]
+                save()
+            end
+        end
+        if imgui.SliderInt(fa.TEXT_HEIGHT..u8' Положение названия Y', settings.menu.waterposy, 1, 1000) then
+            if settings.cfg.autosave[0] then
+                ini.menu.waterposy = settings.menu.waterposy[0]
+                save()
+            end
+        end
+    end
     if imgui.SliderInt(fa.TEXT_WIDTH..u8' Ширина кнопок вкладок', settings.menu.tabswidth, 50, 300) then
         if settings.cfg.autosave[0] then
             ini.menu.tabswidth = settings.menu.tabswidth[0]
@@ -965,8 +1014,24 @@ imgui.OnFrame(function() return window_state[0] end, function()
     local sizeX, sizeY = 305, 435
     imgui.SetNextWindowPos(imgui.ImVec2(1100 * MONET_DPI_SCALE, 500 * MONET_DPI_SCALE), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
     imgui.SetNextWindowSize(imgui.ImVec2(settings.menu.menuwidth[0] * MONET_DPI_SCALE, settings.menu.menuheight[0] * MONET_DPI_SCALE), imgui.Cond.Always)
-    imgui.Begin(fa.STAR_OF_LIFE..u8' Miku Project Reborn '..fa.STAR_OF_LIFE, window_state, imgui.WindowFlags.NoResize)
+    if settings.menu.notitlebar[0] then
+        imgui.Begin(fa.STAR_OF_LIFE..u8' Miku Project Reborn '..fa.STAR_OF_LIFE, window_state, imgui.WindowFlags.NoResize)
+    else
+        imgui.Begin(fa.STAR_OF_LIFE..u8' Miku Project Reborn '..fa.STAR_OF_LIFE, window_state, imgui.WindowFlags.NoResize + imgui.WindowFlags.NoTitleBar)
+    end
     imgui.SetWindowFontScale(settings.menu.window_scale[0])
+    if not settings.menu.notitlebar[0] then
+        imgui.SetCursorPos(imgui.ImVec2(settings.menu.waterposx[0], settings.menu.waterposy[0]))
+        imgui.PushFont(updfont[30])
+        imgui.Text(u8'Miku Project')
+        imgui.PopFont()
+        imgui.SetCursorPosX(settings.menu.waterposx[0])
+        imgui.PushFont(updfont[25])
+        imgui.Text(u8'       Reborn')
+        imgui.SetCursorPosX(settings.menu.waterposx[0])
+        imgui.Text(u8'  version '..script_ver)
+        imgui.PopFont()
+    end
     imgui.SetCursorPos(imgui.ImVec2(settings.menu.onechildposx[0] * MONET_DPI_SCALE, settings.menu.onechildposy[0] * MONET_DPI_SCALE))
     if imgui.BeginChild('Tabs##'..tab, imgui.ImVec2(settings.menu.onechildwidth[0] * MONET_DPI_SCALE, settings.menu.onechildheight[0] * MONET_DPI_SCALE), true) then
         if imgui.Button(fa.FIRE..u8' Основное', imgui.ImVec2(settings.menu.tabswidth[0], settings.menu.tabsheight[0])) then
@@ -1517,6 +1582,12 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     save()
                 end
             end
+            if imgui.ToggleButton(fa.EYE_DROPPER..u8' Быстрый тормоз + флип', settings.car.fastbrake) then
+                if settings.cfg.autosave[0] then
+                    ini.car.fastbrake = settings.car.fastbrake[0]
+                    save()
+                end
+            end
             if imgui.Button(fa.ARROW_TREND_UP..u8' Флипнуть') then
                 if isCharInAnyCar(PLAYER_PED) then    
                     local veh = storeCarCharIsInNoSave(PLAYER_PED)
@@ -1858,12 +1929,12 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 end
             end
 		    imgui.Separator()
-		    imgui.Text(u8'Меню')
+		    imgui.Text(fa.GEARS..u8' Меню')
 		    if imgui.Button(fa.GEARS..u8' Настройки меню') then
 		        menusettings[0] = not menusettings[0]
 		    end
 		    imgui.Separator()
-		    imgui.Text(u8'Помощь')
+		    imgui.Text(fa.PERSON_CIRCLE_QUESTION..u8' Помощь')
 		    if imgui.ToggleButton(fa.INFO..u8' | Отображать подсказки', settings.menu.showinfo) then
                 if settings.cfg.autosave[0] then
                     ini.menu.showinfo = settings.menu.showinfo[0]
@@ -1984,6 +2055,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.car.fastenter = settings.car.fastenter[0]
                     ini.car.infinitefuel = settings.car.infinitefuel[0]
                     ini.car.fastexit = settings.car.fastexit[0]
+                    ini.car.fastbrake = settings.car.fastbrake[0]
                     ini.render.ruda = settings.render.ruda[0]
                     ini.render.narkotiki = settings.render.narkotiki[0]
                     ini.render.podarok = settings.render.podarok[0]
@@ -2018,6 +2090,9 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.menu.tabsheight = settings.menu.tabsheight[0]
                     ini.menu.window_scale = settings.menu.window_scale[0]
                     ini.menu.syncwithmoonmonet = settings.menu.syncwithmoonmonet[0]
+                    ini.menu.notitlebar = settings.menu.notitlebar[0]
+                    ini.menu.waterposx = settings.menu.waterposx[0]
+                    ini.menu.waterposy = settings.menu.waterposy[0]
                     ini.objects.autormlsa = settings.objects.autormlsa[0]
                     ini.objects.autormsfa = settings.objects.autormsfa[0]
                     ini.objects.autormblockpost = settings.objects.autormblockpost[0]
@@ -2266,6 +2341,14 @@ function main()
 	statusbot = lua_thread.create_suspended(botwork)
 	statusbot = lua_thread.create_suspended(botwork)
     while true do wait(0)
+        if settings.car.fastbrake[0] then
+            if isCharInAnyCar(PLAYER_PED) then
+                if isWidgetPressed(WIDGET_HANDBRAKE) then
+                    local posX, posY, posZ = getCarCoordinates(storeCarCharIsInNoSave(PLAYER_PED))
+                    setCarCoordinates(storeCarCharIsInNoSave(PLAYER_PED), posX, posY, posZ)
+                end
+            end
+        end
         if settings.ped.sbiv[0] then
             if not isCharInAnyCar(PLAYER_PED) then
                 if isWidgetPressed(WIDGET_SWAP_WEAPONS) then
