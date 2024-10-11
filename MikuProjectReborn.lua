@@ -1,5 +1,5 @@
 -------Версия скрипта--------
-local script_ver = '1.0.0'
+local script_ver = '1.0.1'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
@@ -59,6 +59,7 @@ local ini = inicfg.load({
         themeta = 'moonmonet',
     },
     ESP = {
+        drawing = (false),
         enabled_boxes = (false),
         enabled_bones = (false),
         enabled_nicks = (false),
@@ -188,6 +189,7 @@ local settings = {
         offsety = imgui.new.float(ini.silent.offsety)
     },
     ESP = {
+        drawing = imgui.new.bool(ini.ESP.drawing),
         enabled_bones = imgui.new.bool(ini.ESP.enabled_bones),
         enabled_boxes = imgui.new.bool(ini.ESP.enabled_boxes),
         enabled_nicks = imgui.new.bool(ini.ESP.enabled_nicks),
@@ -309,7 +311,6 @@ local theme_a = {u8'Темная', u8'Зеленая', u8'Голубо-серая', u8'Вишнёвая', 'MoonM
 local theme_t = {u8'black', u8'green', u8'bluegray', u8'cherry', 'moonmonet'}
 local items = imgui.new['const char*'][#theme_a](theme_a)
 local selected_theme = imgui.new.int(ini.theme.selected)
-local test99 = new.bool()
 -- AirBrake
 local was_doubletapped = false
 local enabledair = false
@@ -661,65 +662,66 @@ settings.ESP.processESP = function()
     while not isSampAvailable() do wait(0) end
     while true do
         wait(0)
-        for _, char in ipairs(getAllChars()) do
-            local result, id = sampGetPlayerIdByCharHandle(char)
-            if result and isCharOnScreen(char) and char ~= PLAYER_PED then
-                local opaque_color = bit.bor(bit.band(sampGetPlayerColor(id), 0xFFFFFF), 0xFF000000)
-  
-                if settings.ESP.enabled_bones[0] then
-                    for _, bone in ipairs(ESP2.BONES) do
-                        local x1, y1, z1 = getBonePosition(char, bone)
-                        local x2, y2, z2 = getBonePosition(char, bone + 1)
+        if settings.ESP.drawing[0] then
+            for _, char in ipairs(getAllChars()) do
+                local result, id = sampGetPlayerIdByCharHandle(char)
+                if result and isCharOnScreen(char) and char ~= PLAYER_PED then
+                    local opaque_color = bit.bor(bit.band(sampGetPlayerColor(id), 0xFFFFFF), 0xFF000000)
+                    if settings.ESP.enabled_bones[0] then
+                        for _, bone in ipairs(ESP2.BONES) do
+                            local x1, y1, z1 = getBonePosition(char, bone)
+                            local x2, y2, z2 = getBonePosition(char, bone + 1)
+                            local r1, sx1, sy1 = convert3DCoordsToScreenEx(x1, y1, z1)
+                            local r2, sx2, sy2 = convert3DCoordsToScreenEx(x2, y2, z2)
+                            if r1 and r2 then
+                                renderDrawLine(sx1, sy1, sx2, sy2, settings.ESP.skeletonthinkness[0], opaque_color)
+                            end
+                        end
+                        local x1, y1, z1 = getBonePosition(char, 2)
                         local r1, sx1, sy1 = convert3DCoordsToScreenEx(x1, y1, z1)
-                        local r2, sx2, sy2 = convert3DCoordsToScreenEx(x2, y2, z2)
-                        if r1 and r2 then
-                            renderDrawLine(sx1, sy1, sx2, sy2, settings.ESP.skeletonthinkness[0], opaque_color)
+                        if r1 then
+                            local x2, y2, z2 = getBonePosition(char, 41)
+                            local r2, sx2, sy2 = convert3DCoordsToScreenEx(x2, y2, z2)
+                            if r2 then
+                                renderDrawLine(sx1, sy1, sx2, sy2, settings.ESP.skeletonthinkness[0], opaque_color)
+                            end
+                        end
+                        if r1 then
+                            local x2, y2, z2 = getBonePosition(char, 51)
+                            local r2, sx2, sy2 = convert3DCoordsToScreenEx(x2, y2, z2)
+                            if r2 then
+                                renderDrawLine(sx1, sy1, sx2, sy2, settings.ESP.skeletonthinkness[0], opaque_color)
+                            end
                         end
                     end
-                    local x1, y1, z1 = getBonePosition(char, 2)
-                    local r1, sx1, sy1 = convert3DCoordsToScreenEx(x1, y1, z1)
-                    if r1 then
-                        local x2, y2, z2 = getBonePosition(char, 41)
-                        local r2, sx2, sy2 = convert3DCoordsToScreenEx(x2, y2, z2)
-                        if r2 then
-                            renderDrawLine(sx1, sy1, sx2, sy2, settings.ESP.skeletonthinkness[0], opaque_color)
+                    if settings.ESP.enabled_boxes[0] then
+                        local x, y, z = getOffsetFromCharInWorldCoords(char, 0, 0, 0) -- To get position of char even if he is in car
+                        local headx, heady = convert3DCoordsToScreen(x, y, z + 1.0)
+                        local footx, footy = convert3DCoordsToScreen(x, y, z - 1.0)
+                        local width = math.abs((heady - footy) * 0.25)
+                        renderDrawBoxWithBorder(headx - width, heady, math.abs(2 * width), math.abs(footy - heady), 0, SCREEN_H * settings.ESP.boxthinkness[0], opaque_color)
+                    end
+                    if settings.ESP.enabled_nicks[0] then
+                        local hx, hy, hz = getBonePosition(char, 5)
+                        local hr, headx, heady = convert3DCoordsToScreenEx(hx, hy, hz + 0.25)
+                        if hr then
+                            local nickname = sampGetPlayerNickname(id)
+                            local nametag = nickname .. ' [' .. tostring(id) .. '] - {FF0000}' .. string.format("%.0f", sampGetPlayerHealth(id)) .. 'hp {BBBBBB}' .. string.format("%.0f", sampGetPlayerArmor(id)) .. 'ap'
+                            local nametag_len = renderGetFontDrawTextLength(ESP2.FONT, nametag)
+                            local nametag_x = headx - nametag_len / 2
+                            local nametag_y = heady - renderGetFontDrawHeight(ESP2.FONT)
+                            renderFontDrawText(ESP2.FONT, nametag, nametag_x, nametag_y, opaque_color)
                         end
                     end
-                    if r1 then
-                        local x2, y2, z2 = getBonePosition(char, 51)
-                        local r2, sx2, sy2 = convert3DCoordsToScreenEx(x2, y2, z2)
-                        if r2 then
-                            renderDrawLine(sx1, sy1, sx2, sy2, settings.ESP.skeletonthinkness[0], opaque_color)
-                        end
+                    if settings.ESP.enabled_lines[0] then
+                        local hx, hy, hz = getBonePosition(char, 5)
+                        local hr, headx, heady = convert3DCoordsToScreenEx(hx, hy, hz + 0.25)
+                        local px,py,pz = getCharCoordinates(char)
+                        local sx, sy = getScreenResolution()
+                        local ex, ey = convert3DCoordsToScreen(px,py,pz)
+                        renderDrawLine(sx / 2, sy * settings.ESP.lineposition[0], headx, heady - 25 * MONET_DPI_SCALE, settings.ESP.linethinkness[0], opaque_color)
+                        renderDrawPolygon(headx - 3.5 * MONET_DPI_SCALE, heady - 25 * MONET_DPI_SCALE, 8 * MONET_DPI_SCALE, 8 * MONET_DPI_SCALE, 5, 0.0, opaque_color)
                     end
-                end
-                if settings.ESP.enabled_boxes[0] then
-                    local x, y, z = getOffsetFromCharInWorldCoords(char, 0, 0, 0) -- To get position of char even if he is in car
-                    local headx, heady = convert3DCoordsToScreen(x, y, z + 1.0)
-                    local footx, footy = convert3DCoordsToScreen(x, y, z - 1.0)
-                    local width = math.abs((heady - footy) * 0.25)
-                    renderDrawBoxWithBorder(headx - width, heady, math.abs(2 * width), math.abs(footy - heady), 0, SCREEN_H * settings.ESP.boxthinkness[0], opaque_color)
-                end
-                if settings.ESP.enabled_nicks[0] then
-                    local hx, hy, hz = getBonePosition(char, 5)
-                    local hr, headx, heady = convert3DCoordsToScreenEx(hx, hy, hz + 0.25)
-                    if hr then
-                        local nickname = sampGetPlayerNickname(id)
-                        local nametag = nickname .. ' [' .. tostring(id) .. '] - {FF0000}' .. string.format("%.0f", sampGetPlayerHealth(id)) .. 'hp {BBBBBB}' .. string.format("%.0f", sampGetPlayerArmor(id)) .. 'ap'
-                        local nametag_len = renderGetFontDrawTextLength(ESP2.FONT, nametag)
-                        local nametag_x = headx - nametag_len / 2
-                        local nametag_y = heady - renderGetFontDrawHeight(ESP2.FONT)
-                        renderFontDrawText(ESP2.FONT, nametag, nametag_x, nametag_y, opaque_color)
-                    end
-                end
-                if settings.ESP.enabled_lines[0] then
-                    local hx, hy, hz = getBonePosition(char, 5)
-                    local hr, headx, heady = convert3DCoordsToScreenEx(hx, hy, hz + 0.25)
-                    local px,py,pz = getCharCoordinates(char)
-                    local sx, sy = getScreenResolution()
-                    local ex, ey = convert3DCoordsToScreen(px,py,pz)
-                    renderDrawLine(sx / 2, sy * settings.ESP.lineposition[0], headx, heady - 25 * MONET_DPI_SCALE, settings.ESP.linethinkness[0], opaque_color)
-                    renderDrawPolygon(headx - 3.5 * MONET_DPI_SCALE, heady - 25 * MONET_DPI_SCALE, 8 * MONET_DPI_SCALE, 8 * MONET_DPI_SCALE, 5, 0.0, opaque_color)
                 end
             end
         end
@@ -1078,766 +1080,800 @@ imgui.OnFrame(function() return window_state[0] end, function()
     imgui.SetCursorPos(imgui.ImVec2(settings.menu.twochildposx[0] * MONET_DPI_SCALE, settings.menu.twochildposy[0] * MONET_DPI_SCALE))
     if imgui.BeginChild('Name##'..tab, imgui.ImVec2(settings.menu.twochildwidth[0] * MONET_DPI_SCALE, settings.menu.twochildheight[0] * MONET_DPI_SCALE), true) then
         if tab == 1 then
-            imgui.CenterText(fa.FIRE..u8' Основное')
-            imgui.Separator()
-            imgui.Text(fa.WIND..u8' Аирбрейк активируется даблтапом на иконку оружия')
-            if imgui.ToggleButton(fa.WAND_MAGIC_SPARKLES..u8' Виджет аирбрейка', settings.main.airbrakewidget) then
-                if settings.cfg.autosave[0] then
-                    ini.main.airbrakewidget = settings.main.airbrakewidget[0]
-                    save()
+            if imgui.CollapsingHeader(fa.FIRE..u8' Основное') then
+                imgui.Separator()
+                imgui.Text(fa.WIND..u8' Аирбрейк активируется даблтапом на иконку оружия')
+                if imgui.ToggleButton(fa.WAND_MAGIC_SPARKLES..u8' Виджет аирбрейка', settings.main.airbrakewidget) then
+                    if settings.cfg.autosave[0] then
+                        ini.main.airbrakewidget = settings.main.airbrakewidget[0]
+                        save()
+                    end
                 end
-            end
-            if imgui.ToggleButton(fa.FROG..u8' ClickCoordMobile', settings.main.clickwarpcoord) then
-                if settings.cfg.autosave[0] then
-                    ini.main.clickwarpcoord = settings.main.clickwarpcoord[0]
-                    save()
+                if imgui.ToggleButton(fa.FROG..u8' ClickCoordMobile', settings.main.clickwarpcoord) then
+                    if settings.cfg.autosave[0] then
+                        ini.main.clickwarpcoord = settings.main.clickwarpcoord[0]
+                        save()
+                    end
                 end
-            end
-            if imgui.ToggleButton(fa.USER_SECRET..u8' Анти-маска', settings.main.antimask) then
-                if settings.cfg.autosave[0] then
-                    ini.main.antimask = settings.main.antimask[0]
-                    save()
+                if imgui.ToggleButton(fa.USER_SECRET..u8' Анти-маска', settings.main.antimask) then
+                    if settings.cfg.autosave[0] then
+                        ini.main.antimask = settings.main.antimask[0]
+                        save()
+                    end
                 end
-            end
-            if imgui.Button(fa.WIFI..u8' Реконнект') and not Reconnect.reconnecting and not Reconnect.waiting then
-                Reconnect.activate()
-            end
-            if Reconnect.waiting then
+                if imgui.Button(fa.WIFI..u8' Реконнект') and not Reconnect.reconnecting and not Reconnect.waiting then
+                    Reconnect.activate()
+                end
+                if Reconnect.waiting then
+                    imgui.SameLine()
+                    imgui.Text(string.format(u8'Реконнект через %.2f секунд...', Reconnect.remaining / 1000))
+                    imgui.SameLine()
+                    if imgui.Button(fa.XMARK..u8' Отмена') then
+                        Reconnect.abort = true
+                    end
+                end
+                imgui.SetNextItemWidth(imgui.GetFontSize() * 15)
+                imgui.SliderFloat(fa.HOURGLASS_START..u8' Задержка реконнекта (в секундах)', Reconnect.delay, 0.0, 30.0)
+                if imgui.Button(fa.WIND..u8' Установить погоду') then
+                    forceWeatherNow(WeatherAndTime.weather[0])
+                end
                 imgui.SameLine()
-                imgui.Text(string.format(u8'Реконнект через %.2f секунд...', Reconnect.remaining / 1000))
+                imgui.SetNextItemWidth(imgui.GetFontSize() * 5)
+                imgui.PushItemWidth(120)
+                if imgui.InputInt(fa.SUN..u8' Погода', WeatherAndTime.weather, 1, 10) then
+                    if WeatherAndTime.weather[0] < 0 then
+                        WeatherAndTime.weather[0] = 0
+                    end
+                    if WeatherAndTime.weather[0] > 45 then
+                        WeatherAndTime.weather[0] = 45
+                    end
+                end
+                imgui.PopItemWidth()
                 imgui.SameLine()
-                if imgui.Button(fa.XMARK..u8' Отмена') then
-                    Reconnect.abort = true
-                end
-            end
-            imgui.SetNextItemWidth(imgui.GetFontSize() * 15)
-            imgui.SliderFloat(fa.HOURGLASS_START..u8' Задержка реконнекта (в секундах)', Reconnect.delay, 0.0, 30.0)
-            if imgui.Button(fa.WIND..u8' Установить погоду') then
-                forceWeatherNow(WeatherAndTime.weather[0])
-            end
-            imgui.SameLine()
-            imgui.SetNextItemWidth(imgui.GetFontSize() * 5)
-            imgui.PushItemWidth(120)
-            if imgui.InputInt(fa.SUN..u8' Погода', WeatherAndTime.weather, 1, 10) then
-                if WeatherAndTime.weather[0] < 0 then
-                    WeatherAndTime.weather[0] = 0
-                end
-                if WeatherAndTime.weather[0] > 45 then
-                    WeatherAndTime.weather[0] = 45
-                end
-            end
-            imgui.PopItemWidth()
-            imgui.SameLine()
-            if imgui.ToggleButton(fa.XMARK..u8' Блокировать погоду сервера', settings.main.weatherblockserv) then
-                if settings.cfg.autosave[0] then
-                    ini.main.weatherblockserv = settings.main.weatherblockserv[0]
-                    save()
-                end
-            end
-            if imgui.Button(fa.MOON..u8' Установить время') then
-                if WeatherAndTime.thread ~= nil then
-                    WeatherAndTime.thread:terminate()
-                end
-                WeatherAndTime.locked_time = WeatherAndTime.time[0]
-                WeatherAndTime.thread = lua_thread.create(function()
-                    WeatherAndTime.new_time = false
-                    while not WeatherAndTime.new_time do
-                        setTimeOfDay(WeatherAndTime.locked_time, 0)
-                        wait(0)
-                    end
-                    WeatherAndTime.new_time = false
-                end)
-            end
-            imgui.SameLine()
-            imgui.SetNextItemWidth(imgui.GetFontSize() * 5)
-            imgui.PushItemWidth(120)
-            if imgui.InputInt(fa.CLOCK..u8' Время', WeatherAndTime.time, 1, 5) then
-                if WeatherAndTime.time[0] < 0 then
-                    WeatherAndTime.time[0] = 0
-                end
-                if WeatherAndTime.time[0] > 23 then
-                    WeatherAndTime.time[0] = 23
-                end
-            end
-            imgui.PopItemWidth()
-            imgui.SameLine()
-            if imgui.ToggleButton(fa.XMARK..u8' Блокировать время сервера', settings.main.timeblockserv) then
-                if settings.cfg.autosave[0] then
-                    ini.main.timeblockserv = settings.main.timeblockserv[0]
-                    save()
-                end
-            end
-            imgui.Separator()
-            imgui.CenterText(fa.MAGNIFYING_GLASS..u8' Рендер на объекты')
-            imgui.Separator()
-            if imgui.ToggleButton(fa.GEM..u8' Руда', settings.render.ruda) then
-                if settings.cfg.autosave[0] then
-                    ini.render.ruda = settings.render.ruda[0]
-                    save()
-                end
-            end
-            if imgui.ToggleButton(fa.SEEDLING..u8' Семена нарко', settings.render.semena) then
-                if settings.cfg.autosave[0] then
-                    ini.render.semena = settings.render.semena[0]
-                    save()
-                end
-            end
-            if imgui.ToggleButton(fa.TABLETS..u8' Закладки', settings.render.narkotiki) then
-                if settings.cfg.autosave[0] then
-                    ini.render.narkotiki = settings.render.narkotiki[0]
-                    save()
-                end
-            end
-            if imgui.ToggleButton(fa.TREE..u8' Дерево высшего качества', settings.render.derevovishkac) then
-                if settings.cfg.autosave[0] then
-                    ini.render.derevovishkac = settings.render.derevovishkac[0]
-                    save()
-                end
-            end
-            if imgui.ToggleButton(fa.GIFT..u8' Подарок', settings.render.podarok) then
-                if settings.cfg.autosave[0] then
-                    ini.render.podarok = settings.render.podarok[0]
-                    save()
-                end
-            end
-            if imgui.ToggleButton(fa.TOOLBOX..u8' Клад', settings.render.kladrender) then
-                if settings.cfg.autosave[0] then
-                    ini.render.kladrender = settings.render.kladrender[0]
-                    save()
-                end
-            end
-            if imgui.ToggleButton(fa.APPLE_WHOLE..u8' Яблочное дерево', settings.render.yabloki) then
-                if settings.cfg.autosave[0] then
-                    ini.render.yabloki = settings.render.yabloki[0]
-                    save()
-                end
-            end
-            if imgui.ToggleButton(fa.APPLE_WHOLE..u8' Cливовое дерево', settings.render.slivu) then
-                if settings.cfg.autosave[0] then
-                    ini.render.slivu = settings.render.slivu[0]
-                    save()
-                end
-            end
-            if imgui.ToggleButton(fa.APPLE_WHOLE..u8' Кокосное дерево', settings.render.kokosi) then
-                if settings.cfg.autosave[0] then
-                    ini.render.kokosi = settings.render.kokosi[0]
-                    save()
-                end
-            end
-            if imgui.ToggleButton(fa.SPRAY_CAN..u8' Граффити', settings.render.graffiti) then
-                if settings.cfg.autosave[0] then
-                    ini.render.graffiti = settings.render.graffiti[0]
-                    save()
-                end
-            end
-            imgui.Separator()
-            imgui.CenterText(fa.DIAGRAM_PROJECT..u8' Объекты')
-            imgui.Separator()
-            imgui.Text(fa.TRASH..u8' Удалить:')
-            if imgui.Button(fa.TORII_GATE..u8' Ворота армии ЛС') then
-                for _, obj in pairs(getAllObjects()) do
-                    local modeid = getObjectModel(obj)
-                    if modeid == 975 then
-                        deleteObject(obj)
+                if imgui.ToggleButton(fa.XMARK..u8' Блокировать погоду сервера', settings.main.weatherblockserv) then
+                    if settings.cfg.autosave[0] then
+                        ini.main.weatherblockserv = settings.main.weatherblockserv[0]
+                        save()
                     end
                 end
-            end
-            imgui.SameLine()
-            if imgui.ToggleButton(fa.TRASH..u8' Автоудаление', settings.objects.autormlsa) then
-                if settings.cfg.autosave[0] then
-                    ini.objects.autormlsa = settings.objects.autormlsa[0]
-                    save()
+                if imgui.Button(fa.MOON..u8' Установить время') then
+                    if WeatherAndTime.thread ~= nil then
+                        WeatherAndTime.thread:terminate()
+                    end
+                    WeatherAndTime.locked_time = WeatherAndTime.time[0]
+                    WeatherAndTime.thread = lua_thread.create(function()
+                        WeatherAndTime.new_time = false
+                        while not WeatherAndTime.new_time do
+                            setTimeOfDay(WeatherAndTime.locked_time, 0)
+                            wait(0)
+                        end
+                        WeatherAndTime.new_time = false
+                    end)
                 end
-            end
-            if imgui.Button(fa.TORII_GATE..u8' Ворота армии СФ') then
-                for _, obj in pairs(getAllObjects()) do
-                    local modeid = getObjectModel(obj)
-                    if modeid == 988 then
-                        deleteObject(obj)
+                imgui.SameLine()
+                imgui.SetNextItemWidth(imgui.GetFontSize() * 5)
+                imgui.PushItemWidth(120)
+                if imgui.InputInt(fa.CLOCK..u8' Время', WeatherAndTime.time, 1, 5) then
+                    if WeatherAndTime.time[0] < 0 then
+                        WeatherAndTime.time[0] = 0
+                    end
+                    if WeatherAndTime.time[0] > 23 then
+                        WeatherAndTime.time[0] = 23
                     end
                 end
-            end
-            imgui.SameLine()
-            if imgui.ToggleButton(fa.TRASH..u8' Автоудaление', settings.objects.autormsfa) then
-                if settings.cfg.autosave[0] then
-                    ini.objects.autormsfa = settings.objects.autormsfa[0]
-                    save()
-                end
-            end
-            if imgui.Button(fa.ROAD_BARRIER..u8' Шлагбаумы (КПП)') then
-                for _, obj in pairs(getAllObjects()) do
-                    local modeid = getObjectModel(obj)
-                    if modeid == 968 then
-                        deleteObject(obj)
+                imgui.PopItemWidth()
+                imgui.SameLine()
+                if imgui.ToggleButton(fa.XMARK..u8' Блокировать время сервера', settings.main.timeblockserv) then
+                    if settings.cfg.autosave[0] then
+                        ini.main.timeblockserv = settings.main.timeblockserv[0]
+                        save()
                     end
                 end
+                imgui.Separator()
             end
-            imgui.SameLine()
-            if imgui.ToggleButton(fa.TRASH..u8' Aвтоудаление', settings.objects.autormblockpost) then
-                if settings.cfg.autosave[0] then
-                    ini.objects.autormblockpost = settings.objects.autormblockpost[0]
-                    save()
+            if imgui.CollapsingHeader(fa.MAGNIFYING_GLASS..u8' Рендер на объекты') then
+                imgui.Separator()
+                if imgui.ToggleButton(fa.GEM..u8' Руда', settings.render.ruda) then
+                    if settings.cfg.autosave[0] then
+                        ini.render.ruda = settings.render.ruda[0]
+                        save()
+                    end
                 end
+                if imgui.ToggleButton(fa.SEEDLING..u8' Семена нарко', settings.render.semena) then
+                    if settings.cfg.autosave[0] then
+                        ini.render.semena = settings.render.semena[0]
+                        save()
+                    end
+                end
+                if imgui.ToggleButton(fa.TABLETS..u8' Закладки', settings.render.narkotiki) then
+                    if settings.cfg.autosave[0] then
+                        ini.render.narkotiki = settings.render.narkotiki[0]
+                        save()
+                    end
+                end
+                if imgui.ToggleButton(fa.TREE..u8' Дерево высшего качества', settings.render.derevovishkac) then
+                    if settings.cfg.autosave[0] then
+                        ini.render.derevovishkac = settings.render.derevovishkac[0]
+                        save()
+                    end
+                end
+                if imgui.ToggleButton(fa.GIFT..u8' Подарок', settings.render.podarok) then
+                    if settings.cfg.autosave[0] then
+                        ini.render.podarok = settings.render.podarok[0]
+                        save()
+                    end
+                end
+                if imgui.ToggleButton(fa.TOOLBOX..u8' Клад', settings.render.kladrender) then
+                    if settings.cfg.autosave[0] then
+                        ini.render.kladrender = settings.render.kladrender[0]
+                        save()
+                    end
+                end
+                if imgui.ToggleButton(fa.APPLE_WHOLE..u8' Яблочное дерево', settings.render.yabloki) then
+                    if settings.cfg.autosave[0] then
+                        ini.render.yabloki = settings.render.yabloki[0]
+                        save()
+                    end
+                end
+                if imgui.ToggleButton(fa.APPLE_WHOLE..u8' Cливовое дерево', settings.render.slivu) then
+                    if settings.cfg.autosave[0] then
+                        ini.render.slivu = settings.render.slivu[0]
+                        save()
+                    end
+                end
+                if imgui.ToggleButton(fa.APPLE_WHOLE..u8' Кокосное дерево', settings.render.kokosi) then
+                    if settings.cfg.autosave[0] then
+                        ini.render.kokosi = settings.render.kokosi[0]
+                        save()
+                    end
+                end
+                if imgui.ToggleButton(fa.SPRAY_CAN..u8' Граффити', settings.render.graffiti) then
+                    if settings.cfg.autosave[0] then
+                        ini.render.graffiti = settings.render.graffiti[0]
+                        save()
+                    end
+                end
+                imgui.Separator()
             end
-            if settings.menu.showinfo[0] then
-                imgui.Text(fa.INFO..u8' | (Будет пополняться в зависимости)')
-                imgui.Text(fa.INFO..u8' | (от ваших пожеланий в чате Miku Project)')
+            if imgui.CollapsingHeader(fa.DIAGRAM_PROJECT..u8' Объекты') then
+                imgui.Separator()
+                imgui.Text(fa.TRASH..u8' Удалить:')
+                if imgui.Button(fa.TORII_GATE..u8' Ворота армии ЛС') then
+                    for _, obj in pairs(getAllObjects()) do
+                        local modeid = getObjectModel(obj)
+                        if modeid == 975 then
+                            deleteObject(obj)
+                        end
+                    end
+                end
+                imgui.SameLine()
+                if imgui.ToggleButton(fa.TRASH..u8' Автоудаление', settings.objects.autormlsa) then
+                    if settings.cfg.autosave[0] then
+                        ini.objects.autormlsa = settings.objects.autormlsa[0]
+                        save()
+                    end
+                end
+                if imgui.Button(fa.TORII_GATE..u8' Ворота армии СФ') then
+                    for _, obj in pairs(getAllObjects()) do
+                        local modeid = getObjectModel(obj)
+                        if modeid == 988 then
+                            deleteObject(obj)
+                        end
+                    end
+                end
+                imgui.SameLine()
+                if imgui.ToggleButton(fa.TRASH..u8' Автоудaление', settings.objects.autormsfa) then
+                    if settings.cfg.autosave[0] then
+                        ini.objects.autormsfa = settings.objects.autormsfa[0]
+                        save()
+                    end
+                end
+                if imgui.Button(fa.ROAD_BARRIER..u8' Шлагбаумы (КПП)') then
+                    for _, obj in pairs(getAllObjects()) do
+                        local modeid = getObjectModel(obj)
+                        if modeid == 968 then
+                            deleteObject(obj)
+                        end
+                    end
+                end
+                imgui.SameLine()
+                if imgui.ToggleButton(fa.TRASH..u8' Aвтоудаление', settings.objects.autormblockpost) then
+                    if settings.cfg.autosave[0] then
+                        ini.objects.autormblockpost = settings.objects.autormblockpost[0]
+                        save()
+                    end
+                end
+                if settings.menu.showinfo[0] then
+                    imgui.Text(fa.INFO..u8' | (Будет пополняться в зависимости)')
+                    imgui.Text(fa.INFO..u8' | (от ваших пожеланий в чате Miku Project)')
+                end
+                imgui.Separator()
             end
         elseif tab == 2 then
-            imgui.CenterText(fa.USER..u8' Персонаж')
-            imgui.Separator()
-            if imgui.ToggleButton(fa.BOOK_BIBLE..u8' Бессмертие', settings.ped.godmode_enabled) then
-                if settings.ped.godmode_enabled[0] then
-                    setCharProofs(PLAYER_PED, false, true, true, true, true)
-                else
-                    setCharProofs(PLAYER_PED, false, false, false, false, false)
-                end
-                if settings.cfg.autosave[0] then
-                    ini.ped.godmode_enabled = settings.ped.godmode_enabled[0]
-                    save()
-                end
-            end
-            imgui.SameLine()
-            imgui.SetCursorPosX(370)
-            if imgui.ToggleButton(fa.GUN..u8' Убивать ботов с 1 выстрела', settings.ped.killbots1hit) then
-                if settings.cfg.autosave[0] then
-                    ini.ped.killbots1hit = settings.ped.killbots1hit[0]
-                    save()
-                end
-            end
-            if imgui.ToggleButton(fa.REPEAT..u8' No Reload', settings.ped.noreload) then
-                if settings.cfg.autosave[0] then
-                    ini.ped.noreload = settings.ped.noreload[0]
-                    save()
-                end
-            end
-            imgui.SameLine()
-            imgui.SetCursorPosX(370)
-            if imgui.ToggleButton(fa.WAND_SPARKLES..u8' Фейк скиллы', settings.ped.setskills) then
-                if settings.cfg.autosave[0] then
-                    ini.ped.setskills = settings.ped.setskills[0]
-                    save()
-                end
-            end
-            imgui.ToggleButton(fa.PAPERCLIP..u8' Флуд взаимодействием', floodalt)
-            imgui.SameLine()
-            imgui.SetCursorPosX(370)
-            if imgui.ToggleButton(fa.GUN..u8' Авто +С', settings.ped.autoplusc) then
-                if settings.cfg.autosave[0] then
-                    ini.ped.autoplusc = settings.ped.autoplusc[0]
-                    save()
-                end
-            end
-            if imgui.ToggleButton(fa.HEART_PULSE..u8' Виджет сбива', settings.ped.sbiv) then
-                if settings.cfg.autosave[0] then
-                    ini.ped.sbiv = settings.ped.sbiv[0]
-                    save()
-                end
-            end
-            imgui.SameLine()
-            imgui.SetCursorPosX(370)
-            if imgui.ToggleButton(fa.INFINITY..u8' Бесконечный бег', settings.ped.infiniterun) then
-                if settings.cfg.autosave[0] then
-                    ini.ped.infiniterun = settings.ped.infiniterun[0]
-                    save()
-                end
-            end
-            if imgui.ToggleButton(fa.PERSON_RUNNING..u8' Скорость анимаций', settings.ped.animspeed) then
-                if settings.cfg.autosave[0] then
-                    ini.ped.animspeed = settings.ped.animspeed[0]
-                    save()
-                end
-            end
-            imgui.SameLine()
-            imgui.SetCursorPosX(370)
-            if imgui.ToggleButton(fa.GUN..u8' Рапид', settings.ped.rapidfire) then
-                if settings.cfg.autosave[0] then
-                    ini.ped.rapidfire = settings.ped.rapidfire[0]
-                    save()
-                end
-            end
-            imgui.PushItemWidth(200)
-            if imgui.SliderInt(u8'', settings.ped.speedint, 1, 10) then
-                if settings.cfg.autosave[0] then
-                    ini.ped.speedint = settings.ped.speedint[0]
-                    save()
-                end
-            end
-            imgui.PopItemWidth()
-            imgui.SameLine()
-            imgui.SetCursorPosX(370)
-            imgui.PushItemWidth(200)
-            if imgui.SliderInt(u8' ', settings.ped.rapidint, 1, 10) then
-                if settings.cfg.autosave[0] then
-                    ini.ped.rapidint = settings.ped.rapidint[0]
-                    save()
-                end
-            end
-            imgui.PopItemWidth()
-            if imgui.Button(fa.PERSON..u8' Установить скин', imgui.ImVec2(420, 35)) then
-                setskin_activate()
-            end
-            imgui.SameLine()
-            imgui.SetNextItemWidth(imgui.GetFontSize() * 7)
-            if imgui.InputInt(fa.ID_CARD_CLIP..u8' ID Скина', settings.ped.skinid, 1, 50) then
-                if settings.cfg.autosave[0] then
-                    ini.ped.skinid = settings.ped.skinid[0]
-                    save()
-                end
-            end
-            if imgui.Button(fa.PERSON_RUNNING..u8' Включить бег CJ', imgui.ImVec2(275, 35)) then
-                setAnimGroupForChar(PLAYER_PED, "PLAYER")
-            end
-            imgui.SameLine()
-            if imgui.Button(fa.PERSON_RUNNING..u8' Выключить бег CJ', imgui.ImVec2(275, 35)) then
-                setAnimGroupForChar(PLAYER_PED, usePlayerAnimGroup and "PLAYER" or isCharMale(PLAYER_PED) and "MAN" or "WOMAN")
-            end
-            imgui.Separator()
-            imgui.CenterText(fa.ROBOT..u8' Боты')
-            imgui.Separator()
-            if imgui.Button(fa.USER..u8' Бот завод') then
-                sampProcessChatInput('/armbot '..krugibota[0])
-            end
-            imgui.PushItemWidth(250)
-            imgui.SliderInt(fa.ARROWS_SPIN..u8' Количество кругов (завод)', krugibota, 0, 50)
-            imgui.PopItemWidth()
-            if settings.menu.showinfo[0] then
-                imgui.Text(fa.INFO..u8' | Можно использовать /armbot *кол-во кругов*')
-                imgui.Text(fa.INFO..u8' | 0 - бесконечность кругов')
-            end
-            if imgui.Button(fa.FISH..u8' Бот рыбалка') then
-                sampProcessChatInput('/fishbot')
-            end
-            if settings.menu.showinfo[0] then
-                imgui.Text(fa.INFO..u8' | Можно использовать /fishbot')
-            end
-            imgui.Separator()
-            imgui.CenterText(fa.LOCATION_CROSSHAIRS..u8' Silent by Langer (v2.1.1)')
-            imgui.Separator()
-            if imgui.ToggleButton(fa.CROSSHAIRS..u8' Silent Aim', settings.silent.salo) then
-                if settings.cfg.autosave[0] then
-                    ini.silent.salo = settings.silent.salo[0]
-                    save()
-                end
-            end
-            if imgui.ToggleButton(fa.CAR..u8' Игнорировать автомобили', settings.silent.ignoreCars) then
-                if settings.cfg.autosave[0] then
-                    ini.silent.ignoreCars = settings.silent.ignoreCars[0]
-                    save()
-                end
-            end
-            if imgui.ToggleButton(fa.OBJECT_GROUP..u8' Игнорировать объекты', settings.silent.ignoreObj) then
-                if settings.cfg.autosave[0] then
-                    ini.silent.ignoreObj = settings.silent.ignoreObj[0]
-                    save()
-                end
-            end
-            imgui.Separator()
-            if imgui.ToggleButton(fa.GUN..u8' Автоматически выбирать дистанцию у оружие', settings.silent.useWeaponDistance) then
-                if settings.cfg.autosave[0] then
-                    ini.silent.useWeaponDistance = settings.silent.useWeaponDistance[0]
-                    save()
-                end
-            end
-            if not settings.silent.useWeaponDistance[0] then
-                if imgui.SliderInt(fa.PEOPLE_ARROWS..u8' Дистанция поиска цели', settings.silent.distance, 1, 1000) then
+            if imgui.CollapsingHeader(fa.USER..u8' Персонаж') then
+                imgui.Separator()
+                if imgui.ToggleButton(fa.BOOK_BIBLE..u8' Бессмертие', settings.ped.godmode_enabled) then
+                    if settings.ped.godmode_enabled[0] then
+                        setCharProofs(PLAYER_PED, false, true, true, true, true)
+                    else
+                        setCharProofs(PLAYER_PED, false, false, false, false, false)
+                    end
                     if settings.cfg.autosave[0] then
-                        ini.silent.distance = settings.silent.distance[0]
+                        ini.ped.godmode_enabled = settings.ped.godmode_enabled[0]
                         save()
                     end
                 end
-            end
-            if imgui.SliderInt(fa.CIRCLE..u8' Радиус поиска цели', settings.silent.radius, 1, 100) then
-                if settings.cfg.autosave[0] then
-                    ini.silent.radius = settings.silent.radius[0]
-                    save()
-                end
-            end
-            if imgui.SliderFloat(fa.ARROWS_LEFT_RIGHT..u8' Положение FOV по X', settings.silent.offsetx, -200.0, 200.0) then
-                if settings.cfg.autosave[0] then
-                    ini.silent.offsetx = settings.silent.offsetx[0]
-                    save()
-                end
-            end
-            if imgui.SliderFloat(fa.ARROWS_UP_DOWN..u8' Положение FOV по Y', settings.silent.offsety, -200.0, 200.0) then
-                if settings.cfg.autosave[0] then
-                    ini.silent.offsety = settings.silent.offsety[0]
-                    save()
-                end
-            end
-            imgui.Separator()
-            if imgui.ToggleButton(fa.DIAGRAM_PROJECT..u8' Отображать линию к цели', settings.silent.line) then
-                if settings.cfg.autosave[0] then
-                    ini.silent.line = settings.silent.line[0]
-                    save()
-                end
-            end
-            if imgui.ToggleButton(fa.CROSSHAIRS..u8' Отображать прицел', settings.silent.circle) then
-                if settings.cfg.autosave[0] then
-                    ini.silent.circle = settings.silent.circle[0]
-                    save()
-                end
-            end
-            if settings.silent.circle[0] then
-                if imgui.ToggleButton(fa.LOCATION_CROSSHAIRS..u8' Отображать более производительный прицел (более удобный)', settings.silent.fpscircle) then
+                imgui.SameLine()
+                imgui.SetCursorPosX(370)
+                if imgui.ToggleButton(fa.GUN..u8' Убивать ботов с 1 выстрела', settings.ped.killbots1hit) then
                     if settings.cfg.autosave[0] then
-                        ini.silent.fpscircle = settings.silent.fpscircle[0]
+                        ini.ped.killbots1hit = settings.ped.killbots1hit[0]
                         save()
                     end
                 end
-            end
-            if imgui.ToggleButton(fa.COMMENT..u8' Писать снизу о нанесение урона', settings.silent.printString) then
-                if settings.cfg.autosave[0] then
-                    ini.silent.printString = settings.silent.printString[0]
-                    save()
+                if imgui.ToggleButton(fa.REPEAT..u8' No Reload', settings.ped.noreload) then
+                    if settings.cfg.autosave[0] then
+                        ini.ped.noreload = settings.ped.noreload[0]
+                        save()
+                    end
                 end
-            end
-            imgui.Separator()
-            if imgui.ToggleButton(fa.PERSON_CIRCLE_QUESTION..u8' Промахи', settings.silent.misses) then
-                if settings.cfg.autosave[0] then
-                    ini.silent.misses = settings.silent.misses[0]
-                    save()
+                imgui.SameLine()
+                imgui.SetCursorPosX(370)
+                if imgui.ToggleButton(fa.WAND_SPARKLES..u8' Фейк скиллы', settings.ped.setskills) then
+                    if settings.cfg.autosave[0] then
+                        ini.ped.setskills = settings.ped.setskills[0]
+                        save()
+                    end
                 end
-            end
-            if settings.silent.misses[0] then
+                imgui.ToggleButton(fa.PAPERCLIP..u8' Флуд взаимодействием', floodalt)
+                imgui.SameLine()
+                imgui.SetCursorPosX(370)
+                if imgui.ToggleButton(fa.GUN..u8' Авто +С', settings.ped.autoplusc) then
+                    if settings.cfg.autosave[0] then
+                        ini.ped.autoplusc = settings.ped.autoplusc[0]
+                        save()
+                    end
+                end
+                if imgui.ToggleButton(fa.HEART_PULSE..u8' Виджет сбива', settings.ped.sbiv) then
+                    if settings.cfg.autosave[0] then
+                        ini.ped.sbiv = settings.ped.sbiv[0]
+                        save()
+                    end
+                end
+                imgui.SameLine()
+                imgui.SetCursorPosX(370)
+                if imgui.ToggleButton(fa.INFINITY..u8' Бесконечный бег', settings.ped.infiniterun) then
+                    if settings.cfg.autosave[0] then
+                        ini.ped.infiniterun = settings.ped.infiniterun[0]
+                        save()
+                    end
+                end
+                if imgui.ToggleButton(fa.PERSON_RUNNING..u8' Скорость анимаций', settings.ped.animspeed) then
+                    if settings.cfg.autosave[0] then
+                        ini.ped.animspeed = settings.ped.animspeed[0]
+                        save()
+                    end
+                end
+                imgui.SameLine()
+                imgui.SetCursorPosX(370)
+                if imgui.ToggleButton(fa.GUN..u8' Рапид', settings.ped.rapidfire) then
+                    if settings.cfg.autosave[0] then
+                        ini.ped.rapidfire = settings.ped.rapidfire[0]
+                        save()
+                    end
+                end
                 imgui.PushItemWidth(200)
-                if imgui.SliderInt(fa.PERSON_CIRCLE_QUESTION..u8' Шансы на промах', settings.silent.miss_ratio, 1, 100) then
+                if imgui.SliderInt(u8'', settings.ped.speedint, 1, 10) then
                     if settings.cfg.autosave[0] then
-                        ini.silent.miss_ratio = settings.silent.miss_ratio[0]
+                        ini.ped.speedint = settings.ped.speedint[0]
                         save()
                     end
                 end
                 imgui.PopItemWidth()
+                imgui.SameLine()
+                imgui.SetCursorPosX(370)
+                imgui.PushItemWidth(200)
+                if imgui.SliderInt(u8' ', settings.ped.rapidint, 1, 10) then
+                    if settings.cfg.autosave[0] then
+                        ini.ped.rapidint = settings.ped.rapidint[0]
+                        save()
+                    end
+                end
+                imgui.PopItemWidth()
+                if imgui.Button(fa.PERSON..u8' Установить скин', imgui.ImVec2(420, 35)) then
+                    setskin_activate()
+                end
+                imgui.SameLine()
+                imgui.SetNextItemWidth(imgui.GetFontSize() * 7)
+                if imgui.InputInt(fa.ID_CARD_CLIP..u8' ID Скина', settings.ped.skinid, 1, 50) then
+                    if settings.cfg.autosave[0] then
+                        ini.ped.skinid = settings.ped.skinid[0]
+                        save()
+                    end
+                end
+                if imgui.Button(fa.PERSON_RUNNING..u8' Включить бег CJ', imgui.ImVec2(275, 35)) then
+                    setAnimGroupForChar(PLAYER_PED, "PLAYER")
+                end
+                imgui.SameLine()
+                if imgui.Button(fa.PERSON_RUNNING..u8' Выключить бег CJ', imgui.ImVec2(275, 35)) then
+                    setAnimGroupForChar(PLAYER_PED, usePlayerAnimGroup and "PLAYER" or isCharMale(PLAYER_PED) and "MAN" or "WOMAN")
+                end
+                imgui.Separator()
             end
-            imgui.ToggleButton(fa.CAMERA_ROTATE..u8' Изменение камеры', fakemode)
-            imgui.Separator()
-            imgui.CenterText(fa.GUN..u8' Оружие')
-            imgui.Separator()
-            if imgui.Button(fa.GUN..u8' Выдать ган') then
-                givePlayerGun(settings.dgun.gunsList[0], settings.dgun.ammo[0])
+            if imgui.CollapsingHeader(fa.ROBOT..u8' Боты') then
+                imgui.Separator()
+                if imgui.Button(fa.USER..u8' Бот завод') then
+                    sampProcessChatInput('/armbot '..krugibota[0])
+                end
+                imgui.PushItemWidth(250)
+                imgui.SliderInt(fa.ARROWS_SPIN..u8' Количество кругов (завод)', krugibota, 0, 50)
+                imgui.PopItemWidth()
+                if settings.menu.showinfo[0] then
+                    imgui.Text(fa.INFO..u8' | Можно использовать /armbot *кол-во кругов*')
+                    imgui.Text(fa.INFO..u8' | 0 - бесконечность кругов')
+                end
+                if imgui.Button(fa.FISH..u8' Бот рыбалка') then
+                    sampProcessChatInput('/fishbot')
+                end
+                if settings.menu.showinfo[0] then
+                    imgui.Text(fa.INFO..u8' | Можно использовать /fishbot')
+                end
+                imgui.Separator()
             end
-            imgui.PushItemWidth(350)
-            if imgui.Combo(fa.PERSON_RIFLE..u8' Ганы',settings.dgun.gunsList,ImItems, #item_list) then
-                ini.dgun.gunsList = settings.dgun.gunsList[0]
-                save()
+            if imgui.CollapsingHeader(fa.LOCATION_CROSSHAIRS..u8' Silent by Langer (v2.1.1)') then
+                imgui.Separator()
+                if imgui.ToggleButton(fa.CROSSHAIRS..u8' Silent Aim', settings.silent.salo) then
+                    if settings.cfg.autosave[0] then
+                        ini.silent.salo = settings.silent.salo[0]
+                        save()
+                    end
+                end
+                if imgui.ToggleButton(fa.CAR..u8' Игнорировать автомобили', settings.silent.ignoreCars) then
+                    if settings.cfg.autosave[0] then
+                        ini.silent.ignoreCars = settings.silent.ignoreCars[0]
+                        save()
+                    end
+                end
+                if imgui.ToggleButton(fa.OBJECT_GROUP..u8' Игнорировать объекты', settings.silent.ignoreObj) then
+                    if settings.cfg.autosave[0] then
+                        ini.silent.ignoreObj = settings.silent.ignoreObj[0]
+                        save()
+                    end
+                end
+                imgui.Separator()
+                if imgui.ToggleButton(fa.GUN..u8' Автоматически выбирать дистанцию у оружие', settings.silent.useWeaponDistance) then
+                    if settings.cfg.autosave[0] then
+                        ini.silent.useWeaponDistance = settings.silent.useWeaponDistance[0]
+                        save()
+                    end
+                end
+                if not settings.silent.useWeaponDistance[0] then
+                    if imgui.SliderInt(fa.PEOPLE_ARROWS..u8' Дистанция поиска цели', settings.silent.distance, 1, 1000) then
+                        if settings.cfg.autosave[0] then
+                            ini.silent.distance = settings.silent.distance[0]
+                            save()
+                        end
+                    end
+                end
+                if imgui.SliderInt(fa.CIRCLE..u8' Радиус поиска цели', settings.silent.radius, 1, 100) then
+                    if settings.cfg.autosave[0] then
+                        ini.silent.radius = settings.silent.radius[0]
+                        save()
+                    end
+                end
+                if imgui.SliderFloat(fa.ARROWS_LEFT_RIGHT..u8' Положение FOV по X', settings.silent.offsetx, -200.0, 200.0) then
+                    if settings.cfg.autosave[0] then
+                        ini.silent.offsetx = settings.silent.offsetx[0]
+                        save()
+                    end
+                end
+                if imgui.SliderFloat(fa.ARROWS_UP_DOWN..u8' Положение FOV по Y', settings.silent.offsety, -200.0, 200.0) then
+                    if settings.cfg.autosave[0] then
+                        ini.silent.offsety = settings.silent.offsety[0]
+                        save()
+                    end
+                end
+                imgui.Separator()
+                if imgui.ToggleButton(fa.DIAGRAM_PROJECT..u8' Отображать линию к цели', settings.silent.line) then
+                    if settings.cfg.autosave[0] then
+                        ini.silent.line = settings.silent.line[0]
+                        save()
+                    end
+                end
+                if imgui.ToggleButton(fa.CROSSHAIRS..u8' Отображать прицел', settings.silent.circle) then
+                    if settings.cfg.autosave[0] then
+                        ini.silent.circle = settings.silent.circle[0]
+                        save()
+                    end
+                end
+                if settings.silent.circle[0] then
+                    if imgui.ToggleButton(fa.LOCATION_CROSSHAIRS..u8' Отображать более производительный прицел (более удобный)', settings.silent.fpscircle) then
+                        if settings.cfg.autosave[0] then
+                            ini.silent.fpscircle = settings.silent.fpscircle[0]
+                            save()
+                        end
+                    end
+                end
+                if imgui.ToggleButton(fa.COMMENT..u8' Писать снизу о нанесение урона', settings.silent.printString) then
+                    if settings.cfg.autosave[0] then
+                        ini.silent.printString = settings.silent.printString[0]
+                        save()
+                    end
+                end
+                imgui.Separator()
+                if imgui.ToggleButton(fa.PERSON_CIRCLE_QUESTION..u8' Промахи', settings.silent.misses) then
+                    if settings.cfg.autosave[0] then
+                        ini.silent.misses = settings.silent.misses[0]
+                        save()
+                    end
+                end
+                if settings.silent.misses[0] then
+                    imgui.PushItemWidth(200)
+                    if imgui.SliderInt(fa.PERSON_CIRCLE_QUESTION..u8' Шансы на промах', settings.silent.miss_ratio, 1, 100) then
+                        if settings.cfg.autosave[0] then
+                            ini.silent.miss_ratio = settings.silent.miss_ratio[0]
+                            save()
+                        end
+                    end
+                    imgui.PopItemWidth()
+                end
+                imgui.ToggleButton(fa.CAMERA_ROTATE..u8' Изменение камеры', fakemode)
+                imgui.Separator()
             end
-            imgui.PopItemWidth()
-            imgui.PushItemWidth(350)
-            if imgui.SliderInt(fa.WAND_MAGIC_SPARKLES..u8' Патроны', settings.dgun.ammo, 1, 2000) then
-                if settings.cfg.autosave[0] then
-                    ini.dgun.ammo = settings.dgun.ammo[0]
+            if imgui.CollapsingHeader(fa.GUN..u8' Оружие') then
+                imgui.Separator()
+                if imgui.Button(fa.GUN..u8' Выдать ган') then
+                    givePlayerGun(settings.dgun.gunsList[0], settings.dgun.ammo[0])
+                end
+                imgui.PushItemWidth(350)
+                if imgui.Combo(fa.PERSON_RIFLE..u8' Ганы',settings.dgun.gunsList,ImItems, #item_list) then
+                    ini.dgun.gunsList = settings.dgun.gunsList[0]
                     save()
                 end
-            end
-            imgui.PopItemWidth()
-            if settings.menu.showinfo[0] then
-                imgui.Text(fa.INFO..u8" | Кикает без Resync'a, потому подойдет только для нуборп")
+                imgui.PopItemWidth()
+                imgui.PushItemWidth(350)
+                if imgui.SliderInt(fa.WAND_MAGIC_SPARKLES..u8' Патроны', settings.dgun.ammo, 1, 2000) then
+                    if settings.cfg.autosave[0] then
+                        ini.dgun.ammo = settings.dgun.ammo[0]
+                        save()
+                    end
+                end
+                imgui.PopItemWidth()
+                if settings.menu.showinfo[0] then
+                    imgui.Text(fa.INFO..u8" | Кикает без Resync'a, потому подойдет только для нуборп")
+                end
+                imgui.Separator()
             end
         elseif tab == 3 then
-            imgui.CenterText(fa.CAR..u8' Машина')
-            imgui.Separator()
-            if imgui.ToggleButton(fa.BOOK_BIBLE..u8' Бессмертие', settings.car.godmode2_enabled) then
-                if settings.car.godmode2_enabled[0] then
-                    gmcar_activate()
-                else
-                    gmcar_reset()
+            if imgui.CollapsingHeader(fa.CAR..u8' Машина') then
+                imgui.Separator()
+                if imgui.ToggleButton(fa.BOOK_BIBLE..u8' Бессмертие', settings.car.godmode2_enabled) then
+                    if settings.car.godmode2_enabled[0] then
+                        gmcar_activate()
+                    else
+                        gmcar_reset()
+                    end
+                    if settings.cfg.autosave[0] then
+                        ini.car.godmode2_enabled = settings.car.godmode2_enabled[0]
+                        save()
+                    end
                 end
-                if settings.cfg.autosave[0] then
-                    ini.car.godmode2_enabled = settings.car.godmode2_enabled[0]
-                    save()
+                if imgui.ToggleButton(fa.PLANE_DEPARTURE..u8' Полёт', settings.car.flycar) then
+                    if settings.cfg.autosave[0] then
+                        ini.car.flycar = settings.car.flycar[0]
+                        save()
+                    end
                 end
+                if imgui.ToggleButton(fa.MOTORCYCLE..u8' Анти-падение с Мото', settings.car.nobike) then
+                    if settings.car.nobike[0] then
+                        nobike_activate()
+                    else
+                        nobike_reset()
+                    end
+                    if settings.cfg.autosave[0] then
+                        ini.car.nobike = settings.car.nobike[0]
+                        save()
+                    end
+                end
+                if imgui.ToggleButton(fa.GAS_PUMP..u8' Бесконечное топливо', settings.car.infinitefuel) then
+                    if settings.cfg.autosave[0] then
+                        ini.car.infinitefuel = settings.car.infinitefuel[0]
+                        save()
+                    end
+                end
+                if imgui.ToggleButton(fa.DOOR_OPEN..u8' Быстрая посадка в авто', settings.car.fastenter) then
+                    if settings.cfg.autosave[0] then
+                        ini.car.fastenter = settings.car.fastenter[0]
+                        save()
+                    end
+                end
+	            if imgui.ToggleButton(fa.RIGHT_FROM_BRACKET..u8' Быстрый выход', settings.car.fastexit) then
+                    if settings.cfg.autosave[0] then
+                        ini.car.fastexit = settings.car.fastexit[0]
+                        save()
+                    end
+                end
+                if imgui.ToggleButton(fa.EYE_DROPPER..u8' Быстрый тормоз + флип', settings.car.fastbrake) then
+                    if settings.cfg.autosave[0] then
+                        ini.car.fastbrake = settings.car.fastbrake[0]
+                        save()
+                    end
+                end
+                if imgui.Button(fa.ARROW_TREND_UP..u8' Флипнуть') then
+                    if isCharInAnyCar(PLAYER_PED) then    
+                        local veh = storeCarCharIsInNoSave(PLAYER_PED)
+                        local x, y, z = getCarCoordinates(veh)
+                        setCarCoordinates(veh, x, y, z)
+                    end
+                end
+                imgui.Separator()
             end
-            if imgui.ToggleButton(fa.PLANE_DEPARTURE..u8' Полёт', settings.car.flycar) then
-                if settings.cfg.autosave[0] then
-                    ini.car.flycar = settings.car.flycar[0]
-                    save()
+            if imgui.CollapsingHeader(fa.CAR..u8' Attach Trailer') then
+                imgui.Separator()
+                if imgui.ToggleButton(fa.CAR..u8' Attach Trailer', settings.car.atractive) then
+                    if settings.cfg.autosave[0] then
+                        ini.car.atractive = settings.car.atractive[0]
+                        save()
+                    end
                 end
+                imgui.PushItemWidth(250)
+                if imgui.SliderInt(fa.EXPAND..u8' Радиус', settings.car.atrradius, 1, 500) then
+                    if settings.cfg.autosave[0] then
+                        ini.car.atrradius = settings.car.atrradius[0]
+                        save()
+                    end
+                end
+                imgui.PopItemWidth()
+                imgui.Separator()
             end
-            if imgui.ToggleButton(fa.MOTORCYCLE..u8' Анти-падение с Мото', settings.car.nobike) then
-                if settings.car.nobike[0] then
-                    nobike_activate()
-                else
-                    nobike_reset()
+            if imgui.CollapsingHeader(fa.FORWARD..u8' SpeedHack') then
+                imgui.Separator()
+                if imgui.ToggleButton(fa.FORWARD..u8' SpeedHack', settings.car.speedhack) then
+                    if settings.cfg.autosave[0] then
+                        ini.car.speedhack = settings.car.speedhack[0]
+                        save()
+                    end
                 end
-                if settings.cfg.autosave[0] then
-                    ini.car.nobike = settings.car.nobike[0]
-                    save()
+                if imgui.Button(fa.GEARS..u8' Настройки спидхака '..fa.CAR) then
+                    imgui.OpenPopup(fa.GEARS..u8' Настройки спидхака '..fa.CAR)
                 end
-            end
-            if imgui.ToggleButton(fa.GAS_PUMP..u8' Бесконечное топливо', settings.car.infinitefuel) then
-                if settings.cfg.autosave[0] then
-                    ini.car.infinitefuel = settings.car.infinitefuel[0]
-                    save()
+                if imgui.BeginPopupModal(fa.GEARS..u8' Настройки спидхака '..fa.CAR, _, imgui.WindowFlags.AlwaysAutoResize) then
+                    if imgui.SliderFloat(fa.PLUG..u8' Сила ускорения', settings.car.slider_mult, 0.001, 100.0) then
+			            if settings.cfg.autosave[0] then
+			                ini.car.mult = settings.car.slider_mult[0]
+			                save()
+			            end
+		            end
+	        	    if imgui.SliderFloat(fa.FORWARD..u8' Максимальная скорость', settings.car.slider_limit, 0.01, 1000.0) then
+			            if settings.cfg.autosave[0] then
+			                ini.car.limit = settings.car.slider_limit[0]
+			                save()
+			            end
+		            end
+		            if imgui.SliderFloat(fa.SHOE_PRINTS..u8' Шаг (мс)', settings.car.slider_timestep, 0.0, 1.0) then
+			            if settings.cfg.autosave[0] then  
+			                ini.car.timestep = settings.car.slider_timestep[0]
+			                save()
+			            end
+		            end
+		            if imgui.ToggleButton(fa.TRAIN..u8' Безопасная скорость поезда', settings.car.safe_train_speed) then
+			            if settings.cfg.autosave[0] then 
+			                ini.car.safe_train_speed = settings.car.safe_train_speed[0]
+			                save()
+			            end
+	        	    end
+                    if imgui.Button(fa.XMARK..u8' Закрыть') then
+                        imgui.CloseCurrentPopup()
+                    end
+                    imgui.EndPopup()
                 end
-            end
-            if imgui.ToggleButton(fa.DOOR_OPEN..u8' Быстрая посадка в авто', settings.car.fastenter) then
-                if settings.cfg.autosave[0] then
-                    ini.car.fastenter = settings.car.fastenter[0]
-                    save()
-                end
-            end
-	        if imgui.ToggleButton(fa.RIGHT_FROM_BRACKET..u8' Быстрый выход', settings.car.fastexit) then
-                if settings.cfg.autosave[0] then
-                    ini.car.fastexit = settings.car.fastexit[0]
-                    save()
-                end
-            end
-            if imgui.ToggleButton(fa.EYE_DROPPER..u8' Быстрый тормоз + флип', settings.car.fastbrake) then
-                if settings.cfg.autosave[0] then
-                    ini.car.fastbrake = settings.car.fastbrake[0]
-                    save()
-                end
-            end
-            if imgui.Button(fa.ARROW_TREND_UP..u8' Флипнуть') then
-                if isCharInAnyCar(PLAYER_PED) then    
-                    local veh = storeCarCharIsInNoSave(PLAYER_PED)
-                    local x, y, z = getCarCoordinates(veh)
-                    setCarCoordinates(veh, x, y, z)
-                end
-            end
-            imgui.Separator()
-            if imgui.ToggleButton(fa.CAR..u8' Attach Trailer', settings.car.atractive) then
-                if settings.cfg.autosave[0] then
-                    ini.car.atractive = settings.car.atractive[0]
-                    save()
-                end
-            end
-            imgui.PushItemWidth(250)
-            if imgui.SliderInt(fa.EXPAND..u8' Радиус', settings.car.atrradius, 1, 500) then
-                if settings.cfg.autosave[0] then
-                    ini.car.atrradius = settings.car.atrradius[0]
-                    save()
-                end
-            end
-            imgui.PopItemWidth()
-            imgui.Separator()
-            if imgui.ToggleButton(fa.FORWARD..u8' Speedhack', settings.car.speedhack) then
-                if settings.cfg.autosave[0] then
-                    ini.car.speedhack = settings.car.speedhack[0]
-                    save()
-                end
-            end
-            if imgui.Button(fa.GEARS..u8' Настройки спидхака '..fa.CAR) then
-                imgui.OpenPopup(fa.GEARS..u8' Настройки спидхака '..fa.CAR)
-            end
-            if imgui.BeginPopupModal(fa.GEARS..u8' Настройки спидхака '..fa.CAR, _, imgui.WindowFlags.AlwaysAutoResize) then
-                if imgui.SliderFloat(fa.PLUG..u8' Сила ускорения', settings.car.slider_mult, 0.001, 100.0) then
-			        if settings.cfg.autosave[0] then
-			            ini.car.mult = settings.car.slider_mult[0]
-			            save()
-			        end
-		        end
-	        	if imgui.SliderFloat(fa.FORWARD..u8' Максимальная скорость', settings.car.slider_limit, 0.01, 1000.0) then
-			        if settings.cfg.autosave[0] then
-			            ini.car.limit = settings.car.slider_limit[0]
-			            save()
-			        end
-		        end
-		        if imgui.SliderFloat(fa.SHOE_PRINTS..u8' Шаг (мс)', settings.car.slider_timestep, 0.0, 1.0) then
-			        if settings.cfg.autosave[0] then  
-			            ini.car.timestep = settings.car.slider_timestep[0]
-			            save()
-			        end
-		        end
-		        if imgui.ToggleButton(fa.TRAIN..u8' Безопасная скорость поезда', settings.car.safe_train_speed) then
-			        if settings.cfg.autosave[0] then 
-			            ini.car.safe_train_speed = settings.car.safe_train_speed[0]
-			            save()
-			        end
-	        	end
-                if imgui.Button(fa.XMARK..u8' Закрыть') then
-                    imgui.CloseCurrentPopup()
-                end
-                imgui.EndPopup()
+                imgui.Separator()
             end
         elseif tab == 4 then
-            imgui.CenterText(fa.EYE..u8' Подсветка (ESP)')
-            imgui.Separator()
-            if imgui.ToggleButton(fa.BOX..u8' Коробки', settings.ESP.enabled_boxes) then
-                if settings.cfg.autosave[0] then
-                    ini.ESP.enabled_boxes = settings.ESP.enabled_boxes[0]
-                    save()
+            if imgui.CollapsingHeader(fa.EYE..u8' ESP') then
+                imgui.Separator()
+                if imgui.ToggleButton(fa.CHECK..u8' Рисовать', settings.ESP.drawing) then
+                    if settings.cfg.autosave[0] then
+                        ini.ESP.drawing = settings.ESP.drawing[0]
+                        save()
+                    end
                 end
-            end
-            if imgui.ToggleButton(fa.SIGNATURE..u8' Ники', settings.ESP.enabled_nicks) then
-                if settings.cfg.autosave[0] then
-                    ini.ESP.enabled_nicks = settings.ESP.enabled_nicks[0]
-                    save()
+                if imgui.ToggleButton(fa.BOX..u8' Коробки', settings.ESP.enabled_boxes) then
+                    if settings.cfg.autosave[0] then
+                        ini.ESP.enabled_boxes = settings.ESP.enabled_boxes[0]
+                        save()
+                    end
                 end
-            end
-            if imgui.ToggleButton(fa.BONE..u8' Скелеты', settings.ESP.enabled_bones) then
-                if settings.cfg.autosave[0] then
-                    ini.ESP.enabled_bones = settings.ESP.enabled_bones[0]
-                    ini.car.speedhack = settings.car.speedhack[0]
+                if imgui.ToggleButton(fa.SIGNATURE..u8' Ники', settings.ESP.enabled_nicks) then
+                    if settings.cfg.autosave[0] then
+                        ini.ESP.enabled_nicks = settings.ESP.enabled_nicks[0]
+                        save()
+                    end
                 end
-            end
-            if imgui.ToggleButton(fa.LINES_LEANING..u8' Линии', settings.ESP.enabled_lines) then
-                if settings.cfg.autosave[0] then
-                    ini.ESP.enabled_lines = settings.ESP.enabled_lines[0]
-                    save()
+                if imgui.ToggleButton(fa.BONE..u8' Скелеты', settings.ESP.enabled_bones) then
+                    if settings.cfg.autosave[0] then
+                        ini.ESP.enabled_bones = settings.ESP.enabled_bones[0]
+                        ini.car.speedhack = settings.car.speedhack[0]
+                    end
                 end
-            end
-            if imgui.SliderInt(fa.PENCIL..u8' Откуда рисовать линию?', settings.ESP.lineposition, 0, 1) then
-                if settings.cfg.autosave[0] then
-                    ini.ESP.lineposition = settings.ESP.lineposition[0]
-                    save()
+                if imgui.ToggleButton(fa.LINES_LEANING..u8' Линии', settings.ESP.enabled_lines) then
+                    if settings.cfg.autosave[0] then
+                        ini.ESP.enabled_lines = settings.ESP.enabled_lines[0]
+                        save()
+                    end
                 end
+                imgui.Separator()
             end
-            if imgui.SliderInt(fa.LINES_LEANING..u8' Толщина линии', settings.ESP.linethinkness, 1, 4) then
-                if settings.cfg.autosave[0] then
-                    ini.ESP.linethinkness = settings.ESP.linethinkness[0]
-                    save()
+            if imgui.CollapsingHeader(fa.GEARS..u8' Настройки ESP') then
+                imgui.Separator()
+                if imgui.SliderInt(fa.PENCIL..u8' Откуда рисовать линию?', settings.ESP.lineposition, 0, 1) then
+                    if settings.cfg.autosave[0] then
+                        ini.ESP.lineposition = settings.ESP.lineposition[0]
+                        save()
+                    end
                 end
-            end
-            if imgui.SliderInt(fa.BONE..u8' Толщина скелетов', settings.ESP.skeletonthinkness, 1, 4) then
-                if settings.cfg.autosave[0] then
-                    ini.ESP.skeletonthinkness = settings.ESP.skeletonthinkness[0]
-                    save()
+                if imgui.SliderInt(fa.LINES_LEANING..u8' Толщина линии', settings.ESP.linethinkness, 1, 4) then
+                    if settings.cfg.autosave[0] then
+                        ini.ESP.linethinkness = settings.ESP.linethinkness[0]
+                        save()
+                    end
                 end
-            end
-            if imgui.SliderFloat(fa.BOX..u8' Толщина коробок', settings.ESP.boxthinkness, 0.001, 0.007) then
-                if settings.cfg.autosave[0] then
-                    ini.ESP.boxthinkness = settings.ESP.boxthinkness[0]
-                    save()
+                if imgui.SliderInt(fa.BONE..u8' Толщина скелетов', settings.ESP.skeletonthinkness, 1, 4) then
+                    if settings.cfg.autosave[0] then
+                        ini.ESP.skeletonthinkness = settings.ESP.skeletonthinkness[0]
+                        save()
+                    end
                 end
-            end
-            if imgui.SliderFloat(fa.SIGNATURE..u8' Размер никнеймов', settings.ESP.nicknamesize, 0.01, 0.03) then
-                if settings.cfg.autosave[0] then
-                    ini.ESP.nicknamesize = settings.ESP.nicknamesize[0]
-                    save()
+                if imgui.SliderFloat(fa.BOX..u8' Толщина коробок', settings.ESP.boxthinkness, 0.001, 0.007) then
+                    if settings.cfg.autosave[0] then
+                        ini.ESP.boxthinkness = settings.ESP.boxthinkness[0]
+                        save()
+                    end
                 end
-            end
-            if settings.menu.showinfo[0] then
-                imgui.Text(fa.INFO..u8' | Для применения размера ников, нужно сохранить конфиг')
-                imgui.Text(fa.INFO..u8' | и перезагрузить скрипт')
+                if imgui.SliderFloat(fa.SIGNATURE..u8' Размер никнеймов', settings.ESP.nicknamesize, 0.01, 0.03) then
+                    if settings.cfg.autosave[0] then
+                        ini.ESP.nicknamesize = settings.ESP.nicknamesize[0]
+                        save()
+                    end
+                end
+                if settings.menu.showinfo[0] then
+                    imgui.Text(fa.INFO..u8' | Для применения размера ников, нужно сохранить конфиг')
+                    imgui.Text(fa.INFO..u8' | и перезагрузить скрипт')
+                end
+                imgui.Separator()
             end
         elseif tab == 5 then
-            imgui.CenterText(fa.XMARKS_LINES..u8' ТСР Хелпер')
-            imgui.Separator()
-            imgui.Text(fa.OBJECT_GROUP..u8' Объекты')
-            imgui.Separator()
-            if imgui.Button(fa.TRASH..u8' Удалить клетки') then
-                for _, obj in pairs(getAllObjects()) do
-                    local modeid = getObjectModel(obj)
-                    if modeid == 19303 then
-                        deleteObject(obj)
+            if imgui.CollapsingHeader(fa.OBJECT_GROUP..u8' Объекты') then
+                imgui.Separator()
+                if imgui.Button(fa.TRASH..u8' Удалить клетки') then
+                    for _, obj in pairs(getAllObjects()) do
+                        local modeid = getObjectModel(obj)
+                        if modeid == 19303 then
+                            deleteObject(obj)
+                        end
                     end
                 end
-            end
-            imgui.SameLine()
-            imgui.SetCursorPosX(175)
-            if imgui.Button(fa.TRASH..u8' Удалить дверь') then
-                for _, obj in pairs(getAllObjects()) do
-                    local modeid = getObjectModel(obj)
-                    if modeid == 19857 then
-                        deleteObject(obj)
+                imgui.SameLine()
+                imgui.SetCursorPosX(175)
+                if imgui.Button(fa.TRASH..u8' Удалить дверь') then
+                    for _, obj in pairs(getAllObjects()) do
+                        local modeid = getObjectModel(obj)
+                        if modeid == 19857 then
+                            deleteObject(obj)
+                        end
                     end
                 end
-            end
-            imgui.SameLine()
-            imgui.SetCursorPosX(326)
-            if imgui.Button(fa.TRASH..u8' Удалить заборы') then
-                for _, obj in pairs(getAllObjects()) do
-                    local modeid = getObjectModel(obj)
-                    if modeid == 19912 then
-                        deleteObject(obj)
+                imgui.SameLine()
+                imgui.SetCursorPosX(326)
+                if imgui.Button(fa.TRASH..u8' Удалить заборы') then
+                    for _, obj in pairs(getAllObjects()) do
+                        local modeid = getObjectModel(obj)
+                        if modeid == 19912 then
+                            deleteObject(obj)
+                        end
+                        if modeid == 19913 then
+                            deleteObject(obj)
+                        end
                     end
-                    if modeid == 19913 then
-                        deleteObject(obj)
+                end
+                if imgui.ToggleButton(fa.TRASH..u8' Aвтoматич.', settings.tsr.autormcell) then
+                    if settings.cfg.autosave[0] then
+                        ini.tsr.autormcell = settings.tsr.autormcell[0]
+                        save()
                     end
                 end
-            end
-            if imgui.ToggleButton(fa.TRASH..u8' Aвтoматич.', settings.tsr.autormcell) then
-                if settings.cfg.autosave[0] then
-                    ini.tsr.autormcell = settings.tsr.autormcell[0]
-                    save()
+                imgui.SameLine()
+                imgui.SetCursorPosX(175)
+                if imgui.ToggleButton(fa.TRASH..u8' Aвтоматич.', settings.tsr.autormdoors) then
+                    if settings.cfg.autosave[0] then
+                        ini.tsr.autormdoors = settings.tsr.autormdoors[0]
+                        save()
+                    end
                 end
-            end
-            imgui.SameLine()
-            imgui.SetCursorPosX(175)
-            if imgui.ToggleButton(fa.TRASH..u8' Aвтоматич.', settings.tsr.autormdoors) then
-                if settings.cfg.autosave[0] then
-                    ini.tsr.autormdoors = settings.tsr.autormdoors[0]
-                    save()
+                imgui.SameLine()
+                imgui.SetCursorPosX(326)
+                if imgui.ToggleButton(fa.TRASH..u8' Автoматич.', settings.tsr.autormfence) then
+                    if settings.cfg.autosave[0] then
+                        ini.tsr.autormfence = settings.tsr.autormfence[0]
+                        save()
+                    end
                 end
+                imgui.Separator()
             end
-            imgui.SameLine()
-            imgui.SetCursorPosX(326)
-            if imgui.ToggleButton(fa.TRASH..u8' Автoматич.', settings.tsr.autormfence) then
-                if settings.cfg.autosave[0] then
-                    ini.tsr.autormfence = settings.tsr.autormfence[0]
-                    save()
+            if imgui.CollapsingHeader(fa.PLANE..u8' ТП к стиралкам (Цифра - номер стиралки)') then
+                imgui.Separator()
+                if imgui.Button(u8' 1 ') then
+                    setCharCoordinates(PLAYER_PED, 1393.4752,1353.7609,10)
                 end
-            end
-            imgui.Separator()
-            imgui.Text(fa.PLANE..u8' ТП к стиралкам (Цифра - номер стиралки)')
-            imgui.Separator()
-            if imgui.Button(u8' 1 ') then
-                setCharCoordinates(PLAYER_PED, 1393.4752,1353.7609,10)
-            end
-            imgui.SameLine()
-            if imgui.Button(u8' 2 ') then
-                setCharCoordinates(PLAYER_PED, 1393.4773,1355.6962,10)
-            end
-            imgui.SameLine()
-            if imgui.Button(u8' 3 ') then
-                setCharCoordinates(PLAYER_PED, 1393.4667,1357.8531,10)
-            end
-            imgui.SameLine()
-            imgui.Text(u8'|')
-            imgui.SameLine()
-            if imgui.Button(u8' 4 ') then
-                setCharCoordinates(PLAYER_PED, 1400.3271, 1353.6957, 10)
-            end
-            imgui.SameLine()
-            if imgui.Button(u8' 5 ') then
-                setCharCoordinates(PLAYER_PED, 1400.3285, 1355.6793, 10)
-            end
-            imgui.SameLine()
-            if imgui.Button(u8' 6 ') then
-                setCharCoordinates(PLAYER_PED, 1400.3372, 1357.8384, 10)
-            end
-            if imgui.Button(fa.VEST..u8' Грязная одежда') then
-                setCharCoordinates(PLAYER_PED, 1396.1380, 1354.9414, 10)
-            end
-            imgui.SameLine()
-            if imgui.Button(fa.SHIRT..u8' Чистая одежда') then
-                setCharCoordinates(PLAYER_PED, 1397.8023, 1357.9216, 10.9390)
-            end
-            imgui.Separator()
-            imgui.Text(fa.RECYCLE..u8' Мусор')
-            imgui.Separator()
-            if imgui.ToggleButton(fa.DUMPSTER..u8' Вх на мусор', settings.render.musortsr) then
-                if settings.cfg.autosave[0] then
-                    ini.render.musortsr = settings.render.musortsr[0]
-                    save()
+                imgui.SameLine()
+                if imgui.Button(u8' 2 ') then
+                    setCharCoordinates(PLAYER_PED, 1393.4773,1355.6962,10)
                 end
-            end
-            imgui.Separator()
-            imgui.Text(fa.ROBOT..u8' Боты')
-            if imgui.ToggleButton(fa.BOX..u8' Коробки RAGE', tsrragebot) then
-                botstep = 0
-                ragetsrbot()
-            end
-            if imgui.SliderInt(fa.HOURGLASS_HALF..u8' Задержка', settings.tsr.tsrbotwait, 100, 5000) then
-                if settings.cfg.autosave[0] then
-                    ini.tsr.tsrbotwait = settings.tsr.tsrbotwait[0]
-                    save()
+                imgui.SameLine()
+                if imgui.Button(u8' 3 ') then
+                    setCharCoordinates(PLAYER_PED, 1393.4667,1357.8531,10)
                 end
+                imgui.SameLine()
+                imgui.Text(u8'|')
+                imgui.SameLine()
+                if imgui.Button(u8' 4 ') then
+                    setCharCoordinates(PLAYER_PED, 1400.3271, 1353.6957, 10)
+                end
+                imgui.SameLine()
+                if imgui.Button(u8' 5 ') then
+                    setCharCoordinates(PLAYER_PED, 1400.3285, 1355.6793, 10)
+                end
+                imgui.SameLine()
+                if imgui.Button(u8' 6 ') then
+                    setCharCoordinates(PLAYER_PED, 1400.3372, 1357.8384, 10)
+                end
+                if imgui.Button(fa.VEST..u8' Грязная одежда') then
+                    setCharCoordinates(PLAYER_PED, 1396.1380, 1354.9414, 10)
+                end
+                imgui.SameLine()
+                if imgui.Button(fa.SHIRT..u8' Чистая одежда') then
+                    setCharCoordinates(PLAYER_PED, 1397.8023, 1357.9216, 10.9390)
+                end
+                imgui.Separator()
             end
-            imgui.Separator()
-            imgui.Text(fa.BOX..u8' Грузчик')
-            imgui.Separator()
-            if imgui.Button(fa.PLANE..u8' ТП к началу') then
-                setCharCoordinates(PLAYER_PED, 257.86, 2012.86, 16.64)
+            if imgui.CollapsingHeader(fa.RECYCLE..u8' Мусор') then
+                imgui.Separator()
+                if imgui.ToggleButton(fa.DUMPSTER..u8' Вх на мусор', settings.render.musortsr) then
+                    if settings.cfg.autosave[0] then
+                        ini.render.musortsr = settings.render.musortsr[0]
+                        save()
+                    end
+                end
+                imgui.Separator()
             end
-            imgui.SameLine()
-            if imgui.Button(fa.PLANE..u8' ТП в центр') then
-                setCharCoordinates(PLAYER_PED, 244.37739562988, 2015.8483886719, 17.667018890381)
+            if imgui.CollapsingHeader(fa.ROBOT..u8' Боты') then
+                imgui.Separator()
+                if imgui.ToggleButton(fa.BOX..u8' Коробки RAGE', tsrragebot) then
+                    botstep = 0
+                    ragetsrbot()
+                end
+                if imgui.SliderInt(fa.HOURGLASS_HALF..u8' Задержка', settings.tsr.tsrbotwait, 100, 5000) then
+                    if settings.cfg.autosave[0] then
+                        ini.tsr.tsrbotwait = settings.tsr.tsrbotwait[0]
+                        save()
+                    end
+                end
+                imgui.Separator()
             end
-            imgui.SameLine()
-            if imgui.Button(fa.PLANE..u8' ТП в конец') then
-                setCharCoordinates(PLAYER_PED, 239.16299438477, 2026.7818603516, 16.687019348145)
+            if imgui.CollapsingHeader(fa.BOX..u8' Грузчик') then
+                imgui.Separator()
+                if imgui.Button(fa.PLANE..u8' ТП к началу') then
+                    setCharCoordinates(PLAYER_PED, 257.86, 2012.86, 16.64)
+                end
+                imgui.SameLine()
+                if imgui.Button(fa.PLANE..u8' ТП в центр') then
+                    setCharCoordinates(PLAYER_PED, 244.37739562988, 2015.8483886719, 17.667018890381)
+                end
+                imgui.SameLine()
+                if imgui.Button(fa.PLANE..u8' ТП в конец') then
+                    setCharCoordinates(PLAYER_PED, 239.16299438477, 2026.7818603516, 16.687019348145)
+                end
+                imgui.Separator()
             end
         elseif tab == 6 then
             imgui.CenterText(fa.SQUARE_CHECK..u8' Кнопочки')
@@ -1863,6 +1899,11 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     sampSetSpecialAction(0)
                 end)
             end
+            imgui.SameLine()
+            if imgui.Button(fa.PLANE..u8' ТП метка', imgui.ImVec2(150, 80)) then
+                result, x, y, z = getTargetBlipCoordinatesFixed()
+                if result then setCharCoordinates(PLAYER_PED, x, y, z) end
+            end
             if imgui.Button(fa.ARROW_UP..u8' Slap up', imgui.ImVec2(150, 40)) then
                 local x, y, z = getCharCoordinates(PLAYER_PED)
                 setCharCoordinates(PLAYER_PED, x, y, z+5)
@@ -1872,103 +1913,110 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 setCharCoordinates(PLAYER_PED, x, y, z-5)
             end
         elseif tab == 7 then
-            imgui.CenterText(fa.GEARS..u8' Настройки')
-		    imgui.Separator()
-            if imgui.Combo(u8'Темы', selected_theme, items, #theme_a) then
-                themeta = theme_t[selected_theme[0]+1]
-                ini.theme.themeta = themeta
-                ini.theme.selected = selected_theme[0]
-                save()
-            end
-            if ini.theme.themeta == 'moonmonet' then
-                if imgui.ColorEdit3('## COLOR', mmcolor, imgui.ColorEditFlags.NoInputs) then
-                    r,g,b = mmcolor[0] * 255, mmcolor[1] * 255, mmcolor[2] * 255
-	                argb = join_argb(0, r, g, b)
-                    ini.theme.moonmonet = argb
+            if imgui.CollapsingHeader(fa.GEARS..u8' Тема') then
+		        imgui.Separator()
+                if imgui.Combo(u8'Темы', selected_theme, items, #theme_a) then
+                    themeta = theme_t[selected_theme[0]+1]
+                    ini.theme.themeta = themeta
+                    ini.theme.selected = selected_theme[0]
                     save()
-			        apply_n_t()
+                end
+                if ini.theme.themeta == 'moonmonet' then
+                    if imgui.ColorEdit3('## COLOR', mmcolor, imgui.ColorEditFlags.NoInputs) then
+                        r,g,b = mmcolor[0] * 255, mmcolor[1] * 255, mmcolor[2] * 255
+	                    argb = join_argb(0, r, g, b)
+                        ini.theme.moonmonet = argb
+                        save()
+			            apply_n_t()
+                    end
+                    imgui.SameLine()
+                    imgui.Text(fa.NOTE_STICKY..u8' Цвет MoonMonet')
+                end
+                imgui.Separator()
+            end
+		    if imgui.CollapsingHeader(fa.SQUARE..u8' Открытие меню') then
+                imgui.Separator()
+		        if imgui.ToggleButton(fa.CHECK..u8' Полоска снизу экрана', settings.menu.openbutton) then
+                    if settings.cfg.autosave[0] then
+                        ini.menu.openbutton = settings.menu.openbutton[0]
+                        save()
+                    end
                 end
                 imgui.SameLine()
-                imgui.Text(fa.NOTE_STICKY..u8' Цвет MoonMonet')
-            end
-            imgui.Separator()
-		    imgui.Text(fa.SQUARE..u8' Открытие меню')
-		    if imgui.ToggleButton(fa.CHECK..u8' Полоска снизу экрана', settings.menu.openbutton) then
-                if settings.cfg.autosave[0] then
-                    ini.menu.openbutton = settings.menu.openbutton[0]
-                    save()
+                imgui.Text(u8'(')
+                imgui.SameLine()
+                if imgui.ToggleButton(fa.NOTE_STICKY..u8' Синхронизация цвета с MoonMonet', settings.menu.syncwithmoonmonet) then
+                    if settings.cfg.autosave[0] then
+                        ini.menu.syncwithmoonmonet = settings.menu.syncwithmoonmonet[0]
+                        save()
+                    end
                 end
-            end
-            imgui.SameLine()
-            imgui.Text(u8'(')
-            imgui.SameLine()
-            if imgui.ToggleButton(fa.NOTE_STICKY..u8' Синхронизация цвета с MoonMonet', settings.menu.syncwithmoonmonet) then
-                if settings.cfg.autosave[0] then
-                    ini.menu.syncwithmoonmonet = settings.menu.syncwithmoonmonet[0]
-                    save()
+                imgui.SameLine()
+                imgui.Text(u8')')
+                if imgui.ToggleButton(fa.CHECK..u8' Кнопка "Menu"', settings.menu.openbutton2) then
+                    if settings.cfg.autosave[0] then
+                        ini.menu.openbutton2 = settings.menu.openbutton2[0]
+                        save()
+                    end
                 end
-            end
-            imgui.SameLine()
-            imgui.Text(u8')')
-            if imgui.ToggleButton(fa.CHECK..u8' Кнопка "Menu"', settings.menu.openbutton2) then
-                if settings.cfg.autosave[0] then
-                    ini.menu.openbutton2 = settings.menu.openbutton2[0]
-                    save()
+		        if imgui.SliderInt(fa.TEXT_WIDTH..u8' Ширина кнопки меню', settings.menu.slideropenbuttonwidth, 30, 150) then
+                    if settings.cfg.autosave[0] then
+                        ini.menu.slideropenbuttonwidth = settings.menu.slideropenbuttonwidth[0]
+                        save()
+                    end
                 end
-            end
-		    if imgui.SliderInt(fa.TEXT_WIDTH..u8' Ширина кнопки меню', settings.menu.slideropenbuttonwidth, 30, 150) then
-                if settings.cfg.autosave[0] then
-                    ini.menu.slideropenbuttonwidth = settings.menu.slideropenbuttonwidth[0]
-                    save()
+		        if imgui.SliderInt(fa.TEXT_HEIGHT..u8' Высота кнопки меню', settings.menu.slideropenbuttonheight, 30, 150) then
+                    if settings.cfg.autosave[0] then
+                        ini.menu.slideropenbuttonheight = settings.menu.slideropenbuttonheight[0]
+                        save()
+                    end
                 end
+		        imgui.Separator()
             end
-		    if imgui.SliderInt(fa.TEXT_HEIGHT..u8' Высота кнопки меню', settings.menu.slideropenbuttonheight, 30, 150) then
-                if settings.cfg.autosave[0] then
-                    ini.menu.slideropenbuttonheight = settings.menu.slideropenbuttonheight[0]
-                    save()
-                end
+		    if imgui.CollapsingHeader(fa.GEARS..u8' Меню') then
+                imgui.Separator()
+		        if imgui.Button(fa.GEARS..u8' Настройки меню') then
+		            menusettings[0] = not menusettings[0]
+		        end
+		        imgui.Separator()
             end
-		    imgui.Separator()
-		    imgui.Text(fa.GEARS..u8' Меню')
-		    if imgui.Button(fa.GEARS..u8' Настройки меню') then
-		        menusettings[0] = not menusettings[0]
-		    end
-		    imgui.Separator()
-		    imgui.Text(fa.PERSON_CIRCLE_QUESTION..u8' Помощь')
-		    if imgui.ToggleButton(fa.INFO..u8' | Отображать подсказки', settings.menu.showinfo) then
-                if settings.cfg.autosave[0] then
-                    ini.menu.showinfo = settings.menu.showinfo[0]
-                    save()
+            if imgui.CollapsingHeader(fa.PERSON_CIRCLE_QUESTION..u8' Помощь') then
+		        if imgui.ToggleButton(fa.INFO..u8' | Отображать подсказки', settings.menu.showinfo) then
+                    if settings.cfg.autosave[0] then
+                        ini.menu.showinfo = settings.menu.showinfo[0]
+                        save()
+                    end
                 end
+		        if imgui.Button(fa.HANDSHAKE_ANGLE..u8' Показать кнопку взаимодействия') then
+		            settings.menu.sendalt[0] = not settings.menu.sendalt[0]
+                    if settings.cfg.autosave[0] then
+                        ini.menu.sendalt = settings.menu.sendalt[0]
+                        save()
+                    end
+		        end
+		        imgui.SameLine()
+		        if imgui.Button(fa.INFO..u8' Команды скрипта') then
+		            imgui.OpenPopup(fa.STAR_OF_LIFE..u8' Команды скрипта '..fa.STAR_OF_LIFE)
+		        end
+                if imgui.BeginPopupModal(fa.STAR_OF_LIFE..u8' Команды скрипта '..fa.STAR_OF_LIFE, _, imgui.WindowFlags.AlwaysAutoResize) then
+                    imgui.Text(u8'/miku - основное меню скрипта')
+                    imgui.Text(u8'/armbot - бот на завод')
+                    imgui.Text(u8'/tpc - телепорт метка (для нубо рп, моментальный)')
+                    imgui.Text(u8'/jump - включить прыжок (баг, когда упал и перс не встает)')
+                    imgui.Text(u8'/rc - реконнект')
+                    if imgui.Button(fa.XMARK..u8' Закрыть') then
+                        imgui.CloseCurrentPopup()
+                    end
+                    imgui.EndPopup()
+                end
+		        imgui.Separator()
             end
-		    if imgui.Button(fa.HANDSHAKE_ANGLE..u8' Показать кнопку взаимодействия') then
-		        settings.menu.sendalt[0] = not settings.menu.sendalt[0]
-                if settings.cfg.autosave[0] then
-                    ini.menu.sendalt = settings.menu.sendalt[0]
-                    save()
-                end
-		    end
-		    imgui.SameLine()
-		    if imgui.Button(fa.INFO..u8' Команды скрипта') then
-		        imgui.OpenPopup(fa.STAR_OF_LIFE..u8' Команды скрипта '..fa.STAR_OF_LIFE)
-		    end
-            if imgui.BeginPopupModal(fa.STAR_OF_LIFE..u8' Команды скрипта '..fa.STAR_OF_LIFE, _, imgui.WindowFlags.AlwaysAutoResize) then
-                imgui.Text(u8'/miku - основное меню скрипта')
-                imgui.Text(u8'/armbot - бот на завод')
-                imgui.Text(u8'/tpc - телепорт метка (для нубо рп, моментальный)')
-                imgui.Text(u8'/jump - включить прыжок (баг, когда упал и перс не встает)')
-                imgui.Text(u8'/rc - реконнект')
-                if imgui.Button(fa.XMARK..u8' Закрыть') then
-                    imgui.CloseCurrentPopup()
-                end
-                imgui.EndPopup()
+		    if imgui.CollapsingHeader(fa.SCREWDRIVER_WRENCH..u8' Отладка') then
+		        if imgui.Button(fa.WINDOW_RESTORE..u8' Показать mimgui demo') then
+		            custommimguiStyle[0] = not custommimguiStyle[0]
+		        end
+		        imgui.Separator()
             end
-		    imgui.Separator()
-		    imgui.Text(fa.SCREWDRIVER_WRENCH..u8' Отладка')
-		    if imgui.Button(fa.WINDOW_RESTORE..u8' Показать mimgui demo') then
-		        custommimguiStyle[0] = not custommimguiStyle[0]
-		    end
-		    imgui.Separator()
             if imgui.Button(fa.POWER_OFF, imgui.ImVec2(40 * MONET_DPI_SCALE, 40 * MONET_DPI_SCALE)) then
                 thisScript():unload()
             end
@@ -2016,6 +2064,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.silent.removeAmmo = settings.silent.removeAmmo[0]
                     ini.silent.offsetx = settings.silent.offsetx[0]
                     ini.silent.offsety = settings.silent.offsety[0]
+                    ini.ESP.drawing = settings.ESP.drawing[0]
                     ini.ESP.enabled_boxes = settings.ESP.enabled_boxes[0]
                     ini.ESP.enabled_bones = settings.ESP.enabled_bones[0]
                     ini.ESP.enabled_nicks = settings.ESP.enabled_nicks[0]
@@ -4660,4 +4709,3 @@ imgui.OnFrame(function() return settings.menu.openbutton[0] end, function(self)
     imgui.PopStyleColor()
     imgui.End()
 end)
-    
