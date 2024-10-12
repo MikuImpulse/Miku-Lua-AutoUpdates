@@ -1,5 +1,5 @@
 -------Версия скрипта--------
-local script_ver = '1.0.1'
+local script_ver = '1.0.2'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
@@ -155,7 +155,8 @@ local ini = inicfg.load({
     objects = {
         autormlsa = (false),
         autormsfa = (false),
-        autormblockpost = (false)
+        autormblockpost = (false),
+        autormlampposts = (false)
     },
     tsr = {
         tsrbotwait = (1200),
@@ -285,7 +286,8 @@ local settings = {
     objects = {
         autormlsa = imgui.new.bool(ini.objects.autormlsa),
         autormsfa = imgui.new.bool(ini.objects.autormsfa),
-        autormblockpost = imgui.new.bool(ini.objects.autormblockpost)
+        autormblockpost = imgui.new.bool(ini.objects.autormblockpost),
+        autormlampposts = imgui.new.bool(ini.objects.autormlampposts)
     },
     tsr = {
         tsrbotwait = imgui.new.int(ini.tsr.tsrbotwait),
@@ -1283,6 +1285,30 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         save()
                     end
                 end
+                if imgui.Button(fa.BOLT..u8' Фонарные столбы') then
+                    for _, obj in pairs(getAllObjects()) do
+                        local modeid = getObjectModel(obj)
+                        if modeid == 1297 then
+                            deleteObject(obj)
+                        end
+                        if modeid == 1283 then
+                            deleteObject(obj)
+                        end
+                        if modeid == 1226 then
+                            deleteObject(obj)
+                        end
+                        if modeid == 1294 then
+                            deleteObject(obj)
+                        end
+                    end
+                end
+                imgui.SameLine()
+                if imgui.ToggleButton(fa.TRASH..u8' Автoудаление', settings.objects.autormlampposts) then
+                    if settings.cfg.autosave[0] then
+                        ini.objects.autormlampposts = settings.objects.autormlampposts[0]
+                        save()
+                    end
+                end
                 if settings.menu.showinfo[0] then
                     imgui.Text(fa.INFO..u8' | (Будет пополняться в зависимости)')
                     imgui.Text(fa.INFO..u8' | (от ваших пожеланий в чате Miku Project)')
@@ -1608,7 +1634,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 end
                 imgui.Separator()
             end
-            if imgui.CollapsingHeader(fa.CAR..u8' Attach Trailer') then
+            if imgui.CollapsingHeader(fa.CAR..u8' Attаch Trailer') then
                 imgui.Separator()
                 if imgui.ToggleButton(fa.CAR..u8' Attach Trailer', settings.car.atractive) then
                     if settings.cfg.autosave[0] then
@@ -1628,7 +1654,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
             end
             if imgui.CollapsingHeader(fa.FORWARD..u8' SpeedHack') then
                 imgui.Separator()
-                if imgui.ToggleButton(fa.FORWARD..u8' SpeedHack', settings.car.speedhack) then
+                if imgui.ToggleButton(fa.FORWARD..u8' SpeedHаck', settings.car.speedhack) then
                     if settings.cfg.autosave[0] then
                         ini.car.speedhack = settings.car.speedhack[0]
                         save()
@@ -2145,6 +2171,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.objects.autormlsa = settings.objects.autormlsa[0]
                     ini.objects.autormsfa = settings.objects.autormsfa[0]
                     ini.objects.autormblockpost = settings.objects.autormblockpost[0]
+                    ini.objects.autormlampposts = settings.objects.autormlampposts[0]
                     ini.tsr.tsrbotwait = settings.tsr.tsrbotwait[0]
                     ini.tsr.autormcell = settings.tsr.autormcell[0]
                     ini.tsr.autormdoors = settings.tsr.autormdoors[0]
@@ -2557,6 +2584,26 @@ function main()
                 for _, obj in pairs(getAllObjects()) do
                     local modeid = getObjectModel(obj)
                     if modeid == 968 then
+                        deleteObject(obj)
+                    end
+                end
+                return
+            end)
+        end
+        if settings.objects.autormlampposts[0] then
+            lua_thread.create(function() 
+                for _, obj in pairs(getAllObjects()) do
+                    local modeid = getObjectModel(obj)
+                    if modeid == 1297 then
+                        deleteObject(obj)
+                    end
+                    if modeid == 1283 then
+                        deleteObject(obj)
+                    end
+                    if modeid == 1226 then
+                        deleteObject(obj)
+                    end
+                    if modeid == 1294 then
                         deleteObject(obj)
                     end
                 end
