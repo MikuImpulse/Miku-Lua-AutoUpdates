@@ -1,5 +1,5 @@
 -------Версия скрипта--------
-local script_ver = '1.0.2'
+local script_ver = '1.0.3'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
@@ -4755,4 +4755,50 @@ imgui.OnFrame(function() return settings.menu.openbutton[0] end, function(self)
     imgui.PopStyleColor()
     imgui.PopStyleColor()
     imgui.End()
+end)
+
+local figure = {
+    x = 0,
+    y = 0,
+    vx = 0,
+    vy = 0,
+    color = {1, 0, 0, 1},
+    shape = "circle"
+}
+
+local function create_figure()
+  local new_figure = {
+    x = math.random(0, getScreenResolution()),
+    y = math.random(0, getScreenResolution()),
+    vx = math.random(-5, 5),
+    vy = math.random(-5, 5),
+    color = {
+      math.random(),
+      math.random(),
+      math.random(),
+      1,
+    },
+  }
+  return new_figure
+end
+
+local figures = {}
+for i = 1, 100 do
+    table.insert(figures, create_figure())
+end
+
+imgui.OnFrame(function() return window_state[0] end, function()
+    local bgdl = imgui.GetBackgroundDrawList()
+    bgdl:AddRectFilled(imgui.ImVec2(0, 0), imgui.ImVec2(3000, 3000), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.00, 0.00, 0.00, 0.60)), 20, 1 + 8)
+    for _, fig in ipairs(figures) do
+        fig.x = fig.x + fig.vx
+        fig.y = fig.y + fig.vy
+        if fig.x < 0 or fig.x > getScreenResolution() then
+            fig.vx = -fig.vx
+        end
+        if fig.y < 0 or fig.y > getScreenResolution() then
+            fig.vy = -fig.vy
+        end
+        bgdl:AddCircleFilled(imgui.ImVec2(fig.x, fig.y), 10, imgui.ColorConvertFloat4ToU32(fig.color))
+    end
 end)
