@@ -4790,6 +4790,14 @@ end
 imgui.OnFrame(function() return window_state[0] end, function()
     local bgdl = imgui.GetBackgroundDrawList()
     bgdl:AddRectFilled(imgui.ImVec2(0, 0), imgui.ImVec2(3000, 3000), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.00, 0.00, 0.00, 0.60)), 20, 1 + 8)
+    for i = 1, #figures do
+        for j = i + 1, #figures do
+            local distance = math.sqrt((figures[i].x - figures[j].x)^2 + (figures[i].y - figures[j].y)^2)
+            if distance < 100 then
+                bgdl:AddLine(imgui.ImVec2(figures[i].x, figures[i].y), imgui.ImVec2(figures[j].x, figures[j].y), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(figures[j].color)), 1.0)
+            end
+        end
+    end
     for _, fig in ipairs(figures) do
         fig.x = fig.x + fig.vx
         fig.y = fig.y + fig.vy
