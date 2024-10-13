@@ -1,5 +1,5 @@
 -------Версия скрипта--------
-local script_ver = '1.0.3'
+local script_ver = '1.0.4'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
@@ -146,7 +146,8 @@ local ini = inicfg.load({
         syncwithmoonmonet = (false),
         waterposx = (0),
         waterposy = (0),
-        notitlebar = (true)
+        notitlebar = (true),
+        draweffects = (true)
     },
     dgun = {
         gunsList = (0),
@@ -277,7 +278,8 @@ local settings = {
         syncwithmoonmonet = imgui.new.bool(ini.menu.syncwithmoonmonet),
         waterposx = imgui.new.int(ini.menu.waterposx),
         waterposy = imgui.new.int(ini.menu.waterposy),
-        notitlebar = imgui.new.bool(ini.menu.notitlebar)
+        notitlebar = imgui.new.bool(ini.menu.notitlebar),
+        draweffects = imgui.new.bool(ini.menu.draweffects)
     },
     dgun = {
         gunsList = imgui.new.int(ini.dgun.gunsList),
@@ -543,30 +545,6 @@ imgui.OnInitialize(function()
     updfont[40] = imgui.GetIO().Fonts:AddFontFromFileTTF(path, 40.0, nil, glyph_ranges)
     updfont[30] = imgui.GetIO().Fonts:AddFontFromFileTTF(path, 30.0, nil, glyph_ranges)
 end)
-  
--- GodMode Car
-gmcar_activate = function()
-    lua_thread.create(function()
-        while true do wait(0)
-            if not settings.car.godmode2_enabled[0] then
-                gmcar_reset()
-            end
-            if isCharInAnyCar(PLAYER_PED) then
-                setCarProofs(storeCarCharIsInNoSave(PLAYER_PED), true, true, true, true, true)
-            end
-        end
-    end)
-end
-  
-gmcar_reset = function()
-    lua_thread.create(function()
-        while true do wait(0)
-            if isCharInAnyCar(PLAYER_PED) then
-                setCarProofs(storeCarCharIsInNoSave(PLAYER_PED), false, false, false, false, false)
-            end
-        end
-    end)
-end
 
 -- Reconnect
 Reconnect.activate = function()
@@ -627,28 +605,6 @@ FlyCar.processFlyCar = function()
     end
     setCarForwardSpeed(car, FlyCar.cars)
 end
-
--- NoBike
-nobike_activate = function()
-    lua_thread.create(function()
-        while true do wait(0)
-            if isCharInAnyCar(PLAYER_PED) and settings.car.nobike[0] then
-                setCharCanBeKnockedOffBike(PLAYER_PED, true)
-                if isCharInAnyCar(PLAYER_PED) then
-                    if isCarInWater(storeCarCharIsInNoSave(PLAYER_PED)) then
-                        setCharCanBeKnockedOffBike(PLAYER_PED, false)
-                    else
-                        setCharCanBeKnockedOffBike(PLAYER_PED, true)
-                    end
-                end
-            end
-        end
-    end)
-end
-  
-nobike_reset = function()
-    setCharCanBeKnockedOffBike(PLAYER_PED, false)
-end
   
 -- SetSkin by forget
 setskin_activate = function()
@@ -657,129 +613,6 @@ setskin_activate = function()
     raknetBitStreamWriteInt32(bs, settings.ped.skinid[0])
     raknetEmulRpcReceiveBitStream(153, bs)
     raknetDeleteBitStream(bs)
-end
-  
--- ESP
-settings.ESP.processESP = function()
-    while not isSampAvailable() do wait(0) end
-    while true do
-        wait(0)
-        if settings.ESP.drawing[0] then
-            for _, char in ipairs(getAllChars()) do
-                local result, id = sampGetPlayerIdByCharHandle(char)
-                if result and isCharOnScreen(char) and char ~= PLAYER_PED then
-                    local opaque_color = bit.bor(bit.band(sampGetPlayerColor(id), 0xFFFFFF), 0xFF000000)
-                    if settings.ESP.enabled_bones[0] then
-                        for _, bone in ipairs(ESP2.BONES) do
-                            local x1, y1, z1 = getBonePosition(char, bone)
-                            local x2, y2, z2 = getBonePosition(char, bone + 1)
-                            local r1, sx1, sy1 = convert3DCoordsToScreenEx(x1, y1, z1)
-                            local r2, sx2, sy2 = convert3DCoordsToScreenEx(x2, y2, z2)
-                            if r1 and r2 then
-                                renderDrawLine(sx1, sy1, sx2, sy2, settings.ESP.skeletonthinkness[0], opaque_color)
-                            end
-                        end
-                        local x1, y1, z1 = getBonePosition(char, 2)
-                        local r1, sx1, sy1 = convert3DCoordsToScreenEx(x1, y1, z1)
-                        if r1 then
-                            local x2, y2, z2 = getBonePosition(char, 41)
-                            local r2, sx2, sy2 = convert3DCoordsToScreenEx(x2, y2, z2)
-                            if r2 then
-                                renderDrawLine(sx1, sy1, sx2, sy2, settings.ESP.skeletonthinkness[0], opaque_color)
-                            end
-                        end
-                        if r1 then
-                            local x2, y2, z2 = getBonePosition(char, 51)
-                            local r2, sx2, sy2 = convert3DCoordsToScreenEx(x2, y2, z2)
-                            if r2 then
-                                renderDrawLine(sx1, sy1, sx2, sy2, settings.ESP.skeletonthinkness[0], opaque_color)
-                            end
-                        end
-                    end
-                    if settings.ESP.enabled_boxes[0] then
-                        local x, y, z = getOffsetFromCharInWorldCoords(char, 0, 0, 0) -- To get position of char even if he is in car
-                        local headx, heady = convert3DCoordsToScreen(x, y, z + 1.0)
-                        local footx, footy = convert3DCoordsToScreen(x, y, z - 1.0)
-                        local width = math.abs((heady - footy) * 0.25)
-                        renderDrawBoxWithBorder(headx - width, heady, math.abs(2 * width), math.abs(footy - heady), 0, SCREEN_H * settings.ESP.boxthinkness[0], opaque_color)
-                    end
-                    if settings.ESP.enabled_nicks[0] then
-                        local hx, hy, hz = getBonePosition(char, 5)
-                        local hr, headx, heady = convert3DCoordsToScreenEx(hx, hy, hz + 0.25)
-                        if hr then
-                            local nickname = sampGetPlayerNickname(id)
-                            local nametag = nickname .. ' [' .. tostring(id) .. '] - {FF0000}' .. string.format("%.0f", sampGetPlayerHealth(id)) .. 'hp {BBBBBB}' .. string.format("%.0f", sampGetPlayerArmor(id)) .. 'ap'
-                            local nametag_len = renderGetFontDrawTextLength(ESP2.FONT, nametag)
-                            local nametag_x = headx - nametag_len / 2
-                            local nametag_y = heady - renderGetFontDrawHeight(ESP2.FONT)
-                            renderFontDrawText(ESP2.FONT, nametag, nametag_x, nametag_y, opaque_color)
-                        end
-                    end
-                    if settings.ESP.enabled_lines[0] then
-                        local hx, hy, hz = getBonePosition(char, 5)
-                        local hr, headx, heady = convert3DCoordsToScreenEx(hx, hy, hz + 0.25)
-                        local px,py,pz = getCharCoordinates(char)
-                        local sx, sy = getScreenResolution()
-                        local ex, ey = convert3DCoordsToScreen(px,py,pz)
-                        renderDrawLine(sx / 2, sy * settings.ESP.lineposition[0], headx, heady - 25 * MONET_DPI_SCALE, settings.ESP.linethinkness[0], opaque_color)
-                        renderDrawPolygon(headx - 3.5 * MONET_DPI_SCALE, heady - 25 * MONET_DPI_SCALE, 8 * MONET_DPI_SCALE, 8 * MONET_DPI_SCALE, 5, 0.0, opaque_color)
-                    end
-                end
-            end
-        end
-    end
-end
-  
-lua_thread.create(settings.ESP.processESP)
-
--- tsr rage bot
-ragetsrbot = function()
-    lua_thread.create(function()
-        while true do
-            wait(0)
-            if tsrragebot[0] then
-                if botstep == 0 then
-                    setCharCoordinates(PLAYER_PED, 257.86, 2012.86, 16.64)
-                    wait(500)
-                    local bs = raknetNewBitStream()
-	                raknetBitStreamWriteInt8(bs, 220)
-	                raknetBitStreamWriteInt8(bs, 63)
-	                raknetBitStreamWriteInt8(bs, 8)
-	                raknetBitStreamWriteInt32(bs, 7)
-	                raknetBitStreamWriteInt32(bs, -1)
-	                raknetBitStreamWriteInt32(bs, 0)
-	                raknetBitStreamWriteString(bs, "")
-	                raknetSendBitStreamEx(bs, 1, 7, 1)
-	                raknetDeleteBitStream(bs)
-	                botstep = 1
-	            elseif botstep == 1 then
-                    wait(settings.tsr.tsrbotwait[0])
-                    setCharCoordinates(PLAYER_PED, 244.37, 2015.84, 17.66)
-                    wait(100)
-                    setCharCoordinates(PLAYER_PED, 239.16, 2026.78, 16.68)
-                    wait(500)
-                    local bs = raknetNewBitStream()
-	                raknetBitStreamWriteInt8(bs, 220)
-	                raknetBitStreamWriteInt8(bs, 63)
-	                raknetBitStreamWriteInt8(bs, 8)
-	                raknetBitStreamWriteInt32(bs, 7)
-	                raknetBitStreamWriteInt32(bs, -1)
-	                raknetBitStreamWriteInt32(bs, 0)
-	                raknetBitStreamWriteString(bs, "")
-	                raknetSendBitStreamEx(bs, 1, 7, 1)
-	                raknetDeleteBitStream(bs)
-                    botstep = 2
-                elseif botstep == 2 then
-                    wait(settings.tsr.tsrbotwait[0])
-                    setCharCoordinates(PLAYER_PED, 244.37, 2015.84, 17.66)
-                    wait(100)
-                    botstep = 0
-                    box = box + 1
-                    printStringNow('Box: ' .. box, 500)
-                end
-            end
-        end
-    end)
 end
 
 ---------Кнопка Menu---------
@@ -864,19 +697,16 @@ imgui.OnFrame(function() return settings.menu.sendalt[0] end, function()
     imgui.SetNextWindowPos(imgui.ImVec2(screenx / 2 , screeny - 60), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
     imgui.Begin(u8'  ', settings.menu.sendalt, imgui.WindowFlags.AlwaysAutoResize + imgui.WindowFlags.NoTitleBar)
     if imgui.Button(fa.HANDSHAKE_ANGLE..u8' Взаимодействие', imgui.ImVec2(settings.menu.sendaltwidth[0], settings.menu.sendaltheight[0])) then
-        lua_thread.create(function()
-            local bs = raknetNewBitStream()
-	        raknetBitStreamWriteInt8(bs, 220)
-	        raknetBitStreamWriteInt8(bs, 63)
-            raknetBitStreamWriteInt8(bs, 8)
-	        raknetBitStreamWriteInt32(bs, 7)
-	        raknetBitStreamWriteInt32(bs, -1)
-            raknetBitStreamWriteInt32(bs, 0)
-	        raknetBitStreamWriteString(bs, "")
-	        raknetSendBitStreamEx(bs, 1, 7, 1)
-	        raknetDeleteBitStream(bs)
-	        return
-	    end)
+        local bs = raknetNewBitStream()
+	    raknetBitStreamWriteInt8(bs, 220)
+        raknetBitStreamWriteInt8(bs, 63)
+        raknetBitStreamWriteInt8(bs, 8)
+	    raknetBitStreamWriteInt32(bs, 7)
+	    raknetBitStreamWriteInt32(bs, -1)
+        raknetBitStreamWriteInt32(bs, 0)
+	    raknetBitStreamWriteString(bs, "")
+	    raknetSendBitStreamEx(bs, 1, 7, 1)
+	    raknetDeleteBitStream(bs)
 	end
     imgui.End()
 end)
@@ -1574,11 +1404,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
             if imgui.CollapsingHeader(fa.CAR..u8' Машина') then
                 imgui.Separator()
                 if imgui.ToggleButton(fa.BOOK_BIBLE..u8' Бессмертие', settings.car.godmode2_enabled) then
-                    if settings.car.godmode2_enabled[0] then
-                        gmcar_activate()
-                    else
-                        gmcar_reset()
-                    end
                     if settings.cfg.autosave[0] then
                         ini.car.godmode2_enabled = settings.car.godmode2_enabled[0]
                         save()
@@ -1591,11 +1416,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     end
                 end
                 if imgui.ToggleButton(fa.MOTORCYCLE..u8' Анти-падение с Мото', settings.car.nobike) then
-                    if settings.car.nobike[0] then
-                        nobike_activate()
-                    else
-                        nobike_reset()
-                    end
                     if settings.cfg.autosave[0] then
                         ini.car.nobike = settings.car.nobike[0]
                         save()
@@ -1876,7 +1696,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 imgui.Separator()
                 if imgui.ToggleButton(fa.BOX..u8' Коробки RAGE', tsrragebot) then
                     botstep = 0
-                    ragetsrbot()
                 end
                 if imgui.SliderInt(fa.HOURGLASS_HALF..u8' Задержка', settings.tsr.tsrbotwait, 100, 5000) then
                     if settings.cfg.autosave[0] then
@@ -2003,6 +1822,12 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 imgui.Separator()
 		        if imgui.Button(fa.GEARS..u8' Настройки меню') then
 		            menusettings[0] = not menusettings[0]
+		        end
+		        if imgui.ToggleButton(fa.CIRCLE..u8' Включить спецэффекты меню', settings.menu.draweffects) then
+		            if settings.cfg.autosave[0] then
+		                ini.menu.draweffects = settings.menu.draweffects[0]
+		                save()
+		            end
 		        end
 		        imgui.Separator()
             end
@@ -2168,6 +1993,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.menu.notitlebar = settings.menu.notitlebar[0]
                     ini.menu.waterposx = settings.menu.waterposx[0]
                     ini.menu.waterposy = settings.menu.waterposy[0]
+                    ini.menu.draweffects = settings.menu.draweffects[0]
                     ini.objects.autormlsa = settings.objects.autormlsa[0]
                     ini.objects.autormsfa = settings.objects.autormsfa[0]
                     ini.objects.autormblockpost = settings.objects.autormblockpost[0]
@@ -2355,13 +2181,6 @@ end
 function main()
     check_update()
     while not isSampAvailable() do wait(0) end
-    initializeRender()
-    if settings.car.godmode2_enabled[0] then
-        gmcar_activate()
-    else
-        gmcar_reset()
-    end
-    nobike_activate()
     sampRegisterChatCommand('miku', function() window_state[0] = not window_state[0] end)
     sampRegisterChatCommand('sosopjpjpjpjpjpj', function() fishbot = not fishbot end)
     sampRegisterChatCommand('fishbot', function() 
@@ -2417,6 +2236,139 @@ function main()
 	statusbot = lua_thread.create_suspended(botwork)
 	statusbot = lua_thread.create_suspended(botwork)
     while true do wait(0)
+        if tsrragebot[0] then
+            if botstep == 0 then
+                setCharCoordinates(PLAYER_PED, 257.86, 2012.86, 16.64)
+                wait(500)
+                local bs = raknetNewBitStream()
+                raknetBitStreamWriteInt8(bs, 220)
+                raknetBitStreamWriteInt8(bs, 63)
+                raknetBitStreamWriteInt8(bs, 8)
+                raknetBitStreamWriteInt32(bs, 7)
+                raknetBitStreamWriteInt32(bs, -1)
+                raknetBitStreamWriteInt32(bs, 0)
+                raknetBitStreamWriteString(bs, "")
+                raknetSendBitStreamEx(bs, 1, 7, 1)
+                raknetDeleteBitStream(bs)
+                botstep = 1
+            elseif botstep == 1 then
+                wait(settings.tsr.tsrbotwait[0])
+                setCharCoordinates(PLAYER_PED, 244.37, 2015.84, 17.66)
+                wait(100)
+                setCharCoordinates(PLAYER_PED, 239.16, 2026.78, 16.68)
+                wait(500)
+                local bs = raknetNewBitStream()
+                raknetBitStreamWriteInt8(bs, 220)
+                raknetBitStreamWriteInt8(bs, 63)
+                raknetBitStreamWriteInt8(bs, 8)
+                raknetBitStreamWriteInt32(bs, 7)
+                raknetBitStreamWriteInt32(bs, -1)
+                raknetBitStreamWriteInt32(bs, 0)
+                raknetBitStreamWriteString(bs, "")
+                raknetSendBitStreamEx(bs, 1, 7, 1)
+                raknetDeleteBitStream(bs)
+                botstep = 2
+            elseif botstep == 2 then
+                wait(settings.tsr.tsrbotwait[0])
+                setCharCoordinates(PLAYER_PED, 244.37, 2015.84, 17.66)
+                wait(100)
+                botstep = 0
+                box = box + 1
+                printStringNow('Box: ' .. box, 500)
+            end
+        end
+        if settings.ESP.drawing[0] then
+            for _, char in ipairs(getAllChars()) do
+                local result, id = sampGetPlayerIdByCharHandle(char)
+                if result and isCharOnScreen(char) and char ~= PLAYER_PED then
+                    local opaque_color = bit.bor(bit.band(sampGetPlayerColor(id), 0xFFFFFF), 0xFF000000)
+                    if settings.ESP.enabled_bones[0] then
+                        for _, bone in ipairs(ESP2.BONES) do
+                            local x1, y1, z1 = getBonePosition(char, bone)
+                            local x2, y2, z2 = getBonePosition(char, bone + 1)
+                            local r1, sx1, sy1 = convert3DCoordsToScreenEx(x1, y1, z1)
+                            local r2, sx2, sy2 = convert3DCoordsToScreenEx(x2, y2, z2)
+                            if r1 and r2 then
+                                renderDrawLine(sx1, sy1, sx2, sy2, settings.ESP.skeletonthinkness[0], opaque_color)
+                            end
+                        end
+                        local x1, y1, z1 = getBonePosition(char, 2)
+                        local r1, sx1, sy1 = convert3DCoordsToScreenEx(x1, y1, z1)
+                        if r1 then
+                            local x2, y2, z2 = getBonePosition(char, 41)
+                            local r2, sx2, sy2 = convert3DCoordsToScreenEx(x2, y2, z2)
+                            if r2 then
+                                renderDrawLine(sx1, sy1, sx2, sy2, settings.ESP.skeletonthinkness[0], opaque_color)
+                            end
+                        end
+                        if r1 then
+                            local x2, y2, z2 = getBonePosition(char, 51)
+                            local r2, sx2, sy2 = convert3DCoordsToScreenEx(x2, y2, z2)
+                            if r2 then
+                                renderDrawLine(sx1, sy1, sx2, sy2, settings.ESP.skeletonthinkness[0], opaque_color)
+                            end
+                        end
+                    end
+                    if settings.ESP.enabled_boxes[0] then
+                        local x, y, z = getOffsetFromCharInWorldCoords(char, 0, 0, 0) -- To get position of char even if he is in car
+                        local headx, heady = convert3DCoordsToScreen(x, y, z + 1.0)
+                        local footx, footy = convert3DCoordsToScreen(x, y, z - 1.0)
+                        local width = math.abs((heady - footy) * 0.25)
+                        renderDrawBoxWithBorder(headx - width, heady, math.abs(2 * width), math.abs(footy - heady), 0, SCREEN_H * settings.ESP.boxthinkness[0], opaque_color)
+                    end
+                    if settings.ESP.enabled_nicks[0] then
+                        local hx, hy, hz = getBonePosition(char, 5)
+                        local hr, headx, heady = convert3DCoordsToScreenEx(hx, hy, hz + 0.25)
+                        if hr then
+                            local nickname = sampGetPlayerNickname(id)
+                            local nametag = nickname .. ' [' .. tostring(id) .. '] - {FF0000}' .. string.format("%.0f", sampGetPlayerHealth(id)) .. 'hp {BBBBBB}' .. string.format("%.0f", sampGetPlayerArmor(id)) .. 'ap'
+                            local nametag_len = renderGetFontDrawTextLength(ESP2.FONT, nametag)
+                            local nametag_x = headx - nametag_len / 2
+                            local nametag_y = heady - renderGetFontDrawHeight(ESP2.FONT)
+                            renderFontDrawText(ESP2.FONT, nametag, nametag_x, nametag_y, opaque_color)
+                        end
+                    end
+                    if settings.ESP.enabled_lines[0] then
+                        local hx, hy, hz = getBonePosition(char, 5)
+                        local hr, headx, heady = convert3DCoordsToScreenEx(hx, hy, hz + 0.25)
+                        local px,py,pz = getCharCoordinates(char)
+                        local sx, sy = getScreenResolution()
+                        local ex, ey = convert3DCoordsToScreen(px,py,pz)
+                        renderDrawLine(sx / 2, sy * settings.ESP.lineposition[0], headx, heady - 25 * MONET_DPI_SCALE, settings.ESP.linethinkness[0], opaque_color)
+                        renderDrawPolygon(headx - 3.5 * MONET_DPI_SCALE, heady - 25 * MONET_DPI_SCALE, 8 * MONET_DPI_SCALE, 8 * MONET_DPI_SCALE, 5, 0.0, opaque_color)
+                    end
+                end
+            end
+        end
+        if settings.car.nobike[0] then
+            if isCharInAnyCar(PLAYER_PED) then
+                setCharCanBeKnockedOffBike(PLAYER_PED, true)
+                if isCarInWater(storeCarCharIsInNoSave(PLAYER_PED)) then
+                    setCharCanBeKnockedOffBike(PLAYER_PED, false)
+                else
+                    setCharCanBeKnockedOffBike(PLAYER_PED, true)
+                end
+            else
+                setCharCanBeKnockedOffBike(PLAYER_PED, false)
+            end
+        end
+        fontt = renderCreateFont("Arial", 17, 4)
+        if chooseActive and pointMarker then
+            renderFontDrawText(fontt, "Left your finger from the screen to teleport", renderInfo.rsx, renderInfo.rsy - (renderInfo.rhoffs * 3) - 150, renderInfo.rcolor) 
+            renderFontDrawText(fontt, string.format("%0.2fm", renderInfo.rdist), renderInfo.rsx, renderInfo.rsy - (renderInfo.rhoffs*2) - 150, 0xEEEEEEEE)		  
+            if renderInfo.rcar ~= 0 then 
+              renderFontDrawText(fontt, string.format("%s", findCarName(getCarModel(renderInfo.rcar))), renderInfo.rsx, renderInfo.rsy - renderInfo.rhoffs - 150, 0xEEEEEEEE) 
+          end 
+        end
+        if settings.car.godmode2_enabled[0] then
+            if isCharInAnyCar(PLAYER_PED) then
+                setCarProofs(storeCarCharIsInNoSave(PLAYER_PED), true, true, true, true, true)
+            end
+        else
+            if isCharInAnyCar(PLAYER_PED) then
+                setCarProofs(storeCarCharIsInNoSave(PLAYER_PED), false, false, false, false, false)
+            end
+        end
         if settings.car.fastbrake[0] then
             if isCharInAnyCar(PLAYER_PED) then
                 if isWidgetPressed(WIDGET_HANDBRAKE) then
@@ -2522,93 +2474,72 @@ function main()
             FlyCar.cars = 0
         end
         if settings.objects.autormlsa[0] then
-            lua_thread.create(function()  
-                for _, obj in pairs(getAllObjects()) do
-                    local modeid = getObjectModel(obj)
-                    if modeid == 975 then
-                        deleteObject(obj)
-                    end
+            for _, obj in pairs(getAllObjects()) do
+                local modeid = getObjectModel(obj)
+                if modeid == 975 then
+                    deleteObject(obj)
                 end
-                return
-            end)
+            end
         end
         if settings.tsr.autormcell[0] then
-            lua_thread.create(function()    
-                for _, obj in pairs(getAllObjects()) do
-                    local modeid = getObjectModel(obj)
-                    if modeid == 19303 then
-                        deleteObject(obj)
-                    end
+            for _, obj in pairs(getAllObjects()) do
+                local modeid = getObjectModel(obj)
+                if modeid == 19303 then
+                    deleteObject(obj)
                 end
-                return
-            end)
+            end
         end
         if settings.tsr.autormdoors[0] then
-            lua_thread.create(function()    
-                for _, obj in pairs(getAllObjects()) do
-                    local modeid = getObjectModel(obj)
-                    if modeid == 19857 then
-                        deleteObject(obj)
-                    end
+            for _, obj in pairs(getAllObjects()) do
+                local modeid = getObjectModel(obj)
+                if modeid == 19857 then
+                    deleteObject(obj)
                 end
-                return
-            end)
+            end
         end
         if settings.tsr.autormfence[0] then
-            lua_thread.create(function()    
-                for _, obj in pairs(getAllObjects()) do
-                    local modeid = getObjectModel(obj)
-                    if modeid == 19912 then
-                        deleteObject(obj)
-                    end
-                    if modeid == 19913 then
-                        deleteObject(obj)
-                    end
+            for _, obj in pairs(getAllObjects()) do
+                local modeid = getObjectModel(obj)
+                if modeid == 19912 then
+                    deleteObject(obj)
                 end
-                return
-            end)
+                if modeid == 19913 then
+                    deleteObject(obj)
+                end
+            end
         end
         if settings.objects.autormsfa[0] then
-            lua_thread.create(function()    
-                for _, obj in pairs(getAllObjects()) do
-                    local modeid = getObjectModel(obj)
-                    if modeid == 988 then
-                        deleteObject(obj)
-                    end
+            for _, obj in pairs(getAllObjects()) do
+                local modeid = getObjectModel(obj)
+                if modeid == 988 then
+                    deleteObject(obj)
                 end
-                return
-            end)
+            end
         end
         if settings.objects.autormblockpost[0] then
-            lua_thread.create(function() 
-                for _, obj in pairs(getAllObjects()) do
-                    local modeid = getObjectModel(obj)
-                    if modeid == 968 then
-                        deleteObject(obj)
-                    end
+            for _, obj in pairs(getAllObjects()) do
+                local modeid = getObjectModel(obj)
+                if modeid == 968 then
+                    deleteObject(obj)
                 end
-                return
-            end)
+            end
         end
         if settings.objects.autormlampposts[0] then
-            lua_thread.create(function() 
-                for _, obj in pairs(getAllObjects()) do
-                    local modeid = getObjectModel(obj)
-                    if modeid == 1297 then
-                        deleteObject(obj)
-                    end
-                    if modeid == 1283 then
-                        deleteObject(obj)
-                    end
-                    if modeid == 1226 then
-                        deleteObject(obj)
-                    end
-                    if modeid == 1294 then
-                        deleteObject(obj)
-                    end
+            for _, obj in pairs(getAllObjects()) do
+                local modeid = getObjectModel(obj)
+                if modeid == 1297 then
+                    deleteObject(obj)
                 end
-                return
-            end)
+                if modeid == 1283 then
+                    deleteObject(obj)
+                end
+                if modeid == 1226 then
+                    deleteObject(obj)
+                end
+                if modeid == 1294 then
+                    deleteObject(obj)
+                end
+            end
         end
 		if settings.car.atractive[0] and isCharInAnyCar(1) and getDriverOfCar(getCarCharIsUsing(1)) == 1 then
 			local x, y = getScreenResolution()
@@ -3639,22 +3570,6 @@ function givePlayerGun(id, ammo)
 end
 
 -- clickcoordmobile
-function initializeRender()
-  	font = renderCreateFont("Arial", 17, 4)
-  	lua_thread.create(function()
-      	while true do
-          	wait(0)
-          	if chooseActive and pointMarker then
-              	renderFontDrawText(font, "Left your finger from the screen to teleport", renderInfo.rsx, renderInfo.rsy - (renderInfo.rhoffs * 3) - 150, renderInfo.rcolor) 
-              	renderFontDrawText(font, string.format("%0.2fm", renderInfo.rdist), renderInfo.rsx, renderInfo.rsy - (renderInfo.rhoffs*2) - 150, 0xEEEEEEEE)		  
-  				if renderInfo.rcar ~= 0 then 
-					renderFontDrawText(font, string.format("%s", findCarName(getCarModel(renderInfo.rcar))), renderInfo.rsx, renderInfo.rsy - renderInfo.rhoffs - 150, 0xEEEEEEEE) 
-				end 
-          	end
-      	end
-  	end)
-end
-
 function onTouch(type, id, x, y)
     if chooseActive then
       	local sx, sy = x, y
@@ -4787,7 +4702,7 @@ for i = 1, 100 do
     table.insert(figures, create_figure())
 end
 
-imgui.OnFrame(function() return window_state[0] end, function()
+imgui.OnFrame(function() return window_state[0] and settings.menu.draweffects[0] end, function()
     local bgdl = imgui.GetBackgroundDrawList()
     bgdl:AddRectFilled(imgui.ImVec2(0, 0), imgui.ImVec2(3000, 3000), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.00, 0.00, 0.00, 0.60)), 20, 1 + 8)
     for i = 1, #figures do
