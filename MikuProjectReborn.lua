@@ -697,16 +697,18 @@ imgui.OnFrame(function() return settings.menu.sendalt[0] end, function()
     imgui.SetNextWindowPos(imgui.ImVec2(screenx / 2 , screeny - 60), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
     imgui.Begin(u8'  ', settings.menu.sendalt, imgui.WindowFlags.AlwaysAutoResize + imgui.WindowFlags.NoTitleBar)
     if imgui.Button(fa.HANDSHAKE_ANGLE..u8' Взаимодействие', imgui.ImVec2(settings.menu.sendaltwidth[0], settings.menu.sendaltheight[0])) then
-        local bs = raknetNewBitStream()
-	    raknetBitStreamWriteInt8(bs, 220)
-        raknetBitStreamWriteInt8(bs, 63)
-        raknetBitStreamWriteInt8(bs, 8)
-	    raknetBitStreamWriteInt32(bs, 7)
-	    raknetBitStreamWriteInt32(bs, -1)
-        raknetBitStreamWriteInt32(bs, 0)
-	    raknetBitStreamWriteString(bs, "")
-	    raknetSendBitStreamEx(bs, 1, 7, 1)
-	    raknetDeleteBitStream(bs)
+        lua_thread.create(function()
+            local bs = raknetNewBitStream()
+	        raknetBitStreamWriteInt8(bs, 220)
+            raknetBitStreamWriteInt8(bs, 63)
+            raknetBitStreamWriteInt8(bs, 8)
+	        raknetBitStreamWriteInt32(bs, 7)
+	        raknetBitStreamWriteInt32(bs, -1)
+            raknetBitStreamWriteInt32(bs, 0)
+	        raknetBitStreamWriteString(bs, "")
+	        raknetSendBitStreamEx(bs, 1, 7, 1)
+	        raknetDeleteBitStream(bs)
+	    end)
 	end
     imgui.End()
 end)
@@ -1149,11 +1151,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
             if imgui.CollapsingHeader(fa.USER..u8' Персонаж') then
                 imgui.Separator()
                 if imgui.ToggleButton(fa.BOOK_BIBLE..u8' Бессмертие', settings.ped.godmode_enabled) then
-                    if settings.ped.godmode_enabled[0] then
-                        setCharProofs(PLAYER_PED, false, true, true, true, true)
-                    else
-                        setCharProofs(PLAYER_PED, false, false, false, false, false)
-                    end
                     if settings.cfg.autosave[0] then
                         ini.ped.godmode_enabled = settings.ped.godmode_enabled[0]
                         save()
@@ -2236,6 +2233,12 @@ function main()
 	statusbot = lua_thread.create_suspended(botwork)
 	statusbot = lua_thread.create_suspended(botwork)
     while true do wait(0)
+        while not sampIsLocalPlayerSpawned() do wait(0) end
+        if settings.ped.godmode_enabled[0] then
+            setCharProofs(PLAYER_PED, false, true, true, true, true)
+        else
+            setCharProofs(PLAYER_PED, false, false, false, false, false)
+        end
         if tsrragebot[0] then
             if botstep == 0 then
                 setCharCoordinates(PLAYER_PED, 257.86, 2012.86, 16.64)
@@ -2348,9 +2351,9 @@ function main()
                 else
                     setCharCanBeKnockedOffBike(PLAYER_PED, true)
                 end
-            else
-                setCharCanBeKnockedOffBike(PLAYER_PED, false)
             end
+        else
+            setCharCanBeKnockedOffBike(PLAYER_PED, false)
         end
         fontt = renderCreateFont("Arial", 17, 4)
         if chooseActive and pointMarker then
