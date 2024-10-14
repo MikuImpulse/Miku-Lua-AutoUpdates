@@ -553,7 +553,7 @@ Reconnect.activate = function()
         if ms <= 0 then
             ms = 100
         end
-        notf1(u8'Реконнектимся...')
+        notf4(u8'Реконнектимся...')
         Reconnect.waiting = true
         while ms > 0 do
             if ms <= 500 then
@@ -681,7 +681,7 @@ imgui.OnFrame(function() return found_update[0] end, function()
     end
     if imgui.Button(fa.FORWARD..u8' ПРОПУСТИТЬ', imgui.ImVec2(650, 40)) then
        found_update[0] = not found_update[0]
-       notf2(u8'Обновление скрипта пропущено')
+       notf4(u8'Обновление скрипта пропущено')
     end
     imgui.End()
 end)
@@ -1246,10 +1246,12 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 end
                 if imgui.Button(fa.PERSON_RUNNING..u8' Включить бег CJ', imgui.ImVec2(275, 35)) then
                     setAnimGroupForChar(PLAYER_PED, "PLAYER")
+                    notf4(u8'Бег CJ включен!')
                 end
                 imgui.SameLine()
                 if imgui.Button(fa.PERSON_RUNNING..u8' Выключить бег CJ', imgui.ImVec2(275, 35)) then
                     setAnimGroupForChar(PLAYER_PED, usePlayerAnimGroup and "PLAYER" or isCharMale(PLAYER_PED) and "MAN" or "WOMAN")
+                    notf4(u8'Бег CJ выключен!')
                 end
                 imgui.Separator()
             end
@@ -2183,9 +2185,9 @@ function main()
     sampRegisterChatCommand('fishbot', function() 
         floodfish = not floodfish
         if floodfish then
-            notf1(u8'FishBot включен')
+            notf4(u8'FishBot включен')
         else
-            notf3(u8'FishBot выключен')
+            notf4(u8'FishBot выключен')
         end
     end)
     sampRegisterChatCommand('jump', function()
@@ -3997,6 +3999,10 @@ function notf3(text)
     Notifications.Show(u8'Miku Project Reborn:\n'..text, Notifications.TYPE.ERROR)
 end
 
+function notf4(text)
+    Notifications.Show(u8'Miku Project Reborn:\n'..text, Notifications.TYPE.INFO)
+end
+
 -- anti lomka
 function events.onSetPlayerDrunk(drunkLevel)
     return {1}
@@ -4065,13 +4071,13 @@ function downloadFile(url, path)
 end
 
 function check_update()
-    notf2(u8'Проверка наличия обновлений...')
+    notf4(u8'Проверка наличия обновлений...')
     local currentVersionFile = io.open(lmPath, "r")
     local currentVersion = currentVersionFile:read("*a")
     currentVersionFile:close()
     local response = http.request(lmUrl)
     if response and response ~= currentVersion then
-        notf2(u8"Найдено новое обновление! Вывожу окно для загрузки...")
+        notf4(u8"Найдено новое обновление! Вывожу окно для загрузки...")
         found_update[0] = not found_update[0]
     else
         notf1(u8"У вас актуальная версия скрипта.")
@@ -4079,10 +4085,10 @@ function check_update()
 end
 
 function updateScript(scriptUrl, scriptPath)
-    notf2(u8"Проверка наличия обновлений...")
+    notf4(u8"Проверка наличия обновлений...")
     local response = http.request(scriptUrl)
     if response and response ~= currentVersion then
-        notf2(u8"Обновление...")
+        notf4(u8"Обновление...")
         local success = downloadFile(scriptUrl, scriptPath)
         if success then
             notf1(u8"Скрипт успешно обновлен. Перезагрузка..")
