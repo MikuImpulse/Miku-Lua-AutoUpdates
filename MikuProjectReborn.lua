@@ -1,10 +1,10 @@
 -------Версия скрипта--------
-local script_ver = '1.0.4'
+local script_ver = '1.0.5'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
-script_author('@mikureborn')
-script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channeI: t.me/mikureborn')
+script_author('@mikusilent')
+script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channeI: t.me/mikusilent')
 --------Библиотеки--------
 local imgui = require 'mimgui'
 local fa = require 'fAwesome6_solid'
@@ -315,6 +315,7 @@ local theme_a = {u8'Темная', u8'Зеленая', u8'Голубо-серая', u8'Вишнёвая', 'MoonM
 local theme_t = {u8'black', u8'green', u8'bluegray', u8'cherry', 'moonmonet'}
 local items = imgui.new['const char*'][#theme_a](theme_a)
 local selected_theme = imgui.new.int(ini.theme.selected)
+local pizdeckaneshna = imgui.new.bool(true)
 -- AirBrake
 local was_doubletapped = false
 local enabledair = false
@@ -652,6 +653,29 @@ imgui.OnFrame(function() return settings.car.flycar[0] and not isGamePaused() an
     imgui.PopStyleColor()
     imgui.End()
 end)
+-- warning
+imgui.OnFrame(function() return pizdeckaneshna[0] end, function()
+    local scrx, scry = getScreenResolution()
+    imgui.SetNextWindowPos(imgui.ImVec2(scrx / 2, scry / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+    imgui.Begin(u8'            ', pizdeckaneshna, imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.AlwaysAutoResize)
+    imgui.PushFont(updfont[40])
+    imgui.CenterText('WARNING!')
+    imgui.PopFont()
+    imgui.PushFont(updfont[33])
+    imgui.CenterText(u8'Новый канал')
+    imgui.PopFont()
+    imgui.CenterText('')
+    imgui.CenterText('')
+    imgui.PushFont(updfont[25])
+    imgui.CenterText(u8'Привет! Если ты это читаешь впервые, не скипай пожалуйста.\nМне снесло аккаунт в телеграмме, как и канал, и чат.\nДабы ты не потерял Miku Project - подпишись:\nt.me/mikusilent\nСвязь со мной: t.me/tactilecontact')
+    imgui.PopFont()
+    imgui.CenterText('')
+    imgui.CenterText('')
+    if imgui.Button(fa.FORWARD..u8' ЗАКРЫТЬ ПРЕДУПРЕЖДЕНИЕ', imgui.ImVec2(650, 40)) then
+       pizdeckaneshna[0] = false
+    end
+    imgui.End()
+end)
 -- found update window
 imgui.OnFrame(function() return found_update[0] end, function()
     local scrx, scry = getScreenResolution()
@@ -661,7 +685,7 @@ imgui.OnFrame(function() return found_update[0] end, function()
     imgui.CenterText('Miku Project Reborn')
     imgui.PopFont()
     imgui.PushFont(updfont[20])
-    imgui.CenterText('(credits: @mikureborn, @flawnessly, @langerv, @TheopkaStudio)')
+    imgui.CenterText('(credits: @mikusilent, @tactilecontact, @langerv, @TheopkaStudio)')
     imgui.PopFont()
     imgui.CenterText('')
     imgui.PushFont(updfont[33])
