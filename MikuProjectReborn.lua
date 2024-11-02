@@ -1,5 +1,5 @@
 -------Версия скрипта--------
-local script_ver = '1.0.5'
+local script_ver = '1.0.6'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
@@ -147,7 +147,8 @@ local ini = inicfg.load({
         waterposx = (0),
         waterposy = (0),
         notitlebar = (true),
-        draweffects = (true)
+        draweffects = (true),
+        pizdeckaneshna = (true)
     },
     dgun = {
         gunsList = (0),
@@ -279,7 +280,8 @@ local settings = {
         waterposx = imgui.new.int(ini.menu.waterposx),
         waterposy = imgui.new.int(ini.menu.waterposy),
         notitlebar = imgui.new.bool(ini.menu.notitlebar),
-        draweffects = imgui.new.bool(ini.menu.draweffects)
+        draweffects = imgui.new.bool(ini.menu.draweffects),
+        pizdeckaneshna = imgui.new.bool(ini.menu.pizdeckaneshna)
     },
     dgun = {
         gunsList = imgui.new.int(ini.dgun.gunsList),
@@ -315,7 +317,7 @@ local theme_a = {u8'Темная', u8'Зеленая', u8'Голубо-серая', u8'Вишнёвая', 'MoonM
 local theme_t = {u8'black', u8'green', u8'bluegray', u8'cherry', 'moonmonet'}
 local items = imgui.new['const char*'][#theme_a](theme_a)
 local selected_theme = imgui.new.int(ini.theme.selected)
-local pizdeckaneshna = imgui.new.bool(true)
+local pizdeckaneshna = imgui.new.bool(ini.menu.pizdeckaneshna)
 -- AirBrake
 local was_doubletapped = false
 local enabledair = false
@@ -667,7 +669,10 @@ imgui.OnFrame(function() return pizdeckaneshna[0] end, function()
     imgui.CenterText('')
     imgui.CenterText('')
     imgui.PushFont(updfont[25])
-    imgui.CenterText(u8'Привет! Если ты это читаешь впервые, не скипай пожалуйста.\nМне снесло аккаунт в телеграмме, как и канал, и чат.\nДабы ты не потерял Miku Project - подпишись:\nt.me/mikusilent\nСвязь со мной: t.me/tactilecontact')
+    imgui.CenterText(u8'Привет! Если ты это читаешь впервые, не скипай пожалуйста')
+    imgui.CenterText(u8'Мне снесло аккаунт в телеграмме, как и канал, и чат')
+    imgui.CenterText(u8'Дабы ты не потерял Miku Project - подпишись:')
+    imgui.CenterText(u8't.me/mikusilent')
     imgui.PopFont()
     imgui.CenterText('')
     imgui.CenterText('')
@@ -1852,9 +1857,16 @@ imgui.OnFrame(function() return window_state[0] end, function()
 		                save()
 		            end
 		        end
+		        if imgui.ToggleButton(fa.TRIANGLE_EXCLAMATION..u8' Включить варнинг при загрузке скрипта', settings.menu.pizdeckaneshna) then
+		            if settings.cfg.autosave[0] then
+		                ini.menu.pizdeckaneshna = settings.menu.pizdeckaneshna[0]
+		                save()
+		            end
+		        end
 		        imgui.Separator()
             end
             if imgui.CollapsingHeader(fa.PERSON_CIRCLE_QUESTION..u8' Помощь') then
+                imgui.Separator()
 		        if imgui.ToggleButton(fa.INFO..u8' | Отображать подсказки', settings.menu.showinfo) then
                     if settings.cfg.autosave[0] then
                         ini.menu.showinfo = settings.menu.showinfo[0]
@@ -1886,6 +1898,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
 		        imgui.Separator()
             end
 		    if imgui.CollapsingHeader(fa.SCREWDRIVER_WRENCH..u8' Отладка') then
+		        imgui.Separator()
 		        if imgui.Button(fa.WINDOW_RESTORE..u8' Показать mimgui demo') then
 		            custommimguiStyle[0] = not custommimguiStyle[0]
 		        end
@@ -2017,6 +2030,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.menu.waterposx = settings.menu.waterposx[0]
                     ini.menu.waterposy = settings.menu.waterposy[0]
                     ini.menu.draweffects = settings.menu.draweffects[0]
+                    ini.menu.pizdeckaneshna = settings.menu.pizdeckaneshna[0]
                     ini.objects.autormlsa = settings.objects.autormlsa[0]
                     ini.objects.autormsfa = settings.objects.autormsfa[0]
                     ini.objects.autormblockpost = settings.objects.autormblockpost[0]
