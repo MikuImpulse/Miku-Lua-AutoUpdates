@@ -962,7 +962,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         save()
                     end
                 end
-                if imgui.ToggleButton(fa.STAR_OF_LIFE..u8' Анти-капча') then
+                if imgui.ToggleButton(fa.STAR_OF_LIFE..u8' Анти-капча', settings.main.autocaptcha) then
                     if settings.cfg.autosave[0] then
                         ini.main.autocaptcha = settings.main.autocaptcha[0]
                         save()
