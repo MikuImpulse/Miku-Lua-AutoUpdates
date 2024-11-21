@@ -7,8 +7,8 @@ script_author('@mikusilent')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channeI: t.me/mikusilent')
 --------Проверка на долбаеба-------
 local getName = thisScript().path
-if getName ~= '/storage/emulated/0/Android/media/com.arizona.game/monetloader/MikuProjectReborn.lua' then
-    os.rename(getName, '/storage/emulated/0/Android/media/com.arizona.game/monetloader/MikuProjectReborn.lua')
+if getName ~= getWorkingDirectory()..'/MikuProjectReborn.lua' then
+    os.rename(getName, getWorkingDirectory()..'/MikuProjectReborn.lua')
 end
 --------Библиотеки--------
 local imgui = require 'mimgui'
