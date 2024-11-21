@@ -1,5 +1,5 @@
 -------Версия скрипта--------
-local script_ver = '1.0.6'
+local script_ver = '1.0.7'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
@@ -75,7 +75,8 @@ local ini = inicfg.load({
         clickwarpcoord = (false),
         antimask = (false),
         timeblockserv = (false),
-        weatherblockserv = (false)
+        weatherblockserv = (false),
+        autocaptcha = (false)
     },
     ped = {
         godmode_enabled = (false),
@@ -208,7 +209,8 @@ local settings = {
         clickwarpcoord = imgui.new.bool(ini.main.clickwarpcoord),
         antimask = imgui.new.bool(ini.main.antimask),
         timeblockserv = imgui.new.bool(ini.main.timeblockserv),
-        weatherblockserv = imgui.new.bool(ini.main.weatherblockserv)
+        weatherblockserv = imgui.new.bool(ini.main.weatherblockserv),
+        autocaptcha = imgui.new.bool(ini.main.autocaptcha)
     },
     ped = {
         godmode_enabled = imgui.new.bool(ini.ped.godmode_enabled),
@@ -369,10 +371,6 @@ atrtrailer = nil
 -- dgun combo
 local item_list = {u8'Кулак', u8'Кастет', u8'Клюшка для гольфа', u8'Полицейская дубинка', u8'Нож', u8'Бейсбольная бита', u8'Лопата', u8'Кий', u8'Катана', u8'Бензопила', u8'Двухсторонний дилдо', u8'Дилдо', u8'Вибратор', u8'Серебряный вибратор', u8'Букет цветов', u8'Трость', u8'Граната', u8'Слезоточивый газ', u8'Коктейль Молотова', u8' ', u8' ', u8' ', u8'Пистолет', u8'USP-S (Тазер)', u8'Desert Eagle', u8'Дробовик', u8'Обрез', u8'Скорострельный дробовик', u8'UZI', u8'MP5', u8'Калаш', u8'М4', u8'TEC-9', u8'Охотничье ружье', u8'Снайперка', u8'РПГ', u8'Самонаводящееся РПГ', u8'Огнемет', u8'Миниган', u8'Сумка с тротилом', u8'Детонатор', u8'Баллончик', u8'Огнетушитель', u8'Фотоаппарат', u8'Очки ночного видения', u8'Тепловизор', u8'Парашют'}
 local ImItems = imgui.new['const char*'][#item_list](item_list)
--- bot zavod
-local coordinates = {{2558.9885253906, -1287.6723632813},{2558.4392089844, -1291.0050048828},{2558.6960449219, -1291.0054931641}, {2559.0173339844, -1290.9860839844}, {2560.0126953125, -1290.7293701172}, {2561.068359375, -1290.697265625}, {2564.4611816406, -1292.9296875}}
-local armorbotstate, armorbotalt, point, setrounds, currentrounds, detal1, detal2, idb = false, false, 0, -1, 0, -1, -1, -1
-local krugibota = imgui.new.int(0)
 -- clickwarp coordmaster
 local chooseActive, pointMarker, renderInfo
 local tpclick, sync = false, false
@@ -964,6 +962,12 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         save()
                     end
                 end
+                if imgui.ToggleButton(fa.ROBOT..u8' Анти-капча') then
+                    if settings.cfg.autosave[0] then
+                        ini.main.autocaptcha = settings.main.autocaptcha[0]
+                        save()
+                    end
+                end
                 if imgui.Button(fa.WIFI..u8' Реконнект') and not Reconnect.reconnecting and not Reconnect.waiting then
                     Reconnect.activate()
                 end
@@ -1281,26 +1285,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 if imgui.Button(fa.PERSON_RUNNING..u8' Выключить бег CJ', imgui.ImVec2(275, 35)) then
                     setAnimGroupForChar(PLAYER_PED, usePlayerAnimGroup and "PLAYER" or isCharMale(PLAYER_PED) and "MAN" or "WOMAN")
                     notf4(u8'Бег CJ выключен!')
-                end
-                imgui.Separator()
-            end
-            if imgui.CollapsingHeader(fa.ROBOT..u8' Боты') then
-                imgui.Separator()
-                if imgui.Button(fa.USER..u8' Бот завод') then
-                    sampProcessChatInput('/armbot '..krugibota[0])
-                end
-                imgui.PushItemWidth(250)
-                imgui.SliderInt(fa.ARROWS_SPIN..u8' Количество кругов (завод)', krugibota, 0, 50)
-                imgui.PopItemWidth()
-                if settings.menu.showinfo[0] then
-                    imgui.Text(fa.INFO..u8' | Можно использовать /armbot *кол-во кругов*')
-                    imgui.Text(fa.INFO..u8' | 0 - бесконечность кругов')
-                end
-                if imgui.Button(fa.FISH..u8' Бот рыбалка') then
-                    sampProcessChatInput('/fishbot')
-                end
-                if settings.menu.showinfo[0] then
-                    imgui.Text(fa.INFO..u8' | Можно использовать /fishbot')
                 end
                 imgui.Separator()
             end
@@ -1886,7 +1870,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
 		        end
                 if imgui.BeginPopupModal(fa.STAR_OF_LIFE..u8' Команды скрипта '..fa.STAR_OF_LIFE, _, imgui.WindowFlags.AlwaysAutoResize) then
                     imgui.Text(u8'/miku - основное меню скрипта')
-                    imgui.Text(u8'/armbot - бот на завод')
                     imgui.Text(u8'/tpc - телепорт метка (для нубо рп, моментальный)')
                     imgui.Text(u8'/jump - включить прыжок (баг, когда упал и перс не встает)')
                     imgui.Text(u8'/rc - реконнект')
@@ -1966,6 +1949,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.main.antimask = settings.main.antimask[0]
                     ini.main.timeblockserv = settings.main.timeblockserv[0]
                     ini.main.weatherblockserv = settings.main.weatherblockserv[0]
+                    ini.main.autocaptcha = settings.main.autocaptcha[0]
                     ini.ped.godmode_enabled = settings.ped.godmode_enabled[0]
                     ini.ped.noreload = settings.ped.noreload[0]
                     ini.ped.setskills = settings.ped.setskills[0]
@@ -2219,15 +2203,6 @@ function main()
     check_update()
     while not isSampAvailable() do wait(0) end
     sampRegisterChatCommand('miku', function() window_state[0] = not window_state[0] end)
-    sampRegisterChatCommand('sosopjpjpjpjpjpj', function() fishbot = not fishbot end)
-    sampRegisterChatCommand('fishbot', function() 
-        floodfish = not floodfish
-        if floodfish then
-            notf4(u8'FishBot включен')
-        else
-            notf4(u8'FishBot выключен')
-        end
-    end)
     sampRegisterChatCommand('jump', function()
         lua_thread.create(function()
             sampSetSpecialAction(68)
@@ -2240,38 +2215,6 @@ function main()
         result, x, y, z = getTargetBlipCoordinatesFixed()
         if result then setCharCoordinates(PLAYER_PED, x, y, z) end
     end)
-    sampRegisterChatCommand('armbot', function(round) 
-		if not round:match('%d+') or round:match('[-/*+!#$%%^&()]') then
-			notf3(u8'Неправильно указано количество кругов. ')
-			if armorbotstate then
-				armorbotstate = false
-				statusbot: terminate()
-			end
-		else
-			armorbotstate = not armorbotstate
-			if armorbotstate then
-				if round:match('0') then
-					setrounds = -1
-				else
-					setrounds = tonumber(round)
-				end
-				local _, id = sampGetPlayerIdByCharHandle(PLAYER_PED)
-				if _ then
-					idb = id
-				end
-				currentrounds = 0
-				statusbot: run()
-				notf1(u8'Активирован.')
-			else
-				armorbotalt = false
-				point = 0
-				statusbot: terminate()
-				notf3(u8'Деактивирован.')
-			end
-		end
-	end)
-	statusbot = lua_thread.create_suspended(botwork)
-	statusbot = lua_thread.create_suspended(botwork)
     while true do wait(0)
         while not sampIsLocalPlayerSpawned() do wait(0) end
         if settings.ped.godmode_enabled[0] then
@@ -2439,9 +2382,6 @@ function main()
             if isCharInAnyCar(PLAYER_PED) then
                 switchCarEngine(storeCarCharIsInNoSave(PLAYER_PED), true)
             end
-        end
-        if floodfish then
-            sampProcessChatInput('/sosopjpjpjpjpjpj')
         end
         if settings.car.speedhack[0] then
             local veh = player_vehicle[0]
@@ -3111,18 +3051,6 @@ function events.onSendPlayerSync(data)
     if tpclick then
         return false
 	end
-	if fishbot then
-        lua_thread.create(function()
-            data.keys.secondaryFire_shoot = 1
-            wait(500)
-            data.keys.secondaryFire_shoot = 0
-            wait(500)
-            return
-        end)
-    end
-    if fishbot == false then
-        data.keys.secondaryFire_shoot = 0
-    end
     if nop then 
         return false
     end
@@ -3993,27 +3921,27 @@ function sendInterfaceLoaded(interfaceid, bool)
 end
 
 addEventHandler('onReceivePacket', function(id, bs)
-    if id == 220 then
-        raknetBitStreamIgnoreBits(bs, 8)
-        local type = raknetBitStreamReadInt8(bs)
-        if type == 84 then
-            local interfaceid = raknetBitStreamReadInt8(bs)
-            local subid = raknetBitStreamReadInt8(bs)
-            --local len = raknetBitStreamReadInt32(bs)
-            --local json = raknetBitStreamReadString(bs, len)
-            if interfaceid == 81 then
-                lua_thread.create(function()
-                    wait(100)
-                    sendFrontendClick(81, 0, 0, "")
-                end)
-                return false
-            end
-        elseif type == 62 then
-            local interfaceid = raknetBitStreamReadInt8(bs)
-            local toggle = raknetBitStreamReadBool(bs)
-            if interfaceid == 81 then
-                sendInterfaceLoaded(81, toggle)
-                return false
+    if settings.main.autocaptcha[0] then
+        if id == 220 then
+            raknetBitStreamIgnoreBits(bs, 8)
+            local type = raknetBitStreamReadInt8(bs)
+            if type == 84 then
+                local interfaceid = raknetBitStreamReadInt8(bs)
+                local subid = raknetBitStreamReadInt8(bs)
+                if interfaceid == 81 then
+                    lua_thread.create(function()
+                        wait(100)
+                        sendFrontendClick(81, 0, 0, "")
+                    end)
+                    return false
+                end
+            elseif type == 62 then
+                local interfaceid = raknetBitStreamReadInt8(bs)
+                local toggle = raknetBitStreamReadBool(bs)
+                if interfaceid == 81 then
+                    sendInterfaceLoaded(81, toggle)
+                    return false
+                end
             end
         end
     end
