@@ -1,10 +1,15 @@
 -------Версия скрипта--------
-local script_ver = '1.0.7'
+local script_ver = '1.0.8'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
 script_author('@mikusilent')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channeI: t.me/mikusilent')
+--------Проверка на долбаеба-------
+local getName = thisScript().path
+if getName ~= '/storage/emulated/0/Android/media/com.arizona.game/monetloader/MikuProjectReborn.lua' then
+    os.rename(getName, '/storage/emulated/0/Android/media/com.arizona.game/monetloader/MikuProjectReborn.lua')
+end
 --------Библиотеки--------
 local imgui = require 'mimgui'
 local fa = require 'fAwesome6_solid'
