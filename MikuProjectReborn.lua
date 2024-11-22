@@ -1,5 +1,5 @@
 -------Версия скрипта--------
-local script_ver = '1.0.8'
+local script_ver = '1.0.9'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
@@ -3247,7 +3247,8 @@ local weapons = {
         distance = 75,
         camMode = 53,
         weaponState = 2
-    },  
+    },
+    
 }
 
 imgui.OnFrame(
