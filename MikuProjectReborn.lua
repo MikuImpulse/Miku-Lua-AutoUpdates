@@ -4662,7 +4662,7 @@ local figure = {
     shape = "circle"
 }
 
-local function create_figure()
+--[[local function create_figure()
   local new_figure = {
     x = math.random(0, getScreenResolution()),
     y = math.random(0, getScreenResolution()),
@@ -4705,4 +4705,63 @@ imgui.OnFrame(function() return window_state[0] and settings.menu.draweffects[0]
         end
         bgdl:AddCircleFilled(imgui.ImVec2(fig.x, fig.y), 10, imgui.ColorConvertFloat4ToU32(fig.color))
     end
+end)]]
+
+local screen_resX, screen_resY = getScreenResolution()
+
+local function create_snowflake()
+  local new_snowflake = {
+    x = math.random(0, screen_resX),
+    y = -math.random(10, 50), -- Start above the screen
+    vx = math.random(-1, 1), -- Small horizontal drift
+    vy = math.random(2, 5),   -- Vertical speed (falling)
+    size = math.random(5, 15),
+    color = {1, 1, 1, 1},
+  }
+  return new_snowflake
+end
+
+local snowflakes = {}
+local max_snowflakes = 100
+
+imgui.OnFrame(function() return window_state[0] and settings.menu.draweffects[0] end, function()
+    local bgdl = imgui.GetBackgroundDrawList()
+    bgdl:AddRectFilled(imgui.ImVec2(0, 0), imgui.ImVec2(screen_resX, screen_resY), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.00, 0.00, 0.00, 0.60)), 20, 1 + 8)
+
+    -- Remove old snowflakes
+    snowflakes = table_filter(snowflakes, function(snowflake) return snowflake.y < screen_resY + 50 end)
+
+    -- Add new snowflakes if needed
+    while #snowflakes < max_snowflakes do
+        table.insert(snowflakes, create_snowflake())
+    end
+
+    for i, snowflake in ipairs(snowflakes) do
+        snowflake.x = snowflake.x + snowflake.vx
+        snowflake.y = snowflake.y + snowflake.vy
+
+        -- Remove snowflakes that have fallen off the screen
+        if snowflake.y > screen_resY + snowflake.size then
+            table.remove(snowflakes, i)
+        else
+            -- Draw snowflake (no horizontal constraints)
+            local size = snowflake.size
+            local center = imgui.ImVec2(snowflake.x, snowflake.y)
+            bgdl:AddLine(center, imgui.ImVec2(snowflake.x + size, snowflake.y), imgui.ColorConvertFloat4ToU32(snowflake.color), 1)
+            bgdl:AddLine(center, imgui.ImVec2(snowflake.x - size, snowflake.y), imgui.ColorConvertFloat4ToU32(snowflake.color), 1)
+            bgdl:AddLine(center, imgui.ImVec2(snowflake.x, snowflake.y + size), imgui.ColorConvertFloat4ToU32(snowflake.color), 1)
+            bgdl:AddLine(center, imgui.ImVec2(snowflake.x, snowflake.y - size), imgui.ColorConvertFloat4ToU32(snowflake.color), 1)
+        end
+    end
 end)
+
+
+function table_filter(tbl, fn)
+  local new_tbl = {}
+  for _, v in ipairs(tbl) do
+    if fn(v) then
+      table.insert(new_tbl, v)
+    end
+  end
+  return new_tbl
+end
