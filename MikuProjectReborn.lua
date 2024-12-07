@@ -1,11 +1,11 @@
 -------Версия скрипта--------
-local script_ver = '1.1.0'
+local script_ver = '1.1.1'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
 script_author('@mikusilent')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channeI: t.me/mikusilent')
---------Проверка на долбаеба-------
+--------Проверка на название скрипта-------
 local getName = thisScript().path
 if getName ~= getWorkingDirectory()..'/MikuProjectReborn.lua' then
     os.rename(getName, getWorkingDirectory()..'/MikuProjectReborn.lua')
@@ -27,6 +27,7 @@ local samem = require 'SAMemory'
 local raknet = require 'samp.raknet'
 local ltn12 = require 'ltn12'
 local http = require 'socket.http'
+local FontFlags = require 'lib.moonloader'.font_flag
 --------Кодировка--------
 local encoding = require 'encoding'
 encoding.default = 'CP1251'
@@ -164,7 +165,8 @@ local ini = inicfg.load({
         autormlsa = (false),
         autormsfa = (false),
         autormblockpost = (false),
-        autormlampposts = (false)
+        autormlampposts = (false),
+        autormroadrem = (false)
     },
     tsr = {
         tsrbotwait = (1200),
@@ -298,7 +300,8 @@ local settings = {
         autormlsa = imgui.new.bool(ini.objects.autormlsa),
         autormsfa = imgui.new.bool(ini.objects.autormsfa),
         autormblockpost = imgui.new.bool(ini.objects.autormblockpost),
-        autormlampposts = imgui.new.bool(ini.objects.autormlampposts)
+        autormlampposts = imgui.new.bool(ini.objects.autormlampposts),
+        autormroadrem = imgui.new.bool(ini.objects.autormroadrem)
     },
     tsr = {
         tsrbotwait = imgui.new.int(ini.tsr.tsrbotwait),
@@ -408,11 +411,17 @@ local FlyCar = {
 }
 local wwwflycar = false
 -- Рендер font
-local font = renderCreateFont('NAMU PRO', 25, 26)
+local font = renderCreateFont('NAMU PRO', 25, FontFlags.BORDER)
 -- esp fonts, bones
+function updateFont()
+    if font then
+        renderReleaseFont(font)
+    end
+    FONTESP = renderCreateFont('Arial', SCREEN_H * settings.ESP.nicknamesize[0], 1 + 4)
+end
+updateFont()
 local ESP2 = {
   BONES = { 3, 4, 5, 51, 52, 41, 42, 31, 32, 33, 21, 22, 23, 2 },
-  FONT = renderCreateFont('Arial', SCREEN_H * settings.ESP.nicknamesize[0], 1 + 4)
 }
 -- silent
 local targetId = -1
@@ -1179,6 +1188,39 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         save()
                     end
                 end
+                if imgui.Button(fa.ROAD_BARRIER..u8' Дорожные ремонты') then
+                    for _, obj in pairs(getAllObjects()) do
+                        local modeid = getObjectModel(obj)
+                        if modeid == 1422 then
+                            deleteObject(obj)
+                        end
+                        if modeid == 3865 then
+                            deleteObject(obj)
+                        end
+                        if modeid == 19353 then
+                            deleteObject(obj)
+                        end
+                        if modeid == 19445 then
+                            deleteObject(obj)
+                        end
+                        if modeid == 1459 then
+                            deleteObject(obj)
+                        end
+                        if modeid == 3864 then
+                            deleteObject(obj)
+                        end
+                        if modeid == 16305 then
+                            deleteObject(obj)
+                        end
+                    end
+                end
+                imgui.SameLine()
+                if imgui.ToggleButton(fa.TRASH..u8' Автoудаление##roadrem', settings.objects.autormroadrem) then
+                    if settings.cfg.autosave[0] then
+                        ini.objects.autormroadrem = settings.objects.autormroadrem[0]
+                        save()
+                    end
+                end
                 if settings.menu.showinfo[0] then
                     imgui.Text(fa.INFO..u8' | (Будет пополняться в зависимости)')
                     imgui.Text(fa.INFO..u8' | (от ваших пожеланий в чате Miku Project)')
@@ -1598,10 +1640,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         ini.ESP.nicknamesize = settings.ESP.nicknamesize[0]
                         save()
                     end
-                end
-                if settings.menu.showinfo[0] then
-                    imgui.Text(fa.INFO..u8' | Для применения размера ников, нужно сохранить конфиг')
-                    imgui.Text(fa.INFO..u8' | и перезагрузить скрипт')
+                    updateFont()
                 end
                 imgui.Separator()
             end
@@ -2024,6 +2063,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.objects.autormsfa = settings.objects.autormsfa[0]
                     ini.objects.autormblockpost = settings.objects.autormblockpost[0]
                     ini.objects.autormlampposts = settings.objects.autormlampposts[0]
+                    ini.objects.autormroadrem = settings.objects.autormroadrem[0]
                     ini.tsr.tsrbotwait = settings.tsr.tsrbotwait[0]
                     ini.tsr.autormcell = settings.tsr.autormcell[0]
                     ini.tsr.autormdoors = settings.tsr.autormdoors[0]
@@ -2215,7 +2255,17 @@ function main()
             sampSetSpecialAction(0)
         end)
     end)
-    sampRegisterChatCommand('rc', Reconnect.activate)
+    sampRegisterChatCommand('rc', function()
+        notf4(u8'Реконнектимся...')
+        local bs = raknetNewBitStream()
+        raknetBitStreamWriteInt8(bs, sf.PACKET_DISCONNECTION_NOTIFICATION)
+        raknetSendBitStreamEx(bs, sf.SYSTEM_PRIORITY, sf.RELIABLE, 0)
+        raknetDeleteBitStream(bs)
+
+        bs = raknetNewBitStream()
+        raknetEmulPacketReceiveBitStream(sf.PACKET_CONNECTION_LOST, bs)
+        raknetDeleteBitStream(bs)
+    end)
     sampRegisterChatCommand('tpc', function()
         result, x, y, z = getTargetBlipCoordinatesFixed()
         if result then setCharCoordinates(PLAYER_PED, x, y, z) end
@@ -2313,10 +2363,10 @@ function main()
                         if hr then
                             local nickname = sampGetPlayerNickname(id)
                             local nametag = nickname .. ' [' .. tostring(id) .. '] - {FF0000}' .. string.format("%.0f", sampGetPlayerHealth(id)) .. 'hp {BBBBBB}' .. string.format("%.0f", sampGetPlayerArmor(id)) .. 'ap'
-                            local nametag_len = renderGetFontDrawTextLength(ESP2.FONT, nametag)
+                            local nametag_len = renderGetFontDrawTextLength(FONTESP, nametag)
                             local nametag_x = headx - nametag_len / 2
-                            local nametag_y = heady - renderGetFontDrawHeight(ESP2.FONT)
-                            renderFontDrawText(ESP2.FONT, nametag, nametag_x, nametag_y, opaque_color)
+                            local nametag_y = heady - renderGetFontDrawHeight(FONTESP)
+                            renderFontDrawText(FONTESP, nametag, nametag_x, nametag_y, opaque_color)
                         end
                     end
                     if settings.ESP.enabled_lines[0] then
@@ -2525,6 +2575,32 @@ function main()
                     deleteObject(obj)
                 end
                 if modeid == 1294 then
+                    deleteObject(obj)
+                end
+            end
+        end
+        if settings.objects.autormroadrem[0] then
+            for _, obj in pairs(getAllObjects()) do
+                local modeid = getObjectModel(obj)
+                if modeid == 1422 then
+                    deleteObject(obj)
+                end
+                if modeid == 3865 then
+                    deleteObject(obj)
+                end
+                if modeid == 19353 then
+                    deleteObject(obj)
+                end
+                if modeid == 19445 then
+                    deleteObject(obj)
+                end
+                if modeid == 1459 then
+                    deleteObject(obj)
+                end
+                if modeid == 3864 then
+                    deleteObject(obj)
+                end
+                if modeid == 16305 then
                     deleteObject(obj)
                 end
             end
