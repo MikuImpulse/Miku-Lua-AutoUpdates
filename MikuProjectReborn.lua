@@ -1,5 +1,5 @@
 -------Версия скрипта--------
-local script_ver = '1.1.1'
+local script_ver = '1.1.2'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
