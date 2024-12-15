@@ -150,7 +150,6 @@ local ini = inicfg.load({
         tabswidth = (140),
         tabsheight = (40),
         window_scale = (1.0),
-        syncwithmoonmonet = (false),
         waterposx = (0),
         waterposy = (0),
         notitlebar = (true),
@@ -285,7 +284,6 @@ local settings = {
         tabswidth = imgui.new.int(ini.menu.tabswidth),
         tabsheight = imgui.new.int(ini.menu.tabsheight),
         window_scale = imgui.new.float(ini.menu.window_scale),
-        syncwithmoonmonet = imgui.new.bool(ini.menu.syncwithmoonmonet),
         waterposx = imgui.new.int(ini.menu.waterposx),
         waterposy = imgui.new.int(ini.menu.waterposy),
         notitlebar = imgui.new.bool(ini.menu.notitlebar),
@@ -1843,17 +1841,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         save()
                     end
                 end
-                imgui.SameLine()
-                imgui.Text(u8'(')
-                imgui.SameLine()
-                if imgui.ToggleButton(fa.NOTE_STICKY..u8' Синхронизация цвета с MoonMonet', settings.menu.syncwithmoonmonet) then
-                    if settings.cfg.autosave[0] then
-                        ini.menu.syncwithmoonmonet = settings.menu.syncwithmoonmonet[0]
-                        save()
-                    end
-                end
-                imgui.SameLine()
-                imgui.Text(u8')')
                 if imgui.ToggleButton(fa.CHECK..u8' Кнопка "Menu"', settings.menu.openbutton2) then
                     if settings.cfg.autosave[0] then
                         ini.menu.openbutton2 = settings.menu.openbutton2[0]
@@ -2053,7 +2040,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     ini.menu.tabswidth = settings.menu.tabswidth[0]
                     ini.menu.tabsheight = settings.menu.tabsheight[0]
                     ini.menu.window_scale = settings.menu.window_scale[0]
-                    ini.menu.syncwithmoonmonet = settings.menu.syncwithmoonmonet[0]
                     ini.menu.notitlebar = settings.menu.notitlebar[0]
                     ini.menu.waterposx = settings.menu.waterposx[0]
                     ini.menu.waterposy = settings.menu.waterposy[0]
@@ -4714,18 +4700,12 @@ imgui.OnFrame(function() return settings.menu.openbutton[0] end, function(self)
     imgui.SetCursorPos(imgui.ImVec2(0, 30))
     local dl = imgui.GetWindowDrawList()
     local p = imgui.GetCursorScreenPos()
-    local generated_color = monet.buildColors(ini.theme.moonmonet, 1.0, true)
-    if settings.menu.syncwithmoonmonet[0] then
-        dl:AddRectFilled(p, imgui.ImVec2(p.x + 293, p.y + 10), imgui.ColorConvertFloat4ToU32(ColorAccentsAdapter(generated_color.accent1.color_600):apply_alpha(0xcc):as_vec4()), 10, 10)
-    else
-        dl:AddRectFilled(p, imgui.ImVec2(p.x + 293, p.y + 10), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(1.00, 1.00, 1.00, 1.00)), 10, 10)
-    end
+    dl:AddRectFilled(p, imgui.ImVec2(p.x + 293, p.y + 10), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(1.00, 1.00, 1.00, 1.00)), 10, 10)
     imgui.SetCursorPos(imgui.ImVec2(0, 0))
     if imgui.InvisibleButton('##hidemenu', imgui.GetWindowSize()) then
         window_state[0] = not window_state[0]
     end
-    imgui.PopStyleColor()
-    imgui.PopStyleColor()
+    imgui.PopStyleColor(2)
     imgui.End()
 end)
 
