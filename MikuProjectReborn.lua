@@ -549,7 +549,7 @@ imgui.OnInitialize(function()
 	mmcolor = imgui.new.float[3](tmp.z, tmp.y, tmp.x)
     apply_n_t()
 	----////\\\\----
-	imgui.GetIO().IniFilename = nil
+	--imgui.GetIO().IniFilename = nil
     ----\\\\////----
 	local glyph_ranges = imgui.GetIO().Fonts:GetGlyphRangesCyrillic()
     local path = getWorkingDirectory()..'/resource/Zekton-Font.ttf'
@@ -4831,8 +4831,7 @@ end
 
 -- watermark
 imgui.OnFrame(function() return watermark[0] end, function(self)
-    local xsr, ysr = getScreenResolution()
-    imgui.SetNextWindowPos(imgui.ImVec2(xsr / 2.3, 15), imgui.Cond.FirstUseEver)
+    imgui.SetNextWindowPos(imgui.ImVec2(25, 15), imgui.Cond.FirstUseEver)
     imgui.SetNextWindowSize(imgui.ImVec2(300, 48), imgui.Cond.Always)
     imgui.PushStyleColor(imgui.Col.WindowBg, imgui.ImVec4(0.12, 0.12, 0.14, 0.70))
     imgui.PushStyleColor(imgui.Col.Text, imgui.ImVec4(0.90, 0.90, 0.93, 0.85))
