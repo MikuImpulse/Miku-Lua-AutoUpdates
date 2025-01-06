@@ -1,5 +1,5 @@
 -------Версия скрипта--------
-local script_ver = '1.1.3'
+local script_ver = '1.1.4'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
@@ -2260,6 +2260,11 @@ function main()
     end)
     while true do wait(0)
         while not sampIsLocalPlayerSpawned() do wait(0) end
+        if not settings.menu.openbutton[0] and not settings.menu.openbutton2[0] then
+            watermark[0] = false
+        else
+            watermark[0] = true
+        end
         if settings.ped.godmode_enabled[0] then
             setCharProofs(PLAYER_PED, false, true, true, true, true)
         else
