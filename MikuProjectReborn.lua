@@ -1,5 +1,5 @@
 -------Версия скрипта--------
-local script_ver = '1.1.2'
+local script_ver = '1.1.3'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
@@ -326,6 +326,8 @@ local theme_t = {u8'black', u8'green', u8'bluegray', u8'cherry', 'moonmonet'}
 local items = imgui.new['const char*'][#theme_a](theme_a)
 local selected_theme = imgui.new.int(ini.theme.selected)
 local pizdeckaneshna = imgui.new.bool(ini.menu.pizdeckaneshna)
+-- watermark
+local watermark = imgui.new.bool(true)
 -- AirBrake
 local was_doubletapped = false
 local enabledair = false
@@ -547,7 +549,7 @@ imgui.OnInitialize(function()
 	mmcolor = imgui.new.float[3](tmp.z, tmp.y, tmp.x)
     apply_n_t()
 	----////\\\\----
-	--imgui.GetIO().IniFilename = nil
+	imgui.GetIO().IniFilename = nil
     ----\\\\////----
 	local glyph_ranges = imgui.GetIO().Fonts:GetGlyphRangesCyrillic()
     local path = getWorkingDirectory()..'/resource/Zekton-Font.ttf'
@@ -4766,15 +4768,15 @@ end)]]
 local screen_resX, screen_resY = getScreenResolution()
 
 local function create_snowflake()
-  local new_snowflake = {
-    x = math.random(0, screen_resX),
-    y = -math.random(10, 50), -- Start above the screen
-    vx = math.random(-1, 1), -- Small horizontal drift
-    vy = math.random(2, 5),   -- Vertical speed (falling)
-    size = math.random(5, 15),
-    color = {1, 1, 1, 1},
-  }
-  return new_snowflake
+    local new_snowflake = {
+        x = math.random(0, screen_resX),
+        y = -math.random(10, 50), -- Start above the screen
+        vx = math.random(-1, 1), -- Small horizontal drift
+        vy = math.random(2, 5),   -- Vertical speed (falling)
+        size = math.random(5, 15),
+        color = {1, 1, 1, 1},
+    }
+    return new_snowflake
 end
 
 local snowflakes = {}
@@ -4813,11 +4815,24 @@ end)
 
 
 function table_filter(tbl, fn)
-  local new_tbl = {}
-  for _, v in ipairs(tbl) do
-    if fn(v) then
-      table.insert(new_tbl, v)
+    local new_tbl = {}
+    for _, v in ipairs(tbl) do
+        if fn(v) then
+            table.insert(new_tbl, v)
+        end
     end
-  end
-  return new_tbl
+    return new_tbl
 end
+
+-- watermark
+imgui.OnFrame(function() return watermark[0] end, function(self)
+    local xsr, ysr = getScreenResolution()
+    imgui.SetNextWindowPos(imgui.ImVec2(xsr / 2.3, 15), imgui.Cond.FirstUseEver)
+    imgui.SetNextWindowSize(imgui.ImVec2(300, 48), imgui.Cond.Always)
+    imgui.PushStyleColor(imgui.Col.WindowBg, imgui.ImVec4(0.12, 0.12, 0.14, 0.70))
+    imgui.PushStyleColor(imgui.Col.Text, imgui.ImVec4(0.90, 0.90, 0.93, 0.85))
+    imgui.Begin("##minet", watermark, imgui.WindowFlags.NoMove + imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoInputs + imgui.WindowFlags.NoScrollbar)
+    imgui.Text(u8"Miku Reborn | v"..script_ver.." | @mikusilent")
+    imgui.End()
+    imgui.PopStyleColor(2)
+end)
