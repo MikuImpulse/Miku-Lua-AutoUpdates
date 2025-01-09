@@ -1,5 +1,5 @@
 -------Версия скрипта--------
-local script_ver = '1.2'
+local script_ver = '1.2.1'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
@@ -1095,7 +1095,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 subtab_2 = 1
             end
             imgui.SameLine()
-            if imgui.Button(u8"Silent Aim") then
+            if imgui.Button(u8"Silent Aim##tab") then
                 subtab_2 = 2
             end
             imgui.SameLine()
