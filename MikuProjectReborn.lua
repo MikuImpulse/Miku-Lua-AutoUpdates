@@ -1,5 +1,5 @@
 -------Версия скрипта--------
-local script_ver = '1.2.1'
+local script_ver = '1.2.2'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
@@ -9,6 +9,7 @@ script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to op
 local getName = thisScript().path
 if getName ~= getWorkingDirectory()..'/MikuProjectReborn.lua' then
     os.rename(getName, getWorkingDirectory()..'/MikuProjectReborn.lua')
+    thisScript():reload()
 end
 --------Библиотеки--------
 local imgui = require 'mimgui'
@@ -26,6 +27,7 @@ local samem = require 'SAMemory'
 local raknet = require 'samp.raknet'
 local ltn12 = require 'ltn12'
 local http = require 'socket.http'
+samem.require 'CPed'
 local FontFlags = require 'lib.moonloader'.font_flag
 --------Кодировка--------
 local encoding = require 'encoding'
@@ -90,7 +92,10 @@ local ini = inicfg.load({
         autoplusc = (false),
         infiniterun = (false),
         killbots1hit = (false),
-        sbiv = (false)
+        sbiv = (false),
+        autoscroll = (false),
+        pt = (1),
+        wait = (200)
     },
     car = {
         godmode2_enabled = (false),
@@ -208,7 +213,10 @@ local settings = {
         autoplusc = imgui.new.bool(ini.ped.autoplusc),
         infiniterun = imgui.new.bool(ini.ped.infiniterun),
         killbots1hit = imgui.new.bool(ini.ped.killbots1hit),
-        sbiv = imgui.new.bool(ini.ped.sbiv)
+        sbiv = imgui.new.bool(ini.ped.sbiv),
+        autoscroll = imgui.new.bool(ini.ped.autoscroll),
+        pt = imgui.new.int(ini.ped.pt),
+        wait = imgui.new.int(ini.ped.wait)
     },
     car = {
         godmode2_enabled = imgui.new.bool(ini.car.godmode2_enabled),
@@ -405,7 +413,13 @@ end
 local silentfovcolor = {
     colornew = imgui.ImVec4(0.00, 1.00, 0.00, 1.00)
 }
+
+local animSpeed = {'RUN_CIVI', 'RUN_1ARMED', 'RUN_ARMED', 'RUN_CSAW', 'RUN_FAT', 'RUN_FATOLD', 'RUN_GANG1', 'RUN_LEFT', 'RUN_OLD', 'RUN_PLAYER', 'RUN_RIGHT', 'RUN_ROCKET', 'RUN_WUZI', 'RUN_STOP', 'RUN_STOPR', 'IDLE_STANCE', 'XPRESSSCRATCH', 'ROADCROSS', 'ROADCROSS_FEMALE', 'ROADCROSS_GANG', 'ROADCROSS_OLD', 'IDLE_HBHB', 'IDLE_GANG1', 'IDLE_ARMED', 'IDLESTANCE_OLD', 'IDLESTANCE_FAT', 'FIGHTIDLE', 'FIGHTA_M', 'FIGHTA_1'}
+local rapidAnimations = {"PYTHON_CROUCHFIRE", "PYTHON_FIRE", "PYTHON_FIRE_POOR", "PYTHON_CROCUCHRELOAD", "RIFLE_CROUCHFIRE", "RIFLE_CROUCHLOAD", "RIFLE_FIRE", "RIFLE_FIRE_POOR", "RIFLE_LOAD", "SHOTGUN_CROUCHFIRE", "SHOTGUN_FIRE", "SHOTGUN_FIRE_POOR", "SILENCED_CROUCH_RELOAD", "SILENCED_CROUCH_FIRE", "SILENCED_FIRE", "SILENCED_RELOAD", "TEC_crouchfire", "TEC_crouchreload", "TEC_fire", "TEC_reload", "UZI_crouchfire", "UZI_crouchreload", "UZI_fire", "UZI_fire_poor", "UZI_reload", "idle_rocket", "Rocket_Fire", "run_rocket", "walk_rocket", "WALK_start_rocket", "WEAPON_sniper"}
+
 -- render objects
+
+local guns = {16, 17, 18, 25, 33, 34, 35, 36, 39, 40}
 local ruda1 = {
 	[854] = 'Руда',
 }
@@ -1208,6 +1222,26 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     setAnimGroupForChar(PLAYER_PED, usePlayerAnimGroup and "PLAYER" or isCharMale(PLAYER_PED) and "MAN" or "WOMAN")
                     notf4(u8'Бег CJ выключен!')
                 end
+                if imgui.ToggleButton(u8'AutoScroll', settings.ped.autoscroll) then
+                    if settings.cfg.autosave[0] then
+                        ini.ped.autoscroll = settings.ped.autoscroll[0]
+                        save()
+                    end
+                end
+                imgui.PushItemWidth(200)
+                if imgui.SliderInt(u8'Патроны##as', settings.ped.pt, 1, 100) then
+                    if settings.cfg.autosave[0] then
+                        ini.ped.pt = settings.ped.pt[0]
+                        save()
+                    end
+                end
+                if imgui.SliderInt(u8'Задержка скролла', settings.ped.wait, 1, 1000) then
+                    if settings.cfg.autosave[0] then
+                        ini.ped.wait = settings.ped.wait[0]
+                        save()
+                    end
+                end
+                imgui.PopItemWidth()
             elseif subtab_2 == 2 then
                 if imgui.ToggleButton(u8'Silent Aim', settings.silent.salo) then
                     if settings.cfg.autosave[0] then
@@ -1316,7 +1350,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 end
                 imgui.PopItemWidth()
                 imgui.PushItemWidth(350)
-                if imgui.SliderInt(u8'Патроны', settings.dgun.ammo, 1, 2000) then
+                if imgui.SliderInt(u8'Патроны##dgun', settings.dgun.ammo, 1, 2000) then
                     if settings.cfg.autosave[0] then
                         ini.dgun.ammo = settings.dgun.ammo[0]
                         save()
@@ -1335,7 +1369,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 subtab_3 = 1
             end
             imgui.SameLine()
-            if imgui.Button(u8"Attach Trailer") then
+            if imgui.Button(u8"Attach Trailer##atr") then
                 subtab_3 = 2
             end
             imgui.SameLine()
@@ -1874,6 +1908,9 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         ini.ped.infiniterun = settings.ped.infiniterun[0]
                         ini.ped.killbots1hit = settings.ped.killbots1hit[0]
                         ini.ped.sbiv = settings.ped.sbiv[0]
+                        ini.ped.autoscroll = settings.ped.autoscroll[0]
+                        ini.ped.pt = settings.ped.pt[0]
+                        ini.ped.wait = settings.ped.wait[0]
                         ini.car.godmode2_enabled = settings.car.godmode2_enabled[0]
                         ini.car.flycar = settings.car.flycar[0]
                         ini.car.nobike = settings.car.nobike[0]
@@ -2125,6 +2162,21 @@ function main()
     end)
     while true do wait(0)
         while not sampIsLocalPlayerSpawned() do wait(0) end
+        if settings.ped.autoscroll[0] then
+            if getCurrentCharWeapon(PLAYER_PED) ~= 0 then
+                for k, v in ipairs(guns) do
+                    if getCurrentCharWeapon(PLAYER_PED) ~= v then
+                        if getAmmoInClip() == settings.ped.pt[0] then
+                            local ow = getCurrentCharWeapon(PLAYER_PED)
+                            setCurrentCharWeapon(PLAYER_PED, 0)
+                            samp_create_sync_data("player").send()
+                            wait(settings.ped.wait[0])
+                            setCurrentCharWeapon(PLAYER_PED, ow)
+                        end
+                    end
+                end
+            end
+        end
         if settings.ped.godmode_enabled[0] then
             setCharProofs(PLAYER_PED, false, true, true, true, true)
         else
@@ -2659,71 +2711,17 @@ function main()
             raknetEmulRpcReceiveBitStream(22, nbs)
             raknetDeleteBitStream(nbs)
         end
-        if settings.ped.animspeed[0] then
-            setCharAnimSpeed(PLAYER_PED, 'RUN_CIVI', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'RUN_1ARMED', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'RUN_ARMED', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'RUN_CSAW', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'RUN_FAT', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'RUN_FATOLD', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'RUN_GANG1', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'RUN_LEFT', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'RUN_OLD', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'RUN_PLAYER', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'RUN_RIGHT', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'RUN_ROCKET', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'RUN_WUZI', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'RUN_STOP', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'RUN_STOPR', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'IDLE_STANCE', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'XPRESSSCRATCH', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'ROADCROSS', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'ROADCROSS_FEMALE', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'ROADCROSS_GANG', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'ROADCROSS_OLD', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'IDLE_STANCE', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'IDLE_HBHB', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'IDLE_GANG1', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'IDLE_ARMED', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'IDLESTANCE_OLD', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'IDLESTANCE_FAT', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'FIGHTIDLE', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'FIGHTA_M', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'FIGHTA_1', settings.ped.speedint[0])
-            setCharAnimSpeed(PLAYER_PED, 'IDLESTANCE_FAT', settings.ped.speedint[0])
+        local animSpeed = {}
+        if settings.ped.animspeed[0] then            
+            for _, anim in ipairs(animSpeed) do
+                setCharAnimSpeed(PLAYER_PED, anim, settings.ped.speedint[0])
+            end
+            
         end
         if settings.ped.rapidfire[0] then
-            setCharAnimSpeed(PLAYER_PED, "PYTHON_CROUCHFIRE", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "PYTHON_FIRE", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "PYTHON_FIRE_POOR", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "PYTHON_CROCUCHRELOAD", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "RIFLE_CROUCHFIRE", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "RIFLE_CROUCHLOAD", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "RIFLE_FIRE", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "RIFLE_FIRE_POOR", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "RIFLE_LOAD", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "SHOTGUN_CROUCHFIRE", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "SHOTGUN_FIRE", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "SHOTGUN_FIRE_POOR", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "SILENCED_CROUCH_RELOAD", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "SILENCED_CROUCH_FIRE", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "SILENCED_FIRE", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "SILENCED_RELOAD", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "TEC_crouchfire", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "TEC_crouchreload" , settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "TEC_fire", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "TEC_reload", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "UZI_crouchfire", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "UZI_crouchreload", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "UZI_fire", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "UZI_fire_poor", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "UZI_reload", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "idle_rocket", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "Rocket_Fire", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "run_rocket", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "walk_rocket", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "WALK_start_rocket", settings.ped.rapidint[0])
-            setCharAnimSpeed(PLAYER_PED, "WEAPON_sniper", settings.ped.rapidint[0])
+            for _, anim in ipairs(rapidAnimations) do
+                setCharAnimSpeed(PLAYER_PED, anim, settings.ped.rapidint[0])
+            end
         end
         if settings.silent.salo[0] then
             lua_thread.create(function() 
@@ -2738,210 +2736,10 @@ function main()
                 end
             end)
         end
-        if settings.render.ruda[0] then
+        if checkRenders(true, nil) then
             for _, obj_hand in pairs(getAllObjects()) do
                 local modelid = getObjectModel(obj_hand)
-                local _obj = ruda1[modelid]
-                if _obj then
-                    if isObjectOnScreen(obj_hand) then
-                        local x,y,z = getCharCoordinates(PLAYER_PED)
-                        local res,x1,y1,z1 = getObjectCoordinates(obj_hand)
-                        if res then
-                            local dist = math.floor(getDistanceBetweenCoords3d(x,y,z,x1,y1,z1))
-                            local c1,c2 = convert3DCoordsToScreen(x,y,z)
-                            local o1,o2 = convert3DCoordsToScreen(x1,y1,z1)
-                            local text = '{87CEEB}'.._obj..'\n{87CEEB}DIST: '..dist..'m.'
-                            renderDrawLine(c1,c2,o1,o2,1, 0xB8B8FCFF)
-                            renderFontDrawText(font,text,o1,o2,-1)
-                        end
-                    end
-                end
-            end
-        end
-        if settings.render.semena[0] then
-            for _, obj_hand in pairs(getAllObjects()) do
-                local modelid = getObjectModel(obj_hand)
-                local _obj = semenanarko[modelid]
-                if _obj then
-                    if isObjectOnScreen(obj_hand) then
-                        local x,y,z = getCharCoordinates(PLAYER_PED)
-                        local res,x1,y1,z1 = getObjectCoordinates(obj_hand)
-                        if res then
-                            local dist = math.floor(getDistanceBetweenCoords3d(x,y,z,x1,y1,z1))
-                            local c1,c2 = convert3DCoordsToScreen(x,y,z)
-                            local o1,o2 = convert3DCoordsToScreen(x1,y1,z1)
-                            local text = '{87CEEB}'.._obj..'\n{87CEEB}DIST: '..dist..'m.'
-                            renderDrawLine(c1,c2,o1,o2,1, 0xB8B8FCFF)
-                            renderFontDrawText(font,text,o1,o2,-1)
-                        end
-                    end
-                end
-            end
-        end
-        if settings.render.narkotiki[0] then
-            for _, obj_hand in pairs(getAllObjects()) do
-                local modelid = getObjectModel(obj_hand)
-                local _obj = narko[modelid]
-                if _obj then
-                    if isObjectOnScreen(obj_hand) then
-                        local x,y,z = getCharCoordinates(PLAYER_PED)
-                        local res,x1,y1,z1 = getObjectCoordinates(obj_hand)
-                        if res then
-                            local dist = math.floor(getDistanceBetweenCoords3d(x,y,z,x1,y1,z1))
-                            local c1,c2 = convert3DCoordsToScreen(x,y,z)
-                            local o1,o2 = convert3DCoordsToScreen(x1,y1,z1)
-                            local text = '{87CEEB}'.._obj..'\n{87CEEB}DIST: '..dist..'m.'
-                            renderDrawLine(c1,c2,o1,o2,1, 0xB8B8FCFF)
-                            renderFontDrawText(font,text,o1,o2,-1)
-                        end
-                    end
-                end
-            end
-        end
-        if settings.render.derevovishkac[0] then
-            for _, obj_hand in pairs(getAllObjects()) do
-                local modelid = getObjectModel(obj_hand)
-                local _obj = derevovish[modelid]
-                if _obj then
-                    if isObjectOnScreen(obj_hand) then
-                        local x,y,z = getCharCoordinates(PLAYER_PED)
-                        local res,x1,y1,z1 = getObjectCoordinates(obj_hand)
-                        if res then
-                            local dist = math.floor(getDistanceBetweenCoords3d(x,y,z,x1,y1,z1))
-                            local c1,c2 = convert3DCoordsToScreen(x,y,z)
-                            local o1,o2 = convert3DCoordsToScreen(x1,y1,z1)
-                            local text = '{87CEEB}'.._obj..'\n{87CEEB}DIST: '..dist..'m.'
-                            renderDrawLine(c1,c2,o1,o2,1, 0xB8B8FCFF)
-                            renderFontDrawText(font,text,o1,o2,-1)
-                        end
-                    end
-                end
-            end
-        end
-        if settings.render.podarok[0] then
-            for _, obj_hand in pairs(getAllObjects()) do
-                local modelid = getObjectModel(obj_hand)
-                local _obj = gift[modelid]
-                if _obj then
-                    if isObjectOnScreen(obj_hand) then
-                        local x,y,z = getCharCoordinates(PLAYER_PED)
-                        local res,x1,y1,z1 = getObjectCoordinates(obj_hand)
-                        if res then
-                            local dist = math.floor(getDistanceBetweenCoords3d(x,y,z,x1,y1,z1))
-                            local c1,c2 = convert3DCoordsToScreen(x,y,z)
-                            local o1,o2 = convert3DCoordsToScreen(x1,y1,z1)
-                            local text = '{87CEEB}'.._obj..'\n{87CEEB}DIST: '..dist..'m.'
-                            renderDrawLine(c1,c2,o1,o2,1, 0xB8B8FCFF)
-                            renderFontDrawText(font,text,o1,o2,-1)
-                        end
-                    end
-                end
-            end
-        end
-        if settings.render.yabloki[0] then
-            for _, obj_hand in pairs(getAllObjects()) do
-                local modelid = getObjectModel(obj_hand)
-                local _obj = apple[modelid]
-                if _obj then
-                    if isObjectOnScreen(obj_hand) then
-                        local x,y,z = getCharCoordinates(PLAYER_PED)
-                        local res,x1,y1,z1 = getObjectCoordinates(obj_hand)
-                        if res then
-                            local dist = math.floor(getDistanceBetweenCoords3d(x,y,z,x1,y1,z1))
-                            local c1,c2 = convert3DCoordsToScreen(x,y,z)
-                            local o1,o2 = convert3DCoordsToScreen(x1,y1,z1)
-                            local text = '{87CEEB}'.._obj..'\n{87CEEB}DIST: '..dist..'m.'
-                            renderDrawLine(c1,c2,o1,o2,1, 0xB8B8FCFF)
-                            renderFontDrawText(font,text,o1,o2,-1)
-                        end
-                    end
-                end
-            end
-        end
-        if settings.render.musortsr[0] then
-            for _, obj_hand in pairs(getAllObjects()) do
-                local modelid = getObjectModel(obj_hand)
-                local _obj = musor[modelid]
-                if _obj then
-                    if isObjectOnScreen(obj_hand) then
-                        local x,y,z = getCharCoordinates(PLAYER_PED)
-                        local res,x1,y1,z1 = getObjectCoordinates(obj_hand)
-                        if res then
-                            local dist = math.floor(getDistanceBetweenCoords3d(x,y,z,x1,y1,z1))
-                            local c1,c2 = convert3DCoordsToScreen(x,y,z)
-                            local o1,o2 = convert3DCoordsToScreen(x1,y1,z1)
-                            local text = '{87CEEB}'.._obj..'\n{87CEEB}DIST: '..dist..'m.'
-                            renderDrawLine(c1,c2,o1,o2,1, 0xB8B8FCFF)
-                            renderFontDrawText(font,text,o1,o2,-1)
-                        end
-                    end
-                end
-            end
-        end
-        if settings.render.slivu[0] then
-            for _, obj_hand in pairs(getAllObjects()) do
-                local modelid = getObjectModel(obj_hand)
-                local _obj = sliva[modelid]
-                if _obj then
-                    if isObjectOnScreen(obj_hand) then
-                        local x,y,z = getCharCoordinates(PLAYER_PED)
-                        local res,x1,y1,z1 = getObjectCoordinates(obj_hand)
-                        if res then
-                            local dist = math.floor(getDistanceBetweenCoords3d(x,y,z,x1,y1,z1))
-                            local c1,c2 = convert3DCoordsToScreen(x,y,z)
-                            local o1,o2 = convert3DCoordsToScreen(x1,y1,z1)
-                            local text = '{87CEEB}'.._obj..'\n{87CEEB}DIST: '..dist..'m.'
-                            renderDrawLine(c1,c2,o1,o2,1, 0xB8B8FCFF)
-                            renderFontDrawText(font,text,o1,o2,-1)
-                        end
-                    end
-                end
-            end
-        end
-        if settings.render.kladrender[0] then
-            for _, obj_hand in pairs(getAllObjects()) do
-                local modelid = getObjectModel(obj_hand)
-                local _obj = klad[modelid]
-                if _obj then
-                    if isObjectOnScreen(obj_hand) then
-                        local x,y,z = getCharCoordinates(PLAYER_PED)
-                        local res,x1,y1,z1 = getObjectCoordinates(obj_hand)
-                        if res then
-                            local dist = math.floor(getDistanceBetweenCoords3d(x,y,z,x1,y1,z1))
-                            local c1,c2 = convert3DCoordsToScreen(x,y,z)
-                            local o1,o2 = convert3DCoordsToScreen(x1,y1,z1)
-                            local text = '{87CEEB}'.._obj..'\n{87CEEB}DIST: '..dist..'m.'
-                            renderDrawLine(c1,c2,o1,o2,1, 0xB8B8FCFF)
-                            renderFontDrawText(font,text,o1,o2,-1)
-                        end
-                    end
-                end
-            end
-        end
-        if settings.render.kokosi[0] then
-            for _, obj_hand in pairs(getAllObjects()) do
-                local modelid = getObjectModel(obj_hand)
-                local _obj = kokos[modelid]
-                if _obj then
-                    if isObjectOnScreen(obj_hand) then
-                        local x,y,z = getCharCoordinates(PLAYER_PED)
-                        local res,x1,y1,z1 = getObjectCoordinates(obj_hand)
-                        if res then
-                            local dist = math.floor(getDistanceBetweenCoords3d(x,y,z,x1,y1,z1))
-                            local c1,c2 = convert3DCoordsToScreen(x,y,z)
-                            local o1,o2 = convert3DCoordsToScreen(x1,y1,z1)
-                            local text = '{87CEEB}'.._obj..'\n{87CEEB}DIST: '..dist..'m.'
-                            renderDrawLine(c1,c2,o1,o2,1, 0xB8B8FCFF)
-                            renderFontDrawText(font,text,o1,o2,-1)
-                        end
-                    end
-                end
-            end
-        end
-        if settings.render.graffiti[0] then
-            for _, obj_hand in pairs(getAllObjects()) do
-                local modelid = getObjectModel(obj_hand)
-                local _obj = graffity[modelid]
+                local _obj = checkRenders(false, modelid)
                 if _obj then
                     if isObjectOnScreen(obj_hand) then
                         local x,y,z = getCharCoordinates(PLAYER_PED)
@@ -2959,6 +2757,18 @@ function main()
             end
         end
     end
+end
+
+function checkRenders(state, modelid)
+    if state then
+        return settings.render.derevovishkac[0] or settings.render.graffiti[0] or settings.render.kladrender[0] or settings.render.kokosi[0] or settings.render.musortsr[0] or settings.render.narkotiki[0] or settings.render.podarok[0] or settings.render.ruda[0] or settings.render.semena[0] or settings.render.slivu[0] or settings.render.yabloki[0]
+    else
+        return (settings.render.derevovishkac[0] and derevovish[modelid]) or (settings.render.graffiti[0] and graffity[modelid]) or (settings.render.kladrender[0] and klad[modelid]) or (settings.render.kokosi[0] and kokos[modelid]) or (settings.render.musortsr[0] and musor[modelid]) or (settings.render.narkotiki[0] and narko[modelid]) or (settings.render.podarok[0] and gift[modelid]) or (settings.render.ruda[0] and ruda1[modelid]) or (settings.render.semena[0] and semenanarko[modelid]) or (settings.render.slivu[0] and sliva[modelid]) or (settings.render.yabloki[0] and apple[modelid])
+    end
+end
+
+function checkObject()
+    return settings.objects.autormblockpost[0] or settings.objects.autormlampposts[0] or settings.objects.autormlsa[0] or settings.objects.autormroadrem[0] or settings.objects.autormsfa[0]
 end
 
 --      Общие эвенты        --
@@ -4046,10 +3856,10 @@ end
 -- fast enter vehicle
 function events.onSendEnterVehicle(vehicleId, passenger)
     lua_thread.create(function()
-        if settings.car.fastenter[0] and passenger == false then
+        if settings.car.fastenter[0] and not passenger then
             wait(300)
             warpCharIntoCar(PLAYER_PED, select(2, sampGetCarHandleBySampVehicleId(vehicleId)))
-        elseif settings.car.fastenter[0] and passenger == true then
+        elseif settings.car.fastenter[0] and passenger then
             wait(300)
             warpCharIntoCarAsPassenger(PLAYER_PED, select(2, sampGetCarHandleBySampVehicleId(vehicleId)), 2)
         end
@@ -4060,10 +3870,21 @@ end
 function sendSpawn()
     lua_thread.create(function()
         nop = true
-        sampSendTakeDamage(65535, 1/0, 51, 3)
+        clearCharTasksImmediately(PLAYER_PED)
+        setCharHealth(PLAYER_PED, 0)
+        sampSendDeathByPlayer(65535, 51)
         sampRequestClass(getCharModel(PLAYER_PED))
+        wait(200)
         nop = false
     end)
+end
+
+-- get ammo
+function getAmmoInClip()
+    local cped = ffi.cast("CPed *", getCharPointer(PLAYER_PED))
+    local weapon = cped.aWeapons[cped.nActiveWeaponSlot]
+
+    return tonumber(weapon.nAmmoInClip)
 end
 
 -- theme
