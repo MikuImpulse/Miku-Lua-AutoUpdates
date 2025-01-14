@@ -1,5 +1,5 @@
 -------Версия скрипта--------
-local script_ver = '1.2.3_beta'
+local script_ver = '1.2.3_beta1'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
@@ -663,12 +663,12 @@ imgui.OnFrame(function() return found_update[0] end, function()
     imgui.PopFont()
     imgui.CenterText('')
     imgui.PushFont(upd1)
-    imgui.CenterText(u8'New update found!')
+    imgui.CenterText(u8'New beta update found!')
     imgui.PopFont()
     imgui.CenterText('')
     imgui.CenterText('')
     imgui.PushFont(upd2)
-    imgui.CenterText(u8'A new script update was found')
+    imgui.CenterText(u8'A new beta script update was found')
     imgui.CenterText(u8'To continue working you')
     imgui.CenterText(u8'must select one of the two buttons below')
     imgui.PopFont()
