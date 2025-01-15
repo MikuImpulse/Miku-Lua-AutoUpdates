@@ -337,6 +337,8 @@ local player_vehicle = samem.cast('CVehicle **', samem.player_vehicle)
 -- auto updates
 local lmPath = "MikuProjectReborn.lua"
 local lmUrl = "https://raw.githubusercontent.com/MikuImpulse/Miku-Lua-AutoUpdates/main/MikuProjectReborn.lua"
+local betaPath = "MikuProjectReborn.lua"
+local betaUrl = "https://github.com/MikuImpulse/Miku-Lua-Beta/raw/refs/heads/main/MikuProjectReborn.lua"
 local updfont = {}
 -- togglebutton
 local AI_TOGGLE = {}
@@ -1835,6 +1837,12 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 if imgui.Button(u8'Показать mimgui demo') then
 		            custommimguiStyle[0] = not custommimguiStyle[0]
 		        end
+                if imgui.Button(u8'Обновиться на стабильную версию') then
+                    updateScript(lmUrl, lmPath)
+                end
+                if imgui.Button(u8'Обновиться на Бета-версию') then
+                    updateScript(betaUrl, betaPath)
+                end
                 if imgui.Button(fa.POWER_OFF, imgui.ImVec2(40 * MONET_DPI_SCALE, 40 * MONET_DPI_SCALE)) then
                     thisScript():unload()
                 end
