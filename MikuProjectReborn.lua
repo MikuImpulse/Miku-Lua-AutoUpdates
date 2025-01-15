@@ -594,7 +594,7 @@ FlyCar.processFlyCar = function()
         FlyCar.cars = FlyCar.cars - 0.3
         if FlyCar.cars < 0 then FlyCar.cars = 0 end
     end
-    if isWidgetPressed(WIDGET_HANDBRAKE) then
+    if isWidgetPressed(WIDGET_HORN) then
         FlyCar.cars = 0
         setCarRotationVelocity(car, 0.0, 0.0, 0.0)
         setCarRoll(car, 0.0)
