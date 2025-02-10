@@ -1,5 +1,5 @@
 -------Версия скрипта--------
-local script_ver = '1.2.2'
+local script_ver = '1.2.3'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
@@ -66,11 +66,15 @@ local ini = inicfg.load({
         enabled_bones = (false),
         enabled_nicks = (false),
         enabled_lines = (false),
-        boxthinkness = (0.005),
+        enabled_health = (false),
+        enabled_armor = (false),
+        enabled_fillgradient = (false),
+        boxthinkness = (3),
         skeletonthinkness = (3),
         nicknamesize = (0.0180),
         lineposition = (0),
-        linethinkness = (2)
+        linethinkness = (2),
+        fillboxvalue = (0.3)
     },
     main = {
         airbrakewidget = (false),
@@ -95,7 +99,10 @@ local ini = inicfg.load({
         sbiv = (false),
         autoscroll = (false),
         pt = (1),
-        wait = (200)
+        wait = (200),
+        nofall = (false),
+        changefov = (false),
+        fovvalue = (101)
     },
     car = {
         godmode2_enabled = (false),
@@ -111,7 +118,9 @@ local ini = inicfg.load({
 		fastenter = (false),
 		infinitefuel = (false),
 		fastexit = (false),
-		fastbrake = (false)
+		fastbrake = (false),
+        jumpcar = (false),
+        anticarskill = (false)
     },
     render = {
         ruda = (false),
@@ -187,11 +196,15 @@ local settings = {
         enabled_boxes = imgui.new.bool(ini.ESP.enabled_boxes),
         enabled_nicks = imgui.new.bool(ini.ESP.enabled_nicks),
         enabled_lines = imgui.new.bool(ini.ESP.enabled_lines),
-        boxthinkness = imgui.new.float(ini.ESP.boxthinkness),
+        enabled_health = imgui.new.bool(ini.ESP.enabled_health),
+        enabled_armor = imgui.new.bool(ini.ESP.enabled_armor),
+        enabled_fillgradient = imgui.new.bool(ini.ESP.enabled_fillgradient),
+        boxthinkness = imgui.new.int(ini.ESP.boxthinkness),
         skeletonthinkness = imgui.new.int(ini.ESP.skeletonthinkness),
         nicknamesize = imgui.new.float(ini.ESP.nicknamesize),
         lineposition = imgui.new.int(ini.ESP.lineposition),
-        linethinkness = imgui.new.int(ini.ESP.linethinkness)
+        linethinkness = imgui.new.int(ini.ESP.linethinkness),
+        fillboxvalue = imgui.new.float(ini.ESP.fillboxvalue)
     },
     main = {
         airbrakewidget = imgui.new.bool(ini.main.airbrakewidget),
@@ -216,7 +229,10 @@ local settings = {
         sbiv = imgui.new.bool(ini.ped.sbiv),
         autoscroll = imgui.new.bool(ini.ped.autoscroll),
         pt = imgui.new.int(ini.ped.pt),
-        wait = imgui.new.int(ini.ped.wait)
+        wait = imgui.new.int(ini.ped.wait),
+        nofall = imgui.new.bool(ini.ped.nofall),
+        changefov = imgui.new.bool(ini.ped.changefov),
+        fovvalue = imgui.new.int(ini.ped.fovvalue)
     },
     car = {
         godmode2_enabled = imgui.new.bool(ini.car.godmode2_enabled),
@@ -232,7 +248,9 @@ local settings = {
         fastenter = imgui.new.bool(ini.car.fastenter),
         infinitefuel = imgui.new.bool(ini.car.infinitefuel),
         fastexit = imgui.new.bool(ini.car.fastexit),
-        fastbrake = imgui.new.bool(ini.car.fastbrake)
+        fastbrake = imgui.new.bool(ini.car.fastbrake),
+        jumpcar = imgui.new.bool(ini.car.jumpcar),
+        anticarskill = imgui.new.bool(ini.car.anticarskill)
     },
     render = {
         ruda = imgui.new.bool(ini.render.ruda),
@@ -337,8 +355,8 @@ local player_vehicle = samem.cast('CVehicle **', samem.player_vehicle)
 -- auto updates
 local lmPath = "MikuProjectReborn.lua"
 local lmUrl = "https://raw.githubusercontent.com/MikuImpulse/Miku-Lua-AutoUpdates/main/MikuProjectReborn.lua"
-local betaPath = "MikuProjectReborn.lua"
 local betaUrl = "https://github.com/MikuImpulse/Miku-Lua-Beta/raw/refs/heads/main/MikuProjectReborn.lua"
+local betaPath = "MikuProjectReborn.lua"
 local updfont = {}
 -- togglebutton
 local AI_TOGGLE = {}
@@ -413,7 +431,7 @@ function getpx()
 end
 
 local silentfovcolor = {
-    colornew = imgui.ImVec4(0.00, 1.00, 0.00, 1.00)
+    colornew = imgui.ImVec4(1.00, 1.00, 1.00, 1.00)
 }
 
 local animSpeed = {'RUN_CIVI', 'RUN_1ARMED', 'RUN_ARMED', 'RUN_CSAW', 'RUN_FAT', 'RUN_FATOLD', 'RUN_GANG1', 'RUN_LEFT', 'RUN_OLD', 'RUN_PLAYER', 'RUN_RIGHT', 'RUN_ROCKET', 'RUN_WUZI', 'RUN_STOP', 'RUN_STOPR', 'IDLE_STANCE', 'XPRESSSCRATCH', 'ROADCROSS', 'ROADCROSS_FEMALE', 'ROADCROSS_GANG', 'ROADCROSS_OLD', 'IDLE_HBHB', 'IDLE_GANG1', 'IDLE_ARMED', 'IDLESTANCE_OLD', 'IDLESTANCE_FAT', 'FIGHTIDLE', 'FIGHTA_M', 'FIGHTA_1'}
@@ -506,28 +524,28 @@ local graffity = {
 -- ffi get ped bones position
 local gta = ffi.load('GTASA')
 ffi.cdef[[
-  typedef struct RwV3d {
-    float x, y, z;
-  } RwV3d;
-  // void CPed::GetBonePosition(CPed *this, RwV3d *posn, uint32 bone, bool calledFromCam) - Mangled name
-  void _ZN4CPed15GetBonePositionER5RwV3djb(void* thiz, RwV3d* posn, uint32_t bone, bool calledFromCam);
+    typedef struct RwV3d {
+        float x, y, z;
+    } RwV3d;
+    // void CPed::GetBonePosition(CPed *this, RwV3d *posn, uint32 bone, bool calledFromCam) - Mangled name
+    void _ZN4CPed15GetBonePositionER5RwV3djb(void* thiz, RwV3d* posn, uint32_t bone, bool calledFromCam);
 ]]
 
 function getBonePosition(ped, bone)
-  local pedptr = ffi.cast('void*', getCharPointer(ped))
-  local posn = ffi.new('RwV3d[1]')
-  gta._ZN4CPed15GetBonePositionER5RwV3djb(pedptr, posn, bone, false)
-  return posn[0].x, posn[0].y, posn[0].z
+    local pedptr = ffi.cast('void*', getCharPointer(ped))
+    local posn = ffi.new('RwV3d[1]')
+    gta._ZN4CPed15GetBonePositionER5RwV3djb(pedptr, posn, bone, false)
+    return posn[0].x, posn[0].y, posn[0].z
 end
 
 ----ImGui OnInitialize----
 imgui.OnInitialize(function()
     bluegraytheme()
-    fa.Init()
-    UI_Init()
+    Icons_Init()
+    Fonts_Init()
 end)
 
-function UI_Init()
+function Fonts_Init()
     --imgui.GetIO().IniFilename = nil
     local path = getWorkingDirectory()..'/resource/Zekton-Font.ttf'
     local path2 = getWorkingDirectory()..'/resource/Gotham_Pro.ttf'
@@ -536,10 +554,17 @@ function UI_Init()
     updfont[33] = imgui.GetIO().Fonts:AddFontFromFileTTF(path, 33.0, nil, glyph_ranges)
     updfont[40] = imgui.GetIO().Fonts:AddFontFromFileTTF(path, 40.0, nil, glyph_ranges)
     updfont[30] = imgui.GetIO().Fonts:AddFontFromFileTTF(path, 30.0, nil, glyph_ranges)
-    waterfont = imgui.GetIO().Fonts:AddFontFromFileTTF(path2, 35.0, nil, glyph_ranges)
+    waterfont = imgui.GetIO().Fonts:AddFontFromFileTTF(path2, 27.0 * MONET_DPI_SCALE, nil, glyph_ranges)
     upd1 = imgui.GetIO().Fonts:AddFontFromFileTTF(path2, 33.0, nil, glyph_ranges)
     upd2 = imgui.GetIO().Fonts:AddFontFromFileTTF(path2, 25.0, nil, glyph_ranges)
-    menufont = imgui.GetIO().Fonts:AddFontFromFileTTF(getWorkingDirectory()..'/lib/mimgui/trebucbd.ttf', 25.0, _, glyph_ranges)
+end
+
+function Icons_Init()
+    local config = imgui.ImFontConfig()
+    config.MergeMode = true
+    config.PixelSnapH = true
+    iconRanges = imgui.new.ImWchar[3](faicons.min_range, faicons.max_range, 0)
+    imgui.GetIO().Fonts:AddFontFromMemoryCompressedBase85TTF(faicons.get_font_data_base85('solid'), 20, config, iconRanges)
 end
 
 -- Reconnect
@@ -711,12 +736,6 @@ end)
 -- menu settings
 imgui.OnFrame(function() return menusettings[0] end, function()
     imgui.Begin(u8'Настройки меню', menusettings, imgui.WindowFlags.AlwaysAutoResize + imgui.WindowFlags.NoTitleBar)
-    imgui.CenterText(fa.DIAGRAM_PROJECT..u8' Чайлд вкладок')
-    imgui.Separator()
-    imgui.Separator()
-    imgui.CenterText(fa.DIAGRAM_PROJECT..u8' Чайлд функций')
-    imgui.Separator()
-    imgui.Separator()
     imgui.CenterText(fa.FOLDER..u8' Общие настройки меню')
     imgui.Separator()
     if imgui.SliderFloat(fa.MAXIMIZE..u8' Размер шрифта', settings.menu.window_scale, 1 / MONET_DPI_SCALE, 3.0) then
@@ -747,16 +766,16 @@ imgui.OnFrame(function() return window_state[0] end, function()
     imgui.SetNextWindowPos(imgui.ImVec2(1100 * MONET_DPI_SCALE, 500 * MONET_DPI_SCALE), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
     imgui.SetNextWindowSize(imgui.ImVec2(845 * MONET_DPI_SCALE, 482 * MONET_DPI_SCALE), imgui.Cond.Always)
     imgui.Begin(u8"##miku", window_state, imgui.WindowFlags.NoResize + imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoScrollbar)
-    imgui.SetCursorPos(imgui.ImVec2(20, 23))
+    imgui.SetCursorPos(imgui.ImVec2(10 * MONET_DPI_SCALE, 12 * MONET_DPI_SCALE))
     imgui.PushFont(waterfont)
     imgui.GetWindowDrawList():AddText(imgui.ImVec2(imgui.GetWindowPos().x + 20, imgui.GetWindowPos().y + 23), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.90, 0.90, 0.93, 1.00)), "Miku Reborn")
     imgui.PopFont()
-    imgui.SetCursorPos(imgui.ImVec2(20, 80))
-    imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+    imgui.SetCursorPos(imgui.ImVec2(16 * MONET_DPI_SCALE, 60 * MONET_DPI_SCALE))
+    imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.15, 0.15, 0.17, 1.00))
     imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
     imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
     if imgui.BeginChild("Tabs##"..tab, imgui.ImVec2(153 * MONET_DPI_SCALE, 405 * MONET_DPI_SCALE), false) then
-        if imgui.Button(fa.FIRE..u8" Основное", imgui.ImVec2(197, 68)) then
+        if imgui.Button(fa.FIRE..u8"  Основное", imgui.ImVec2(150 * MONET_DPI_SCALE, 53 * MONET_DPI_SCALE)) then
             tab = 1
             activetab = 1
         end
@@ -765,7 +784,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
             local buttonPos = imgui.GetItemRectMax() 
             drawlist:AddLine(buttonPos, buttonPos - imgui.ImVec2(0, 68), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.90, 0.90, 0.93, 1.00)), 4.0) 
         end
-        if imgui.Button(fa.USER..u8' Персонаж', imgui.ImVec2(197, 68)) then
+        if imgui.Button(fa.USER..u8'  Персонаж', imgui.ImVec2(150 * MONET_DPI_SCALE, 53 * MONET_DPI_SCALE)) then
             tab = 2
             activetab = 2
         end
@@ -774,7 +793,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
             local buttonPos = imgui.GetItemRectMax() 
             drawlist:AddLine(buttonPos, buttonPos - imgui.ImVec2(0, 68), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.90, 0.90, 0.93, 1.00)), 4.0) 
         end
-        if imgui.Button(fa.CAR..u8' Машина', imgui.ImVec2(197, 68)) then
+        if imgui.Button(fa.CAR..u8'  Машина', imgui.ImVec2(150 * MONET_DPI_SCALE, 53 * MONET_DPI_SCALE)) then
             tab = 3
             activetab = 3
         end
@@ -783,7 +802,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
             local buttonPos = imgui.GetItemRectMax() 
             drawlist:AddLine(buttonPos, buttonPos - imgui.ImVec2(0, 68), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.90, 0.90, 0.93, 1.00)), 4.0) 
         end
-        if imgui.Button(fa.EYE..u8' Подсветка', imgui.ImVec2(197, 68)) then
+        if imgui.Button(fa.EYE..u8'  Подсветка', imgui.ImVec2(150 * MONET_DPI_SCALE, 53 * MONET_DPI_SCALE)) then
             tab = 4
             activetab = 4
         end
@@ -792,7 +811,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
             local buttonPos = imgui.GetItemRectMax() 
             drawlist:AddLine(buttonPos, buttonPos - imgui.ImVec2(0, 68), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.90, 0.90, 0.93, 1.00)), 4.0) 
         end
-        if imgui.Button(fa.XMARKS_LINES..u8' ТСР Хелпер', imgui.ImVec2(197, 68)) then
+        if imgui.Button(fa.GAVEL..u8'  ТСР Хелпер', imgui.ImVec2(150 * MONET_DPI_SCALE, 53 * MONET_DPI_SCALE)) then
             tab = 5
             activetab = 5
         end
@@ -801,7 +820,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
             local buttonPos = imgui.GetItemRectMax() 
             drawlist:AddLine(buttonPos, buttonPos - imgui.ImVec2(0, 68), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.90, 0.90, 0.93, 1.00)), 4.0) 
         end
-        if imgui.Button(fa.SQUARE_CHECK..u8' Кнопочки', imgui.ImVec2(197, 68)) then
+        if imgui.Button(fa.SQUARE_CHECK..u8'  Кнопочки', imgui.ImVec2(150 * MONET_DPI_SCALE, 53 * MONET_DPI_SCALE)) then
             tab = 6
             activetab = 6
         end
@@ -810,7 +829,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
             local buttonPos = imgui.GetItemRectMax() 
             drawlist:AddLine(buttonPos, buttonPos - imgui.ImVec2(0, 68), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.90, 0.90, 0.93, 1.00)), 4.0) 
         end
-        if imgui.Button(fa.GEARS..u8' Настройки', imgui.ImVec2(197, 68)) then
+        if imgui.Button(fa.GEARS..u8'  Настройки', imgui.ImVec2(150 * MONET_DPI_SCALE, 53 * MONET_DPI_SCALE)) then
             tab = 7
             activetab = 7
         end
@@ -822,10 +841,10 @@ imgui.OnFrame(function() return window_state[0] end, function()
         imgui.EndChild()
     end
     imgui.PopStyleColor(3)
-    imgui.SetCursorPos(imgui.ImVec2(238, 20))
+    imgui.SetCursorPos(imgui.ImVec2(180 * MONET_DPI_SCALE, 15 * MONET_DPI_SCALE))
     if imgui.BeginChild("##MenuT", imgui.ImVec2(652 * MONET_DPI_SCALE, 458 * MONET_DPI_SCALE), false) then
         if tab == 1 then
-            imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+            imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.16, 0.16, 0.18, 1.00))
             imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
             imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
             if imgui.Button(u8"Основное") then
@@ -867,9 +886,10 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         save()
                     end
                 end
-                if imgui.Button(u8'Реконнект') and not Reconnect.reconnecting and not Reconnect.waiting then
+                if imgui.Button(u8'Реконнект', imgui.ImVec2(80 * MONET_DPI_SCALE, 30 * MONET_DPI_SCALE)) and not Reconnect.reconnecting and not Reconnect.waiting then
                     Reconnect.activate()
                 end
+                imgui.SameLine()
                 if Reconnect.waiting then
                     imgui.SameLine()
                     imgui.Text(string.format(u8'Реконнект через %.2f секунд...', Reconnect.remaining / 1000))
@@ -998,7 +1018,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 end
             elseif subtab_1 == 3 then
                 imgui.Text(u8'Удалить:')
-                if imgui.Button(u8'Ворота армии ЛС') then
+                if imgui.Button(u8'Ворота армии ЛС', imgui.ImVec2(130 * MONET_DPI_SCALE, 25 * MONET_DPI_SCALE)) then
                     for _, obj in pairs(getAllObjects()) do
                         local modeid = getObjectModel(obj)
                         if modeid == 975 then
@@ -1013,7 +1033,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         save()
                     end
                 end
-                if imgui.Button(u8'Ворота армии СФ') then
+                if imgui.Button(u8'Ворота армии СФ', imgui.ImVec2(130 * MONET_DPI_SCALE, 25 * MONET_DPI_SCALE)) then
                     for _, obj in pairs(getAllObjects()) do
                         local modeid = getObjectModel(obj)
                         if modeid == 988 then
@@ -1028,7 +1048,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         save()
                     end
                 end
-                if imgui.Button(u8'Шлагбаумы (КПП)') then
+                if imgui.Button(u8'Шлагбаумы (КПП)', imgui.ImVec2(130 * MONET_DPI_SCALE, 25 * MONET_DPI_SCALE)) then
                     for _, obj in pairs(getAllObjects()) do
                         local modeid = getObjectModel(obj)
                         if modeid == 968 then
@@ -1043,7 +1063,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         save()
                     end
                 end
-                if imgui.Button(u8'Фонарные столбы') then
+                if imgui.Button(u8'Фонарные столбы', imgui.ImVec2(130 * MONET_DPI_SCALE, 25 * MONET_DPI_SCALE)) then
                     for _, obj in pairs(getAllObjects()) do
                         local modeid = getObjectModel(obj)
                         if modeid == 1297 then
@@ -1067,7 +1087,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         save()
                     end
                 end
-                if imgui.Button(u8'Дорожные ремонты') then
+                if imgui.Button(u8'Дорожные ремонты', imgui.ImVec2(130 * MONET_DPI_SCALE, 25 * MONET_DPI_SCALE)) then
                     for _, obj in pairs(getAllObjects()) do
                         local modeid = getObjectModel(obj)
                         if modeid == 1422 then
@@ -1106,7 +1126,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 end
             end
         elseif tab == 2 then
-            imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+            imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.16, 0.16, 0.18, 1.00))
             imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
             imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
             if imgui.Button(u8"Персонаж") then
@@ -1130,12 +1150,48 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     end
                 end
                 imgui.SameLine()
-                imgui.SetCursorPosX(370)
-                if imgui.ToggleButton(u8'Убивать ботов с 1 выстрела', settings.ped.killbots1hit) then
+                imgui.SetCursorPosX(200 * MONET_DPI_SCALE)
+                if imgui.ToggleButton(u8'Ваншот ботов', settings.ped.killbots1hit) then
                     if settings.cfg.autosave[0] then
                         ini.ped.killbots1hit = settings.ped.killbots1hit[0]
                         save()
                     end
+                end
+                imgui.SameLine()
+                imgui.SetCursorPosX(400 * MONET_DPI_SCALE)
+                if imgui.ToggleButton(u8'AutoScroll', settings.ped.autoscroll) then
+                    if settings.cfg.autosave[0] then
+                        ini.ped.autoscroll = settings.ped.autoscroll[0]
+                        save()
+                    end
+                end
+                imgui.SameLine()
+                imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+                imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+                imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+                if imgui.Button(fa.GEARS..'##scrollsettings', imgui.ImVec2(14.5 * MONET_DPI_SCALE, 14.5 * MONET_DPI_SCALE)) then
+                    imgui.OpenPopup(u8'Настройки автоскролла')
+                end
+                imgui.PopStyleColor(3)
+                if imgui.BeginPopupModal(u8'Настройки автоскролла', _, imgui.WindowFlags.AlwaysAutoResize) then
+                    imgui.PushItemWidth(200)
+                    if imgui.SliderInt(u8'Патроны##as', settings.ped.pt, 1, 100) then
+                        if settings.cfg.autosave[0] then
+                            ini.ped.pt = settings.ped.pt[0]
+                            save()
+                        end
+                    end
+                    if imgui.SliderInt(u8'Задержка скролла', settings.ped.wait, 1, 1000) then
+                        if settings.cfg.autosave[0] then
+                            ini.ped.wait = settings.ped.wait[0]
+                            save()
+                        end
+                    end
+                    imgui.PopItemWidth()
+                    if imgui.Button(u8'Закрыть') then
+                        imgui.CloseCurrentPopup()
+                    end
+                    imgui.EndPopup()
                 end
                 if imgui.ToggleButton(u8'No Reload', settings.ped.noreload) then
                     if settings.cfg.autosave[0] then
@@ -1144,21 +1200,58 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     end
                 end
                 imgui.SameLine()
-                imgui.SetCursorPosX(370)
+                imgui.SetCursorPosX(200 * MONET_DPI_SCALE)
                 if imgui.ToggleButton(u8'Фейк скиллы', settings.ped.setskills) then
                     if settings.cfg.autosave[0] then
                         ini.ped.setskills = settings.ped.setskills[0]
                         save()
                     end
                 end
+                imgui.SameLine()
+                imgui.SetCursorPosX(400 * MONET_DPI_SCALE)
+                if imgui.ToggleButton(u8'Анти падение', settings.ped.nofall) then
+                    if settings.cfg.autosave[0] then
+                        ini.ped.nofall = settings.ped.nofall[0]
+                        save()
+                    end
+                end
                 imgui.ToggleButton(u8'Флуд взаимодействием', floodalt)
                 imgui.SameLine()
-                imgui.SetCursorPosX(370)
-                if imgui.ToggleButton(u8'Авто +С', settings.ped.autoplusc) then
+                imgui.SetCursorPosX(200 * MONET_DPI_SCALE)
+                if imgui.ToggleButton(u8'Авто +C', settings.ped.autoplusc) then
                     if settings.cfg.autosave[0] then
                         ini.ped.autoplusc = settings.ped.autoplusc[0]
                         save()
                     end
+                end
+                imgui.SameLine()
+                imgui.SetCursorPosX(400 * MONET_DPI_SCALE)
+                if imgui.ToggleButton(u8'Поле зрения', settings.ped.changefov) then
+                    if settings.cfg.autosave[0] then
+                        ini.ped.changefov = settings.ped.changefov[0]
+                        save()
+                    end
+                end
+                imgui.SameLine()
+                imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+                imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+                imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+                if imgui.Button(fa.GEARS..'##fovsettings', imgui.ImVec2(14.5 * MONET_DPI_SCALE, 14.5 * MONET_DPI_SCALE)) then
+                    imgui.OpenPopup(u8'Настройки поля зрения')
+                end
+                imgui.PopStyleColor(3)
+                if imgui.BeginPopupModal(u8'Настройки поля зрения', _, imgui.WindowFlags.AlwaysAutoResize) then
+                    imgui.PushItemWidth(200)
+                    if imgui.SliderInt(u8"Значение FOV'a", settings.ped.fovvalue, 50, 130) then
+                        if settings.cfg.autosave[0] then
+                            ini.ped.fovvalue = settings.ped.fovvalue[0]
+                            save()
+                        end
+                    end
+                    if imgui.Button(u8'Закрыть') then
+                        imgui.CloseCurrentPopup()
+                    end
+                    imgui.EndPopup()
                 end
                 if imgui.ToggleButton(u8'Виджет сбива', settings.ped.sbiv) then
                     if settings.cfg.autosave[0] then
@@ -1167,7 +1260,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     end
                 end
                 imgui.SameLine()
-                imgui.SetCursorPosX(370)
+                imgui.SetCursorPosX(200 * MONET_DPI_SCALE)
                 if imgui.ToggleButton(u8'Бесконечный бег', settings.ped.infiniterun) then
                     if settings.cfg.autosave[0] then
                         ini.ped.infiniterun = settings.ped.infiniterun[0]
@@ -1181,32 +1274,58 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     end
                 end
                 imgui.SameLine()
-                imgui.SetCursorPosX(370)
+                imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+                imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+                imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+                if imgui.Button(fa.GEARS..'##speedsettings', imgui.ImVec2(14.5 * MONET_DPI_SCALE, 14.5 * MONET_DPI_SCALE)) then
+                    imgui.OpenPopup(u8'Настройки скорости анимаций')
+                end
+                imgui.PopStyleColor(3)
+                if imgui.BeginPopupModal(u8'Настройки скорости анимаций', _, imgui.WindowFlags.AlwaysAutoResize) then
+                    imgui.PushItemWidth(200)
+                    if imgui.SliderInt(u8'Множитель скорости##animspeed', settings.ped.speedint, 1, 10) then
+                        if settings.cfg.autosave[0] then
+                            ini.ped.speedint = settings.ped.speedint[0]
+                            save()
+                        end
+                    end
+                    imgui.PopItemWidth()
+                    if imgui.Button(u8'Закрыть') then
+                        imgui.CloseCurrentPopup()
+                    end
+                    imgui.EndPopup()
+                end
+                imgui.SameLine()
+                imgui.SetCursorPosX(200 * MONET_DPI_SCALE)
                 if imgui.ToggleButton(u8'Рапид', settings.ped.rapidfire) then
                     if settings.cfg.autosave[0] then
                         ini.ped.rapidfire = settings.ped.rapidfire[0]
                         save()
                     end
                 end
-                imgui.PushItemWidth(200)
-                if imgui.SliderInt(u8'', settings.ped.speedint, 1, 10) then
-                    if settings.cfg.autosave[0] then
-                        ini.ped.speedint = settings.ped.speedint[0]
-                        save()
-                    end
-                end
-                imgui.PopItemWidth()
                 imgui.SameLine()
-                imgui.SetCursorPosX(370)
-                imgui.PushItemWidth(200)
-                if imgui.SliderInt(u8' ', settings.ped.rapidint, 1, 10) then
-                    if settings.cfg.autosave[0] then
-                        ini.ped.rapidint = settings.ped.rapidint[0]
-                        save()
-                    end
+                imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+                imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+                imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+                if imgui.Button(fa.GEARS..'##rapidsettings', imgui.ImVec2(14.5 * MONET_DPI_SCALE, 14.5 * MONET_DPI_SCALE)) then
+                    imgui.OpenPopup(u8'Настройки рапида')
                 end
-                imgui.PopItemWidth()
-                if imgui.Button(u8'Установить скин', imgui.ImVec2(420, 35)) then
+                imgui.PopStyleColor(3)
+                if imgui.BeginPopupModal(u8'Настройки рапида', _, imgui.WindowFlags.AlwaysAutoResize) then
+                    imgui.PushItemWidth(200)
+                    if imgui.SliderInt(u8'Множитель рапида##rapidfire', settings.ped.rapidint, 1, 10) then
+                        if settings.cfg.autosave[0] then
+                            ini.ped.rapidint = settings.ped.rapidint[0]
+                            save()
+                        end
+                    end
+                    imgui.PopItemWidth()
+                    if imgui.Button(u8'Закрыть') then
+                        imgui.CloseCurrentPopup()
+                    end
+                    imgui.EndPopup()
+                end
+                if imgui.Button(u8'Установить скин', imgui.ImVec2(300 * MONET_DPI_SCALE, 25 * MONET_DPI_SCALE)) then
                     setskin_activate()
                 end
                 imgui.SameLine()
@@ -1217,33 +1336,14 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         save()
                     end
                 end
-                if imgui.Button(u8'Включить бег CJ', imgui.ImVec2(275, 35)) then
+                if imgui.Button(u8'Включить бег CJ', imgui.ImVec2(146 * MONET_DPI_SCALE, 25 * MONET_DPI_SCALE)) then
                     setAnimGroupForChar(PLAYER_PED, "PLAYER")
                     notf4(u8'Бег CJ включен!')
                 end
                 imgui.SameLine()
-                if imgui.Button(u8'Выключить бег CJ', imgui.ImVec2(275, 35)) then
+                if imgui.Button(u8'Выключить бег CJ', imgui.ImVec2(146 * MONET_DPI_SCALE, 25 * MONET_DPI_SCALE)) then
                     setAnimGroupForChar(PLAYER_PED, usePlayerAnimGroup and "PLAYER" or isCharMale(PLAYER_PED) and "MAN" or "WOMAN")
                     notf4(u8'Бег CJ выключен!')
-                end
-                if imgui.ToggleButton(u8'AutoScroll', settings.ped.autoscroll) then
-                    if settings.cfg.autosave[0] then
-                        ini.ped.autoscroll = settings.ped.autoscroll[0]
-                        save()
-                    end
-                end
-                imgui.PushItemWidth(200)
-                if imgui.SliderInt(u8'Патроны##as', settings.ped.pt, 1, 100) then
-                    if settings.cfg.autosave[0] then
-                        ini.ped.pt = settings.ped.pt[0]
-                        save()
-                    end
-                end
-                if imgui.SliderInt(u8'Задержка скролла', settings.ped.wait, 1, 1000) then
-                    if settings.cfg.autosave[0] then
-                        ini.ped.wait = settings.ped.wait[0]
-                        save()
-                    end
                 end
                 imgui.PopItemWidth()
             elseif subtab_2 == 2 then
@@ -1366,7 +1466,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 end
             end
         elseif tab == 3 then
-            imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+            imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.16, 0.16, 0.18, 1.00))
             imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
             imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
             if imgui.Button(u8"Машина") then
@@ -1422,6 +1522,18 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 if imgui.ToggleButton(u8'Быстрый тормоз + флип', settings.car.fastbrake) then
                     if settings.cfg.autosave[0] then
                         ini.car.fastbrake = settings.car.fastbrake[0]
+                        save()
+                    end
+                end
+                if imgui.ToggleButton(u8'Прыжок авто (start)', settings.car.jumpcar) then
+                    if settings.cfg.autosave[0] then
+                        ini.car.jumpcar = settings.car.jumpcar[0]
+                        save()
+                    end
+                end
+                if imgui.ToggleButton(u8'Анти карскилл', settings.car.anticarskill) then
+                    if settings.cfg.autosave[0] then
+                        ini.car.anticarskill = settings.car.anticarskill[0]
                         save()
                     end
                 end
@@ -1489,7 +1601,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 end
             end
         elseif tab == 4 then
-            imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+            imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.16, 0.16, 0.18, 1.00))
             imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
             imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
             if imgui.Button(u8"ESP") then
@@ -1532,6 +1644,18 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         save()
                     end
                 end
+                if imgui.ToggleButton(u8'Здоровье', settings.ESP.enabled_health) then
+                    if settings.cfg.autosave[0] then
+                        ini.ESP.enabled_health = settings.ESP.enabled_health[0]
+                        save()
+                    end
+                end
+                if imgui.ToggleButton(u8'Броня', settings.ESP.enabled_armor) then
+                    if settings.cfg.autosave[0] then
+                        ini.ESP.enabled_armor = settings.ESP.enabled_armor[0]
+                        save()
+                    end
+                end
             elseif subtab_4 == 2 then
                 if imgui.SliderInt(u8'Позиция линии', settings.ESP.lineposition, 0, 1) then
                     if settings.cfg.autosave[0] then
@@ -1551,22 +1675,35 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         save()
                     end
                 end
-                if imgui.SliderFloat(u8'Толщина коробок', settings.ESP.boxthinkness, 0.001, 0.007) then
+                if imgui.SliderInt(u8'Толщина коробок', settings.ESP.boxthinkness, 1, 4) then
                     if settings.cfg.autosave[0] then
                         ini.ESP.boxthinkness = settings.ESP.boxthinkness[0]
                         save()
                     end
                 end
-                if imgui.SliderFloat(u8'Размер никнеймов', settings.ESP.nicknamesize, 0.01, 0.03) then
+                if imgui.SliderFloat(u8'Размер никнеймов', settings.ESP.nicknamesize, 1, 10) then
                     if settings.cfg.autosave[0] then
                         ini.ESP.nicknamesize = settings.ESP.nicknamesize[0]
                         save()
                     end
-                    updateFont()
+                end
+                if settings.ESP.enabled_boxes[0] then
+                    if imgui.ToggleButton(u8'Градиентная заполненность', settings.ESP.enabled_fillgradient) then
+                        if settings.cfg.autosave[0] then
+                            ini.ESP.enabled_fillgradient = settings.ESP.enabled_fillgradient[0]
+                            save()
+                        end
+                    end
+                    if imgui.SliderFloat(u8'Заполненность коробок', settings.ESP.fillboxvalue, 0.0, 1.0) then
+                        if settings.cfg.autosave[0] then
+                            ini.ESP.fillboxvalue = settings.ESP.fillboxvalue[0]
+                            save()
+                        end
+                    end
                 end
             end
         elseif tab == 5 then
-            imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+            imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.16, 0.16, 0.18, 1.00))
             imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
             imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
             if imgui.Button(u8"Объекты") then
@@ -1699,7 +1836,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 end
             end
         elseif tab == 6 then
-            imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+            imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.16, 0.16, 0.18, 1.00))
             imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
             imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
             if imgui.Button(u8"Кнопочки") then
@@ -1708,21 +1845,21 @@ imgui.OnFrame(function() return window_state[0] end, function()
             imgui.PopStyleColor(3)
             imgui.Separator()
             if subtab_6 == 1 then
-                if imgui.Button(u8'Очистить чат', imgui.ImVec2(150, 80)) then
+                if imgui.Button(fa.COMMENT..u8'  Очистить чат', imgui.ImVec2(125 * MONET_DPI_SCALE, 62 * MONET_DPI_SCALE)) then
                     for i = 1, 90 do
                         sampAddChatMessage("", -1)
                     end
                 end
                 imgui.SameLine()
-                if imgui.Button(u8'Умереть', imgui.ImVec2(150, 80)) then
+                if imgui.Button(fa.SKULL_CROSSBONES..u8'  Умереть', imgui.ImVec2(125 * MONET_DPI_SCALE, 62 * MONET_DPI_SCALE)) then
                     setCharHealth(PLAYER_PED, 0)
                 end
                 imgui.SameLine()
-                if imgui.Button(u8'Спавн', imgui.ImVec2(150, 80)) then
+                if imgui.Button(fa.HOUSE..u8'  Спавн', imgui.ImVec2(125 * MONET_DPI_SCALE, 62 * MONET_DPI_SCALE)) then
                     sendSpawn()
                 end
                 imgui.SameLine()
-                if imgui.Button(u8'Вкл. прыжок', imgui.ImVec2(150, 80)) then
+                if imgui.Button(fa.PERSON_WALKING..u8'  Вкл. прыжок', imgui.ImVec2(125 * MONET_DPI_SCALE, 62 * MONET_DPI_SCALE)) then
                     lua_thread.create(function()
                         sampSetSpecialAction(68)
                         wait(400)
@@ -1730,21 +1867,31 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     end)
                 end
                 imgui.SameLine()
-                if imgui.Button(u8'ТП метка', imgui.ImVec2(150, 80)) then
+                if imgui.Button(fa.LOCATION_DOT..u8'  ТП метка', imgui.ImVec2(125 * MONET_DPI_SCALE, 62 * MONET_DPI_SCALE)) then
                     result, x, y, z = getTargetBlipCoordinatesFixed()
                     if result then setCharCoordinates(PLAYER_PED, x, y, z) end
                 end
-                if imgui.Button(u8'Slap up', imgui.ImVec2(150, 40)) then
+                if imgui.Button(fa.WIFI..u8'  Реконнект v2', imgui.ImVec2(125 * MONET_DPI_SCALE, 62 * MONET_DPI_SCALE)) then
+                    notf4(u8'Реконнектимся...')
+                    local bs = raknetNewBitStream()
+                    raknetBitStreamWriteInt8(bs, sf.PACKET_DISCONNECTION_NOTIFICATION)
+                    raknetSendBitStreamEx(bs, sf.SYSTEM_PRIORITY, sf.RELIABLE, 0)
+                    raknetDeleteBitStream(bs)
+                    bs = raknetNewBitStream()
+                    raknetEmulPacketReceiveBitStream(sf.PACKET_CONNECTION_LOST, bs)
+                    raknetDeleteBitStream(bs)
+                end
+                if imgui.Button(fa.CARET_UP..u8'  Slap up', imgui.ImVec2(125 * MONET_DPI_SCALE, 31 * MONET_DPI_SCALE)) then
                     local x, y, z = getCharCoordinates(PLAYER_PED)
                     setCharCoordinates(PLAYER_PED, x, y, z+5)
                 end
-                if imgui.Button(u8'Slap down', imgui.ImVec2(150, 40)) then
+                if imgui.Button(fa.CARET_DOWN..u8'  Slap down', imgui.ImVec2(125 * MONET_DPI_SCALE, 31 * MONET_DPI_SCALE)) then
                     local x, y, z = getCharCoordinates(PLAYER_PED)
                     setCharCoordinates(PLAYER_PED, x, y, z-5)
                 end
             end
         elseif tab == 7 then
-            imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+            imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.16, 0.16, 0.18, 1.00))
             imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
             imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
             if imgui.Button(u8"Открытие меню") then
@@ -1828,6 +1975,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     imgui.Text(u8'/tpc - телепорт метка (для нубо рп, моментальный)')
                     imgui.Text(u8'/jump - включить прыжок (баг, когда упал и перс не встает)')
                     imgui.Text(u8'/rc - реконнект')
+                    imgui.Text(u8'/mikureload - перезагрузка скрипта')
                     if imgui.Button(u8' Закрыть') then
                         imgui.CloseCurrentPopup()
                     end
@@ -1895,11 +2043,15 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         ini.ESP.enabled_bones = settings.ESP.enabled_bones[0]
                         ini.ESP.enabled_nicks = settings.ESP.enabled_nicks[0]
                         ini.ESP.enabled_lines = settings.ESP.enabled_lines[0]
+                        ini.ESP.enabled_health = settings.ESP.enabled_health[0]
+                        ini.ESP.enabled_armor = settings.ESP.enabled_armor[0]
+                        ini.ESP.enabled_fillgradient = settings.ESP.enabled_fillgradient[0]
                         ini.ESP.boxthinkness = settings.ESP.boxthinkness[0]
                         ini.ESP.skeletonthinkness = settings.ESP.skeletonthinkness[0]
                         ini.ESP.nicknamesize = settings.ESP.nicknamesize[0]
                         ini.ESP.lineposition = settings.ESP.lineposition[0]
                         ini.ESP.linethinkness = settings.ESP.linethinkness[0]
+                        ini.ESP.fillboxvalue = settings.ESP.fillboxvalue[0]
                         ini.main.airbrakewidget = settings.main.airbrakewidget[0]
                         ini.main.clickwarpcoord = settings.main.clickwarpcoord[0]
                         ini.main.antimask = settings.main.antimask[0]
@@ -1921,6 +2073,9 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         ini.ped.autoscroll = settings.ped.autoscroll[0]
                         ini.ped.pt = settings.ped.pt[0]
                         ini.ped.wait = settings.ped.wait[0]
+                        ini.ped.nofall = settings.ped.nofall[0]
+                        ini.ped.changefov = settings.ped.changefov[0]
+                        ini.ped.fovvalue = settings.ped.fovvalue[0]
                         ini.car.godmode2_enabled = settings.car.godmode2_enabled[0]
                         ini.car.flycar = settings.car.flycar[0]
                         ini.car.nobike = settings.car.nobike[0]
@@ -1935,6 +2090,8 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         ini.car.infinitefuel = settings.car.infinitefuel[0]
                         ini.car.fastexit = settings.car.fastexit[0]
                         ini.car.fastbrake = settings.car.fastbrake[0]
+                        ini.car.jumpcar = settings.car.jumpcar[0]
+                        ini.car.anticarskill = settings.car.anticarskill[0]
                         ini.render.ruda = settings.render.ruda[0]
                         ini.render.narkotiki = settings.render.narkotiki[0]
                         ini.render.podarok = settings.render.podarok[0]
@@ -2142,12 +2299,15 @@ function bringVec2To(from, to, start_time, duration)
     return (timer > duration) and to or from, false
 end
 
-------main()------
+------main func------
 function main()
     checkResFolder()
+    clearTags()
     check_update()
+    antifall()
     while not isSampAvailable() do wait(0) end
     sampRegisterChatCommand('miku', function() window_state[0] = not window_state[0] end)
+    sampRegisterChatCommand('mikureload', function() thisScript():reload() end)
     sampRegisterChatCommand('jump', function()
         lua_thread.create(function()
             sampSetSpecialAction(68)
@@ -2172,6 +2332,17 @@ function main()
     end)
     while true do wait(0)
         while not sampIsLocalPlayerSpawned() do wait(0) end
+        if settings.ped.changefov[0] then
+            cameraSetLerpFov(settings.ped.fovvalue[0], settings.ped.fovvalue[0], 1000, true)
+        end
+        if settings.car.jumpcar[0] and isCharInAnyCar(PLAYER_PED) then
+            if isWidgetPressed(WIDGET_SCHOOL_START) then
+                local x, y, z = getCarSpeedVector(storeCarCharIsInNoSave(PLAYER_PED))
+                if z < 7 then
+                    applyForceToCar(storeCarCharIsInNoSave(PLAYER_PED), 0, 0, 0.2, 0, 0, 0)
+                end
+            end
+        end
         if settings.ped.autoscroll[0] then
             if getCurrentCharWeapon(PLAYER_PED) ~= 0 then
                 for k, v in ipairs(guns) do
@@ -2231,69 +2402,6 @@ function main()
                 botstep = 0
                 box = box + 1
                 printStringNow('Box: ' .. box, 500)
-            end
-        end
-        if settings.ESP.drawing[0] then
-            for _, char in ipairs(getAllChars()) do
-                local result, id = sampGetPlayerIdByCharHandle(char)
-                if result and isCharOnScreen(char) and char ~= PLAYER_PED then
-                    local opaque_color = bit.bor(bit.band(sampGetPlayerColor(id), 0xFFFFFF), 0xFF000000)
-                    if settings.ESP.enabled_bones[0] then
-                        for _, bone in ipairs(ESP2.BONES) do
-                            local x1, y1, z1 = getBonePosition(char, bone)
-                            local x2, y2, z2 = getBonePosition(char, bone + 1)
-                            local r1, sx1, sy1 = convert3DCoordsToScreenEx(x1, y1, z1)
-                            local r2, sx2, sy2 = convert3DCoordsToScreenEx(x2, y2, z2)
-                            if r1 and r2 then
-                                renderDrawLine(sx1, sy1, sx2, sy2, settings.ESP.skeletonthinkness[0], opaque_color)
-                            end
-                        end
-                        local x1, y1, z1 = getBonePosition(char, 2)
-                        local r1, sx1, sy1 = convert3DCoordsToScreenEx(x1, y1, z1)
-                        if r1 then
-                            local x2, y2, z2 = getBonePosition(char, 41)
-                            local r2, sx2, sy2 = convert3DCoordsToScreenEx(x2, y2, z2)
-                            if r2 then
-                                renderDrawLine(sx1, sy1, sx2, sy2, settings.ESP.skeletonthinkness[0], opaque_color)
-                            end
-                        end
-                        if r1 then
-                            local x2, y2, z2 = getBonePosition(char, 51)
-                            local r2, sx2, sy2 = convert3DCoordsToScreenEx(x2, y2, z2)
-                            if r2 then
-                                renderDrawLine(sx1, sy1, sx2, sy2, settings.ESP.skeletonthinkness[0], opaque_color)
-                            end
-                        end
-                    end
-                    if settings.ESP.enabled_boxes[0] then
-                        local x, y, z = getOffsetFromCharInWorldCoords(char, 0, 0, 0) -- To get position of char even if he is in car
-                        local headx, heady = convert3DCoordsToScreen(x, y, z + 1.0)
-                        local footx, footy = convert3DCoordsToScreen(x, y, z - 1.0)
-                        local width = math.abs((heady - footy) * 0.25)
-                        renderDrawBoxWithBorder(headx - width, heady, math.abs(2 * width), math.abs(footy - heady), 0, SCREEN_H * settings.ESP.boxthinkness[0], opaque_color)
-                    end
-                    if settings.ESP.enabled_nicks[0] then
-                        local hx, hy, hz = getBonePosition(char, 5)
-                        local hr, headx, heady = convert3DCoordsToScreenEx(hx, hy, hz + 0.25)
-                        if hr then
-                            local nickname = sampGetPlayerNickname(id)
-                            local nametag = nickname .. ' [' .. tostring(id) .. '] - {FF0000}' .. string.format("%.0f", sampGetPlayerHealth(id)) .. 'hp {BBBBBB}' .. string.format("%.0f", sampGetPlayerArmor(id)) .. 'ap'
-                            local nametag_len = renderGetFontDrawTextLength(FONTESP, nametag)
-                            local nametag_x = headx - nametag_len / 2
-                            local nametag_y = heady - renderGetFontDrawHeight(FONTESP)
-                            renderFontDrawText(FONTESP, nametag, nametag_x, nametag_y, opaque_color)
-                        end
-                    end
-                    if settings.ESP.enabled_lines[0] then
-                        local hx, hy, hz = getBonePosition(char, 5)
-                        local hr, headx, heady = convert3DCoordsToScreenEx(hx, hy, hz + 0.25)
-                        local px,py,pz = getCharCoordinates(char)
-                        local sx, sy = getScreenResolution()
-                        local ex, ey = convert3DCoordsToScreen(px,py,pz)
-                        renderDrawLine(sx / 2, sy * settings.ESP.lineposition[0], headx, heady - 25 * MONET_DPI_SCALE, settings.ESP.linethinkness[0], opaque_color)
-                        renderDrawPolygon(headx - 3.5 * MONET_DPI_SCALE, heady - 25 * MONET_DPI_SCALE, 8 * MONET_DPI_SCALE, 8 * MONET_DPI_SCALE, 5, 0.0, opaque_color)
-                    end
-                end
             end
         end
         if settings.car.nobike[0] then
@@ -3838,14 +3946,10 @@ function checkResFolder()
     local folderpath = getWorkingDirectory().."/resource"
     if not doesDirectoryExist(folderpath) then
         createDirectory(folderpath)
-    else
-        sampAddChatMessage("[Miku Debug] Folder exists!", -1)
     end
     if not doesFileExist(getWorkingDirectory().."/resource/Zekton-Font.ttf") or not doesFileExist(getWorkingDirectory().."/resource/Gotham_Pro.ttf") then
         updateScript(ttf_links.gotham.url, ttf_links.gotham.path)
         updateScript(ttf_links.zekton.url, ttf_links.zekton.path)
-    else
-        sampAddChatMessage("[Miku Debug] Font exists!", -1)
     end
 end
 
@@ -4269,7 +4373,7 @@ end
 -- watermark
 imgui.OnFrame(function() return settings.menu.watermark[0] end, function(self)
     imgui.SetNextWindowPos(imgui.ImVec2(25, 15), imgui.Cond.FirstUseEver)
-    imgui.SetNextWindowSize(imgui.ImVec2(300 * MONET_DPI_SCALE, 48 * MONET_DPI_SCALE), imgui.Cond.Always)
+    imgui.SetNextWindowSize(imgui.ImVec2(275 * MONET_DPI_SCALE, 38 * MONET_DPI_SCALE), imgui.Cond.Always)
     imgui.PushStyleColor(imgui.Col.WindowBg, imgui.ImVec4(0.12, 0.12, 0.14, 0.70))
     imgui.PushStyleColor(imgui.Col.Text, imgui.ImVec4(0.90, 0.90, 0.93, 0.85))
     imgui.Begin("##minet", settings.menu.watermark, imgui.WindowFlags.NoMove + imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoInputs + imgui.WindowFlags.NoScrollbar)
@@ -4278,3 +4382,271 @@ imgui.OnFrame(function() return settings.menu.watermark[0] end, function(self)
     imgui.PopStyleColor(2)
 end)
 
+--({ DRAWLIST ESP })--
+imgui.OnFrame(function() return settings.ESP.drawing[0] and not isGamePaused() end, function(self)
+    local draw = imgui.GetBackgroundDrawList()
+    for _, char in ipairs(getAllChars()) do
+        local result, id = sampGetPlayerIdByCharHandle(char)
+        if result and isCharOnScreen(char) and char ~= PLAYER_PED then
+            local opaque_color = imgui.ColorConvertFloat4ToU32(get_player_color_imvec4(id))
+            local fillbox_opaque = imgui.ColorConvertFloat4ToU32(get_player_color_imvec4_2(id))
+            local x, y, z = getOffsetFromCharInWorldCoords(char, 0, 0, 0)
+            local hr_head, headx, heady = convert3DCoordsToScreenEx(x, y, z + 1.0)
+            local hr_foot, footx, footy = convert3DCoordsToScreenEx(x, y, z - 1.0)
+            local box_width = math.abs((heady - footy) * 0.25)
+            local box_x1 = headx - box_width
+            local box_x2 = headx + box_width
+            local box_y1 = heady
+            local box_y2 = footy
+            if settings.ESP.enabled_bones[0] then
+                for _, bone in ipairs(ESP2.BONES) do
+                    local x1, y1, z1 = getBonePosition(char, bone)
+                    local x2, y2, z2 = getBonePosition(char, bone + 1)
+                    local r1, sx1, sy1 = convert3DCoordsToScreenEx(x1, y1, z1)
+                    local r2, sx2, sy2 = convert3DCoordsToScreenEx(x2, y2, z2)
+                    if r1 and r2 then
+                        draw:AddLine(imgui.ImVec2(sx1, sy1), imgui.ImVec2(sx2, sy2), opaque_color, settings.ESP.skeletonthinkness[0])
+                    end
+                end
+                local x1, y1, z1 = getBonePosition(char, 2)
+                local r1, sx1, sy1 = convert3DCoordsToScreenEx(x1, y1, z1)
+                if r1 then
+                    local x2, y2, z2 = getBonePosition(char, 41)
+                    local r2, sx2, sy2 = convert3DCoordsToScreenEx(x2, y2, z2)
+                    if r2 then
+                        draw:AddLine(imgui.ImVec2(sx1, sy1), imgui.ImVec2(sx2, sy2), opaque_color, settings.ESP.skeletonthinkness[0])
+                    end
+                end
+                if r1 then
+                    local x2, y2, z2 = getBonePosition(char, 51)
+                    local r2, sx2, sy2 = convert3DCoordsToScreenEx(x2, y2, z2)
+                    if r2 then
+                        draw:AddLine(imgui.ImVec2(sx1, sy1), imgui.ImVec2(sx2, sy2), opaque_color, settings.ESP.skeletonthinkness[0])
+                    end
+                end
+            end
+            if settings.ESP.enabled_boxes[0] then
+                if hr_head and hr_foot then
+                    if settings.ESP.enabled_fillgradient[0] then
+                        draw:AddRectFilledMultiColor(imgui.ImVec2(box_x1, box_y1), imgui.ImVec2(box_x2, box_y2), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.0, 0.0, 0.0, 0.0)), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.0, 0.0, 0.0, 0.0)), fillbox_opaque, fillbox_opaque)
+                    else
+                        draw:AddRectFilled(imgui.ImVec2(box_x1, box_y1), imgui.ImVec2(box_x2, box_y2), fillbox_opaque, 0)
+                    end
+                    drawOutlinedBox(drawlist, box_x1, box_y1, box_x2, box_y2, opaque_color, outline_color, settings.ESP.boxthinkness[0])
+                end
+            end
+            if settings.ESP.enabled_nicks[0] then
+                local hx, hy, hz = getBonePosition(char, 5)
+                local x, y, z = getCharCoordinates(PLAYER_PED)
+                local hr, headx, heady = convert3DCoordsToScreenEx(hx, hy, hz + 0.25)
+                if hr then
+                    local nickname = sampGetPlayerNickname(id)
+                    if settings.ESP.enabled_health[0] and not settings.ESP.enabled_armor[0] then
+                        nametag = nickname .. ' [' .. tostring(id) .. '] - ' .. string.format("%.0f", sampGetPlayerArmor(id)) .. 'ap'
+                    end
+                    if settings.ESP.enabled_armor[0] and not settings.ESP.enabled_health[0]  then
+                        nametag = nickname .. ' [' .. tostring(id) .. '] - ' .. string.format("%.0f", sampGetPlayerHealth(id)) .. 'hp'
+                    end
+                    if settings.ESP.enabled_health[0] and settings.ESP.enabled_armor[0] then
+                        nametag = nickname .. ' [' .. tostring(id) .. ']'
+                    end
+                    if not settings.ESP.enabled_health[0] and not settings.ESP.enabled_armor[0] then
+                        nametag = nickname .. ' [' .. tostring(id) .. '] - ' .. string.format("%.0f", sampGetPlayerHealth(id)) .. 'hp ' .. string.format("%.0f", sampGetPlayerArmor(id)) .. 'ap'
+                    end
+                    local nametag_len = imgui.CalcTextSize(nametag)
+                    local oox, ooy = getScreenResolution()
+                    local nametag_x = oox - nametag_len.x / 2
+                    local nametag_y = heady - imgui.GetFontSize()
+                    local font = imgui.GetFont()
+                    local font_size = 18 + settings.ESP.nicknamesize[0]
+                    local font_size2 = 19 + settings.ESP.nicknamesize[0]
+                    drawNameTag(draw, nametag, headx, nametag_y, opaque_color, font, font_size) 
+                end
+            end
+            if settings.ESP.enabled_lines[0] then
+                local sx, sy = getScreenResolution()
+                local hx, hy, hz = getBonePosition(char, 5)
+                local hr, headx, heady = convert3DCoordsToScreenEx(hx, hy, hz + 0.25)
+                draw:AddCircleFilled(imgui.ImVec2(headx - 0.1 * MONET_DPI_SCALE, heady - 45 * MONET_DPI_SCALE), 5.0 * MONET_DPI_SCALE, opaque_color, 100, 5.0)
+                draw:AddLine(imgui.ImVec2(sx / 2, sy * settings.ESP.lineposition[0]), imgui.ImVec2(headx, heady - 45 * MONET_DPI_SCALE), opaque_color, settings.ESP.linethinkness[0])
+            end
+            if settings.ESP.enabled_health[0] then
+                local current_hp = sampGetPlayerHealth(id)
+                local max_hp = 100
+
+                local health_bar_x = box_x1 - 10
+                drawHealthBar(drawlist, health_bar_x, box_y1, box_y2 - box_y1, current_hp, max_hp, imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.0, 1.0, 0.0, 1.0)), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.0, 0.0, 0.0, 0.5)), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.0, 0.0, 0.0, 1.0)), 3)
+            end
+
+            if settings.ESP.enabled_armor[0] then
+                local armor_bar_x = box_x1
+                local armor_bar_y = box_y2 + 5
+                local current_armor = sampGetPlayerArmor(id)
+                local max_armor = 100
+                drawArmorBar(drawlist, armor_bar_x, armor_bar_y, box_x2 - box_x1, current_armor, max_armor, imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.0, 0.7, 1.0, 1.0)), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.0, 0.0, 0.0, 0.5)), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.0, 0.0, 0.0, 1.0)), 1)
+            end
+        end
+    end
+end)
+
+function drawNameTag(drawlist, text, x, y, color, font, font_size)
+    local text_size = imgui.CalcTextSize(text)
+
+    local text_x = x - text_size.x / 2
+    local text_y = y - text_size.y / 2
+
+    local outline_offset = 2
+    local outline_color = imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.0, 0.0, 0.0, 1.0))
+
+    imgui.GetBackgroundDrawList():AddTextFontPtr(font, font_size, imgui.ImVec2(text_x - outline_offset, text_y - 20 - outline_offset), outline_color, text)
+    imgui.GetBackgroundDrawList():AddTextFontPtr(font, font_size, imgui.ImVec2(text_x + outline_offset, text_y - 20 - outline_offset), outline_color, text)
+    imgui.GetBackgroundDrawList():AddTextFontPtr(font, font_size, imgui.ImVec2(text_x - outline_offset, text_y - 20 + outline_offset), outline_color, text)
+    imgui.GetBackgroundDrawList():AddTextFontPtr(font, font_size, imgui.ImVec2(text_x + outline_offset, text_y - 20 + outline_offset), outline_color, text)
+
+    imgui.GetBackgroundDrawList():AddTextFontPtr(font, font_size, imgui.ImVec2(text_x, text_y - 20), color, text)
+end
+
+function drawOutlinedBox(drawlist, x1, y1, x2, y2, color, outline_color, thickness)
+    local outline_color = imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.0, 0.0, 0.0, 1.0))
+    imgui.GetBackgroundDrawList():AddRect(imgui.ImVec2(x1 - thickness, y1 - thickness), imgui.ImVec2(x2 + thickness, y2 + thickness), outline_color, 0, 0, thickness)
+    imgui.GetBackgroundDrawList():AddRect(imgui.ImVec2(x1 + thickness, y1 + thickness), imgui.ImVec2(x2 - thickness, y2 - thickness), outline_color, 0, 0, thickness)
+    imgui.GetBackgroundDrawList():AddRect(imgui.ImVec2(x1, y1), imgui.ImVec2(x2, y2), color, 0, 0, thickness)
+end
+
+function drawHealthBar(drawlist, x, y, height, current_hp, max_hp, bar_color, background_color, outline_color, outline_thickness)
+    local bar_width = 6
+    local hp_percent = current_hp / max_hp
+    if hp_percent > 1 then
+        hp_percent = 1
+    elseif hp_percent < 0 then
+        hp_percent = 0
+    end
+    local filled_height = height * hp_percent
+
+    local filled_y = y + height - filled_height
+
+    imgui.GetBackgroundDrawList():AddRect(imgui.ImVec2(x - bar_width, y), imgui.ImVec2(x, y + height), outline_color, 0, 0, outline_thickness)
+
+    imgui.GetBackgroundDrawList():AddRectFilled(imgui.ImVec2(x - bar_width, y), imgui.ImVec2(x, y + height), background_color)
+    
+    imgui.GetBackgroundDrawList():AddRectFilled(imgui.ImVec2(x - bar_width, filled_y), imgui.ImVec2(x, y + height), bar_color)
+
+    local text_x = x - bar_width - 5 
+    local text_y = filled_y - 12
+    imgui.GetBackgroundDrawList():AddText(imgui.ImVec2(text_x - 1, text_y - 1), outline_color, tostring(current_hp))
+    imgui.GetBackgroundDrawList():AddText(imgui.ImVec2(text_x + 1, text_y - 1), outline_color, tostring(current_hp))
+    imgui.GetBackgroundDrawList():AddText(imgui.ImVec2(text_x - 1, text_y + 1), outline_color, tostring(current_hp))
+    imgui.GetBackgroundDrawList():AddText(imgui.ImVec2(text_x + 1, text_y + 1), outline_color, tostring(current_hp))
+
+    imgui.GetBackgroundDrawList():AddText(imgui.ImVec2(text_x, text_y), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(1.0, 1.0, 1.0, 1.0)), tostring(current_hp))
+end
+
+function drawArmorBar(drawlist, x, y, width, current_armor, max_armor, bar_color, background_color, outline_color, outline_thickness)
+    local bar_height = 6
+    local armor_percent = current_armor / max_armor
+    if armor_percent > 1 then
+        armor_percent = 1
+    elseif armor_percent < 0 then
+        armor_percent = 0
+    end
+    local filled_width = width * armor_percent
+
+    imgui.GetBackgroundDrawList():AddRect(imgui.ImVec2(x, y), imgui.ImVec2(x + width, y + bar_height), outline_color, 0, 0, outline_thickness)
+    
+    imgui.GetBackgroundDrawList():AddRectFilled(imgui.ImVec2(x, y), imgui.ImVec2(x + width, y + bar_height), background_color)
+
+    imgui.GetBackgroundDrawList():AddRectFilled(imgui.ImVec2(x, y), imgui.ImVec2(x + filled_width, y + bar_height), bar_color)
+
+    local text_x = x + filled_width - 5
+    local text_y = y - 12
+    local outline_color_text = imgui.ColorConvertFloat4ToU32(imgui.ImVec4(0.0, 0.0, 0.0, 1.0))
+    imgui.GetBackgroundDrawList():AddText(imgui.ImVec2(text_x - 1, text_y - 1), outline_color_text, tostring(current_armor))
+    imgui.GetBackgroundDrawList():AddText(imgui.ImVec2(text_x + 1, text_y - 1), outline_color_text, tostring(current_armor))
+    imgui.GetBackgroundDrawList():AddText(imgui.ImVec2(text_x - 1, text_y + 1), outline_color_text, tostring(current_armor))
+    imgui.GetBackgroundDrawList():AddText(imgui.ImVec2(text_x + 1, text_y + 1), outline_color_text, tostring(current_armor))
+    imgui.GetBackgroundDrawList():AddText(imgui.ImVec2(text_x, text_y), imgui.ColorConvertFloat4ToU32(imgui.ImVec4(1.0, 1.0, 1.0, 1.0)), tostring(current_armor))
+end
+
+-- clear nametags
+clearTags = function()
+    lua_thread.create(function()
+        while true do wait(2000)
+            if settings.ESP.enabled_nicks[0] and settings.ESP.drawing[0] then
+                for k, v in ipairs(getAllChars()) do
+                    local _, id = sampGetPlayerIdByCharHandle(v)
+                    if _ then
+                        local bs = raknetNewBitStream()
+                        raknetBitStreamWriteInt16(bs, tonumber(id))
+                        raknetBitStreamWriteInt8(bs, 0)
+                        raknetEmulRpcReceiveBitStream(80, bs)
+                        raknetDeleteBitStream(bs)
+                    end
+                end
+            else
+                for k, v in ipairs(getAllChars()) do
+                    local _, id = sampGetPlayerIdByCharHandle(v)
+                    if _ then
+                        local bs = raknetNewBitStream()
+                        raknetBitStreamWriteInt16(bs, tonumber(id))
+                        raknetBitStreamWriteInt8(bs, 1)
+                        raknetEmulRpcReceiveBitStream(80, bs)
+                        raknetDeleteBitStream(bs)
+                    end
+                end
+            end
+        end
+    end)
+end
+
+-- convert color to ImVec4
+function get_player_color_imvec4(id)
+  local color = sampGetPlayerColor(id)
+  local opaquee_color = bit.bor(bit.band(color, 0xFFFFFF), 0xFF000000)
+
+  local r = bit.band(bit.rshift(opaquee_color, 16), 0xFF)
+  local g = bit.band(bit.rshift(opaquee_color, 8), 0xFF)
+  local b = bit.band(opaquee_color, 0xFF)
+  local a = bit.band(bit.rshift(opaquee_color, 24), 0xFF)
+
+  local r_float = r / 255.0
+  local g_float = g / 255.0
+  local b_float = b / 255.0
+  local a_float = a / 255.0
+
+  return imgui.ImVec4(r_float, g_float, b_float, a_float)
+end
+
+-- for filled box --
+function get_player_color_imvec4_2(id)
+    local color = sampGetPlayerColor(id)
+    local opaquee_color = bit.bor(bit.band(color, 0xFFFFFF), 0xFF000000)
+
+    local r = bit.band(bit.rshift(opaquee_color, 16), 0xFF)
+    local g = bit.band(bit.rshift(opaquee_color, 8), 0xFF)
+    local b = bit.band(opaquee_color, 0xFF)
+
+    local r_float = r / 255.0
+    local g_float = g / 255.0
+    local b_float = b / 255.0
+
+  return imgui.ImVec4(r_float, g_float, b_float, settings.ESP.fillboxvalue[0])
+end
+
+-- no fall
+function antifall()
+    lua_thread.create(function()
+        while settings.ped.nofall[0] do -- no falltaskPlayAnim(playerPed HANDSUP PED 4.0 0 0 0 0 4)
+            wait(0)
+            if isCharPlayingAnim(playerPed, 'KO_SKID_BACK') or isCharPlayingAnim(playerPed, 'FALL_COLLAPSE') then
+                clearCharTasksImmediately(playerPed)
+            end
+        end
+    end)
+end
+
+-- anti car skill
+function events.onSendVehicleDamaged()
+	if settings.car.anticarskill[0] then
+		return false
+	end
+end
