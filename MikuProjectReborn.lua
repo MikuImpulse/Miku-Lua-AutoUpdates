@@ -1,5 +1,5 @@
 -------Версия скрипта--------
-local script_ver = '1.2.3'
+local script_ver = '1.2.4'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
@@ -708,8 +708,8 @@ imgui.OnFrame(function() return found_update[0] end, function()
 end)
 -- demo window
 imgui.OnFrame(function() return custommimguiStyle[0] end, function()
-    imgui.Begin("mimgui custom style")
-    imgui.ShowStyleEditor()
+    imgui.Begin("ImGui Demo")
+    imgui.ShowDemoWindow()
     imgui.End()
 end)
 -- alt
@@ -2829,12 +2829,10 @@ function main()
             raknetEmulRpcReceiveBitStream(22, nbs)
             raknetDeleteBitStream(nbs)
         end
-        local animSpeed = {}
         if settings.ped.animspeed[0] then            
             for _, anim in ipairs(animSpeed) do
                 setCharAnimSpeed(PLAYER_PED, anim, settings.ped.speedint[0])
             end
-            
         end
         if settings.ped.rapidfire[0] then
             for _, anim in ipairs(rapidAnimations) do
@@ -4649,4 +4647,11 @@ function events.onSendVehicleDamaged()
 	if settings.car.anticarskill[0] then
 		return false
 	end
+end
+
+-- setskill
+function events.onSetPlayerSkillLevel(playerId, skill, level)
+    if settings.ped.setskills[0] then
+        return false
+    end
 end
