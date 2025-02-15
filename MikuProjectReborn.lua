@@ -540,7 +540,7 @@ end
 
 ----ImGui OnInitialize----
 imgui.OnInitialize(function()
-    bluegraytheme()
+    ThemeMenu()
     Icons_Init()
     Fonts_Init()
 end)
@@ -772,8 +772,8 @@ imgui.OnFrame(function() return window_state[0] end, function()
     imgui.PopFont()
     imgui.SetCursorPos(imgui.ImVec2(16 * MONET_DPI_SCALE, 60 * MONET_DPI_SCALE))
     imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.15, 0.15, 0.17, 1.00))
-    imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
-    imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+    imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
+    imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
     if imgui.BeginChild("Tabs##"..tab, imgui.ImVec2(153 * MONET_DPI_SCALE, 405 * MONET_DPI_SCALE), false) then
         if imgui.Button(fa.FIRE..u8"  Основное", imgui.ImVec2(150 * MONET_DPI_SCALE, 53 * MONET_DPI_SCALE)) then
             tab = 1
@@ -845,8 +845,8 @@ imgui.OnFrame(function() return window_state[0] end, function()
     if imgui.BeginChild("##MenuT", imgui.ImVec2(652 * MONET_DPI_SCALE, 458 * MONET_DPI_SCALE), false) then
         if tab == 1 then
             imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.16, 0.16, 0.18, 1.00))
-            imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
-            imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+            imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
+            imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
             if imgui.Button(u8"Основное") then
                 subtab_1 = 1
             end
@@ -1127,8 +1127,8 @@ imgui.OnFrame(function() return window_state[0] end, function()
             end
         elseif tab == 2 then
             imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.16, 0.16, 0.18, 1.00))
-            imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
-            imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+            imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
+            imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
             if imgui.Button(u8"Персонаж") then
                 subtab_2 = 1
             end
@@ -1166,9 +1166,9 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     end
                 end
                 imgui.SameLine()
-                imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
-                imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
-                imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+                imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
+                imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
+                imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
                 if imgui.Button(fa.GEARS..'##scrollsettings', imgui.ImVec2(14.5 * MONET_DPI_SCALE, 14.5 * MONET_DPI_SCALE)) then
                     imgui.OpenPopup(u8'Настройки автоскролла')
                 end
@@ -1233,9 +1233,9 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     end
                 end
                 imgui.SameLine()
-                imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
-                imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
-                imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+                imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
+                imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
+                imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
                 if imgui.Button(fa.GEARS..'##fovsettings', imgui.ImVec2(14.5 * MONET_DPI_SCALE, 14.5 * MONET_DPI_SCALE)) then
                     imgui.OpenPopup(u8'Настройки поля зрения')
                 end
@@ -1274,9 +1274,9 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     end
                 end
                 imgui.SameLine()
-                imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
-                imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
-                imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+                imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
+                imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
+                imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
                 if imgui.Button(fa.GEARS..'##speedsettings', imgui.ImVec2(14.5 * MONET_DPI_SCALE, 14.5 * MONET_DPI_SCALE)) then
                     imgui.OpenPopup(u8'Настройки скорости анимаций')
                 end
@@ -1304,9 +1304,9 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     end
                 end
                 imgui.SameLine()
-                imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
-                imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
-                imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+                imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
+                imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
+                imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
                 if imgui.Button(fa.GEARS..'##rapidsettings', imgui.ImVec2(14.5 * MONET_DPI_SCALE, 14.5 * MONET_DPI_SCALE)) then
                     imgui.OpenPopup(u8'Настройки рапида')
                 end
@@ -1467,8 +1467,8 @@ imgui.OnFrame(function() return window_state[0] end, function()
             end
         elseif tab == 3 then
             imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.16, 0.16, 0.18, 1.00))
-            imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
-            imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+            imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
+            imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
             if imgui.Button(u8"Машина") then
                 subtab_3 = 1
             end
@@ -1602,8 +1602,8 @@ imgui.OnFrame(function() return window_state[0] end, function()
             end
         elseif tab == 4 then
             imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.16, 0.16, 0.18, 1.00))
-            imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
-            imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+            imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
+            imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
             if imgui.Button(u8"ESP") then
                 subtab_4 = 1
             end
@@ -1704,8 +1704,8 @@ imgui.OnFrame(function() return window_state[0] end, function()
             end
         elseif tab == 5 then
             imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.16, 0.16, 0.18, 1.00))
-            imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
-            imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+            imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
+            imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
             if imgui.Button(u8"Объекты") then
                 subtab_5 = 1
             end
@@ -1837,8 +1837,8 @@ imgui.OnFrame(function() return window_state[0] end, function()
             end
         elseif tab == 6 then
             imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.16, 0.16, 0.18, 1.00))
-            imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
-            imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+            imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
+            imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
             if imgui.Button(u8"Кнопочки") then
                 subtab_6 = 1
             end
@@ -1892,8 +1892,8 @@ imgui.OnFrame(function() return window_state[0] end, function()
             end
         elseif tab == 7 then
             imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.16, 0.16, 0.18, 1.00))
-            imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
-            imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.12, 0.12, 0.14, 1.00))
+            imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
+            imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.09, 0.09, 0.10, 1.00))
             if imgui.Button(u8"Открытие меню") then
                 subtab_7 = 1
             end
@@ -4000,66 +4000,59 @@ function getAmmoInClip()
 end
 
 -- theme
-function bluegraytheme()
+function ThemeMenu()
     imgui.SwitchContext()
     local style = imgui.GetStyle()
-    style.WindowPadding = imgui.ImVec2(15, 15)
-    style.WindowRounding = 10.0
-    style.ChildRounding = 6.0
-    style.FramePadding = imgui.ImVec2(8, 7)
+    local colors = style.Colors
+    -- {{ (( WINDOW STYLE )) }} --
+    style.WindowPadding = imgui.ImVec2(15, 12)
+    style.WindowRounding = 12.0
+    style.ChildRounding = 10.0
+    style.FramePadding = imgui.ImVec2(12, 8)
     style.FrameRounding = 8.0
-    style.ItemSpacing = imgui.ImVec2(8, 8)
+    style.ItemSpacing = imgui.ImVec2(12, 8)
     style.ItemInnerSpacing = imgui.ImVec2(10, 6)
     style.IndentSpacing = 25.0
-    style.ScrollbarSize = 25.0
-    style.ScrollbarRounding = 12.0
+    style.ScrollbarSize = 14.0
+    style.ScrollbarRounding = 9.0
     style.GrabMinSize = 10.0
     style.GrabRounding = 6.0
-    style.PopupRounding = 8
     style.WindowTitleAlign = imgui.ImVec2(0.5, 0.5)
     style.ButtonTextAlign = imgui.ImVec2(0.5, 0.5)
-    style.Colors[imgui.Col.Text]                   = imgui.ImVec4(0.90, 0.90, 0.93, 1.00)
-    style.Colors[imgui.Col.TextDisabled]           = imgui.ImVec4(0.40, 0.40, 0.45, 1.00)
-    style.Colors[imgui.Col.WindowBg]               = imgui.ImVec4(0.12, 0.12, 0.14, 1.00)
-    style.Colors[imgui.Col.ChildBg]                = imgui.ImVec4(0.12, 0.12, 0.14, 1.00)
-    style.Colors[imgui.Col.PopupBg]                = imgui.ImVec4(0.13, 0.13, 0.15, 1.00)
-    style.Colors[imgui.Col.Border]                 = imgui.ImVec4(0.30, 0.30, 0.35, 1.00)
-    style.Colors[imgui.Col.BorderShadow]           = imgui.ImVec4(0.00, 0.00, 0.00, 0.00)
-    style.Colors[imgui.Col.FrameBg]                = imgui.ImVec4(0.18, 0.18, 0.20, 1.00)
-    style.Colors[imgui.Col.FrameBgHovered]         = imgui.ImVec4(0.25, 0.25, 0.28, 1.00)
-    style.Colors[imgui.Col.FrameBgActive]          = imgui.ImVec4(0.30, 0.30, 0.34, 1.00)
-    style.Colors[imgui.Col.TitleBg]                = imgui.ImVec4(0.15, 0.15, 0.17, 1.00)
-    style.Colors[imgui.Col.TitleBgCollapsed]       = imgui.ImVec4(0.10, 0.10, 0.12, 1.00)
-    style.Colors[imgui.Col.TitleBgActive]          = imgui.ImVec4(0.15, 0.15, 0.17, 1.00)
-    style.Colors[imgui.Col.MenuBarBg]              = imgui.ImVec4(0.12, 0.12, 0.14, 1.00)
-    style.Colors[imgui.Col.ScrollbarBg]            = imgui.ImVec4(0.12, 0.12, 0.14, 1.00)
-    style.Colors[imgui.Col.ScrollbarGrab]          = imgui.ImVec4(0.30, 0.30, 0.35, 1.00)
-    style.Colors[imgui.Col.ScrollbarGrabHovered]   = imgui.ImVec4(0.40, 0.40, 0.45, 1.00)
-    style.Colors[imgui.Col.ScrollbarGrabActive]    = imgui.ImVec4(0.50, 0.50, 0.55, 1.00)
-    style.Colors[imgui.Col.CheckMark]              = imgui.ImVec4(0.70, 0.70, 0.90, 1.00)
-    style.Colors[imgui.Col.SliderGrab]             = imgui.ImVec4(0.70, 0.70, 0.90, 1.00)
-    style.Colors[imgui.Col.SliderGrabActive]       = imgui.ImVec4(0.80, 0.80, 0.90, 1.00)
-    style.Colors[imgui.Col.Button]                 = imgui.ImVec4(0.18, 0.18, 0.20, 1.00)
-    style.Colors[imgui.Col.ButtonHovered]          = imgui.ImVec4(0.60, 0.60, 0.90, 1.00)
-    style.Colors[imgui.Col.ButtonActive]           = imgui.ImVec4(0.72, 0.72, 0.91, 1.00)
-    style.Colors[imgui.Col.Header]                 = imgui.ImVec4(0.20, 0.20, 0.23, 1.00)
-    style.Colors[imgui.Col.HeaderHovered]          = imgui.ImVec4(0.25, 0.25, 0.28, 1.00)
-    style.Colors[imgui.Col.HeaderActive]           = imgui.ImVec4(0.30, 0.30, 0.34, 1.00)
-    style.Colors[imgui.Col.Separator]              = imgui.ImVec4(0.40, 0.40, 0.45, 1.00)
-    style.Colors[imgui.Col.SeparatorHovered]       = imgui.ImVec4(0.50, 0.50, 0.55, 1.00)
-    style.Colors[imgui.Col.SeparatorActive]        = imgui.ImVec4(0.60, 0.60, 0.65, 1.00)
-    style.Colors[imgui.Col.ResizeGrip]             = imgui.ImVec4(0.20, 0.20, 0.23, 1.00)
-    style.Colors[imgui.Col.ResizeGripHovered]      = imgui.ImVec4(0.25, 0.25, 0.28, 1.00)
-    style.Colors[imgui.Col.ResizeGripActive]       = imgui.ImVec4(0.30, 0.30, 0.34, 1.00)
-    style.Colors[imgui.Col.PlotLines]              = imgui.ImVec4(0.61, 0.61, 0.64, 1.00)
-    style.Colors[imgui.Col.PlotLinesHovered]       = imgui.ImVec4(0.70, 0.70, 0.75, 1.00)
-    style.Colors[imgui.Col.PlotHistogram]          = imgui.ImVec4(0.61, 0.61, 0.64, 1.00)
-    style.Colors[imgui.Col.PlotHistogramHovered]   = imgui.ImVec4(0.70, 0.70, 0.75, 1.00)
-    style.Colors[imgui.Col.TextSelectedBg]         = imgui.ImVec4(0.30, 0.30, 0.34, 1.00)
-    style.Colors[imgui.Col.ModalWindowDimBg]       = imgui.ImVec4(0.10, 0.10, 0.12, 0.80)
-    style.Colors[imgui.Col.Tab]                    = imgui.ImVec4(0.18, 0.20, 0.22, 1.00)
-    style.Colors[imgui.Col.TabHovered]             = imgui.ImVec4(0.60, 0.60, 0.90, 1.00)
-    style.Colors[imgui.Col.TabActive]              = imgui.ImVec4(0.56, 0.56, 0.81, 1.00)
+    style.WindowBorderSize = 0.0
+    -- {{ (( WINDOW COLORS )) }} --
+    colors[imgui.Col.Text] = imgui.ImVec4(0.95, 0.95, 0.98, 1.00)
+    colors[imgui.Col.TextDisabled] = imgui.ImVec4(0.50, 0.50, 0.55, 1.00)
+    colors[imgui.Col.WindowBg] = imgui.ImVec4(0.09, 0.09, 0.10, 1.00)
+    colors[imgui.Col.ChildBg] = imgui.ImVec4(0.09, 0.09, 0.10, 1.00)
+    colors[imgui.Col.PopupBg] = imgui.ImVec4(0.12, 0.12, 0.14, 1.00)
+    colors[imgui.Col.Border] = imgui.ImVec4(0.18, 0.18, 0.20, 1.00)
+    colors[imgui.Col.FrameBg] = imgui.ImVec4(0.20, 0.20, 0.22, 1.00)
+    colors[imgui.Col.FrameBgHovered] = imgui.ImVec4(0.25, 0.25, 0.28, 1.00)
+    colors[imgui.Col.FrameBgActive] = imgui.ImVec4(0.30, 0.30, 0.34, 1.00)
+    colors[imgui.Col.TitleBg] = imgui.ImVec4(0.12, 0.12, 0.14, 1.00)
+    colors[imgui.Col.TitleBgActive] = imgui.ImVec4(0.12, 0.12, 0.14, 1.00)
+    colors[imgui.Col.ScrollbarBg] = imgui.ImVec4(0.12, 0.12, 0.14, 1.00)
+    colors[imgui.Col.ScrollbarGrab] = imgui.ImVec4(0.20, 0.20, 0.22, 1.00)
+    colors[imgui.Col.ScrollbarGrabHovered] = imgui.ImVec4(0.30, 0.30, 0.34, 1.00)
+    colors[imgui.Col.ScrollbarGrabActive] = imgui.ImVec4(0.35, 0.35, 0.39, 1.00)
+    colors[imgui.Col.CheckMark] = imgui.ImVec4(0.16, 0.29, 0.48, 1.00)
+    colors[imgui.Col.SliderGrab] = imgui.ImVec4(0.16, 0.29, 0.48, 1.00)
+    colors[imgui.Col.SliderGrabActive] = imgui.ImVec4(0.20, 0.41, 0.68, 1.00)
+    colors[imgui.Col.Button] = imgui.ImVec4(0.16, 0.29, 0.48, 1.00)
+    colors[imgui.Col.ButtonHovered] = imgui.ImVec4(0.26, 0.59, 0.98, 1.00)
+    colors[imgui.Col.ButtonActive] = imgui.ImVec4(0.20, 0.41, 0.68, 1.00)
+    colors[imgui.Col.Header] = imgui.ImVec4(0.16, 0.29, 0.48, 1.00)
+    colors[imgui.Col.HeaderHovered] = imgui.ImVec4(0.26, 0.59, 0.98, 1.00)
+    colors[imgui.Col.HeaderActive] = imgui.ImVec4(0.20, 0.41, 0.68, 1.00)
+    colors[imgui.Col.Separator] = imgui.ImVec4(0.18, 0.18, 0.20, 1.00)
+    colors[imgui.Col.Tab] = imgui.ImVec4(0.12, 0.12, 0.14, 1.00)
+    colors[imgui.Col.TabHovered] = imgui.ImVec4(0.26, 0.59, 0.98, 1.00)
+    colors[imgui.Col.TabActive] = imgui.ImVec4(0.16, 0.29, 0.48, 1.00)
+    colors[imgui.Col.ResizeGrip] = imgui.ImVec4(0.16, 0.29, 0.48, 1.00)
+    colors[imgui.Col.ResizeGripHovered] = imgui.ImVec4(0.26, 0.59, 0.98, 1.00)
+    colors[imgui.Col.ResizeGripActive] = imgui.ImVec4(0.20, 0.41, 0.68, 1.00)
+    colors[imgui.Col.PlotLines] = imgui.ImVec4(0.16, 0.29, 0.48, 1.00)
 end
 
 function explode_argb(argb)
