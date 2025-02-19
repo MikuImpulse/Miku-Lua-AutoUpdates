@@ -1,5 +1,5 @@
 -------Версия скрипта--------
-local script_ver = '1.2.5'
+local script_ver = '1.2.6'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
@@ -2332,6 +2332,24 @@ function main()
     end)
     while true do wait(0)
         while not sampIsLocalPlayerSpawned() do wait(0) end
+        if settings.render.ruda[0] then
+            for id = 0, 2048 do
+                if sampIs3dTextDefined(id) then
+                    local text, color, x, y, z, distance, ignoreWalls, player, vehicle = sampGet3dTextInfoById(id)
+                    if text:find("Месторождение ресурсов") then
+                        if isPointOnScreen(x, y, z, 3.0) then
+                            xp, yp, zp = getCharCoordinates(PLAYER_PED)
+                            x1, y2 = convert3DCoordsToScreen(x, y, z)
+                            p3, p4 = convert3DCoordsToScreen(xp, yp, zp)
+                            distance = string.format("%.0f", getDistanceBetweenCoords3d(x, y, z, xp, yp, zp))
+                            text = ("{ffffff}Руда\n{B8FCFF}Distance: "..distance)
+                            renderDrawLine(x1, y2, p3, p4, 2, 0xB8B8FCFF)
+                            renderFontDrawText(font, text, x1, y2, -1)
+                        end
+                    end
+                end
+            end
+        end
         if settings.ped.changefov[0] then
             cameraSetLerpFov(settings.ped.fovvalue[0], settings.ped.fovvalue[0], 1000, true)
         end
@@ -2877,9 +2895,9 @@ end
 
 function checkRenders(state, modelid)
     if state then
-        return settings.render.derevovishkac[0] or settings.render.graffiti[0] or settings.render.kladrender[0] or settings.render.kokosi[0] or settings.render.musortsr[0] or settings.render.narkotiki[0] or settings.render.podarok[0] or settings.render.ruda[0] or settings.render.semena[0] or settings.render.slivu[0] or settings.render.yabloki[0]
+        return settings.render.derevovishkac[0] or settings.render.graffiti[0] or settings.render.kladrender[0] or settings.render.kokosi[0] or settings.render.musortsr[0] or settings.render.narkotiki[0] or settings.render.podarok[0] or settings.render.semena[0] or settings.render.slivu[0] or settings.render.yabloki[0]
     else
-        return (settings.render.derevovishkac[0] and derevovish[modelid]) or (settings.render.graffiti[0] and graffity[modelid]) or (settings.render.kladrender[0] and klad[modelid]) or (settings.render.kokosi[0] and kokos[modelid]) or (settings.render.musortsr[0] and musor[modelid]) or (settings.render.narkotiki[0] and narko[modelid]) or (settings.render.podarok[0] and gift[modelid]) or (settings.render.ruda[0] and ruda1[modelid]) or (settings.render.semena[0] and semenanarko[modelid]) or (settings.render.slivu[0] and sliva[modelid]) or (settings.render.yabloki[0] and apple[modelid])
+        return (settings.render.derevovishkac[0] and derevovish[modelid]) or (settings.render.graffiti[0] and graffity[modelid]) or (settings.render.kladrender[0] and klad[modelid]) or (settings.render.kokosi[0] and kokos[modelid]) or (settings.render.musortsr[0] and musor[modelid]) or (settings.render.narkotiki[0] and narko[modelid]) or (settings.render.podarok[0] and gift[modelid]) or (settings.render.semena[0] and semenanarko[modelid]) or (settings.render.slivu[0] and sliva[modelid]) or (settings.render.yabloki[0] and apple[modelid])
     end
 end
 
