@@ -1,16 +1,20 @@
 -------Версия скрипта--------
-local script_ver = '1.2.6'
+local script_ver = '1.2.7'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
 script_author('@mikusilent')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channeI: t.me/mikusilent')
---------Проверка на название скрипта-------
+--------Проверка на название скрипта--------
 local getName = thisScript().path
-if getName ~= getWorkingDirectory()..'/MikuProjectReborn.lua' then
-    os.rename(getName, getWorkingDirectory()..'/MikuProjectReborn.lua')
+local targetName = getWorkingDirectory()..'/MikuProjectReborn.lua'
+if getName ~= targetName then
+    os.rename(getName, targetName)
     thisScript():reload()
 end
+--------Для подгрузки Android v0.1--------
+local success, jniUtil = pcall(require, "android.jnienv-util")
+local success2, env = pcall(require, "android.jnienv")
 --------Библиотеки--------
 local imgui = require 'mimgui'
 local fa = require 'fAwesome6_solid'
@@ -164,6 +168,10 @@ local ini = inicfg.load({
         autormcell = (false),
         autormdoors = (false),
         autormfence = (false)
+    },
+    battery = {
+        notifyLowCharge = (false),
+        lowBatteryLevel = (15)
     }
 }, directIni)
 inicfg.save(ini, directIni)
@@ -295,6 +303,11 @@ local settings = {
         autormdoors = imgui.new.bool(ini.tsr.autormdoors),
         autormfence = imgui.new.bool(ini.tsr.autormfence)
     },
+    battery = {
+        notifyLowCharge = imgui.new.bool(ini.battery.notifyLowCharge),
+        lowBatteryLevel = imgui.new.int(ini.battery.lowBatteryLevel),
+        stopMessage = false
+    },
     cfg = {
         autosave = imgui.new.bool(ini.cfg.autosave)
     }
@@ -317,6 +330,11 @@ local window_state = new.bool()
 local custommimguiStyle = new.bool()
 local menusettings = new.bool()
 local found_update = new.bool()
+-- battery manager
+local BATTERY_PROPERTY_CAPACITY = 4
+local BATTERY_PROPERTY_CHARGE_COUNTER = 1
+local BATTERY_PROPERTY_ENERGY_COUNTER = 5
+local BATTERY_PROPERTY_CURRENT_NOW = 5
 -- AirBrake
 local was_doubletapped = false
 local enabledair = false
@@ -884,6 +902,28 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     if settings.cfg.autosave[0] then
                         ini.main.autocaptcha = settings.main.autocaptcha[0]
                         save()
+                    end
+                end
+                if imgui.ToggleButton(u8'Напоминание о низком заряде', settings.battery.notifyLowCharge) then
+                    if settings.cfg.autosave[0] then
+                        ini.battery.notifyLowCharge = settings.battery.notifyLowCharge[0]
+                        save()
+                    end
+                end
+                if settings.battery.notifyLowCharge[0] then
+                    imgui.SameLine()
+                    imgui.PushItemWidth(200) 
+                    if imgui.SliderInt(u8'Уровень заряда', settings.battery.lowBatteryLevel, 1, 100) then
+                        if settings.battery.lowBatteryLevel[0] < 1 then
+                            settings.battery.lowBatteryLevel[0] = 1
+                        end
+                        if settings.battery.lowBatteryLevel[0] > 100 then
+                            settings.battery.lowBatteryLevel[0] = 100
+                        end
+                        if settings.cfg.autosave[0] then
+                            ini.battery.lowBatteryLevel = settings.battery.lowBatteryLevel[0]
+                            save()
+                        end
                     end
                 end
                 if imgui.Button(u8'Реконнект', imgui.ImVec2(80 * MONET_DPI_SCALE, 30 * MONET_DPI_SCALE)) and not Reconnect.reconnecting and not Reconnect.waiting then
@@ -1982,6 +2022,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     imgui.EndPopup()
                 end
             elseif subtab_7 == 4 then
+
                 if imgui.Button(u8'Показать mimgui demo') then
 		            custommimguiStyle[0] = not custommimguiStyle[0]
 		        end
@@ -2003,7 +2044,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 end
                 imgui.SameLine()
                 if imgui.Button(fa.ROTATE_RIGHT, imgui.ImVec2(40 * MONET_DPI_SCALE, 40 * MONET_DPI_SCALE)) then
-                    notf1(u8'Скрипт перезагружен!')
                     thisScript():reload()
                 end
                 if imgui.IsItemHovered() then
@@ -2123,6 +2163,8 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         ini.tsr.autormcell = settings.tsr.autormcell[0]
                         ini.tsr.autormdoors = settings.tsr.autormdoors[0]
                         ini.tsr.autormfence = settings.tsr.autormcell[0]
+                        ini.battery.notifyLowCharge = settings.battery.notifyLowCharge[0]
+                        ini.battery.lowBatteryLevel = settings.battery.lowBatteryLevel[0]
                         save()
                         notf1(u8'Настройки сохранены!')
                         imgui.CloseCurrentPopup()
@@ -2301,11 +2343,14 @@ end
 
 ------main func------
 function main()
+    while not isSampAvailable() do wait(0) end
+    downloadLibraries()
     checkResFolder()
     clearTags()
     check_update()
     antifall()
-    while not isSampAvailable() do wait(0) end
+    jniUtil.Toast(u8"Miku Reborn загружен!", jniUtil.ToastFlag.LENGTH_SHORT):show()
+    
     sampRegisterChatCommand('miku', function() window_state[0] = not window_state[0] end)
     sampRegisterChatCommand('mikureload', function() thisScript():reload() end)
     sampRegisterChatCommand('jump', function()
@@ -2332,6 +2377,17 @@ function main()
     end)
     while true do wait(0)
         while not sampIsLocalPlayerSpawned() do wait(0) end
+        if settings.battery.notifyLowCharge[0] and success or settings.battery.notifyLowCharge[0] and success2 then
+            local getBatteryLevel = getBatteryPercentage()
+            if getBatteryLevel <= settings.battery.lowBatteryLevel[0] then
+                if not settings.battery.stopMessage then
+                    settings.battery.stopMessage = true
+                    jniUtil.Toast(u8"[Miku] Низкий заряд батареи!!", jniUtil.ToastFlag.LENGTH_SHORT):show()
+                end
+            else
+                settings.battery.stopMessage = false
+            end
+        end
         if settings.render.ruda[0] then
             for id = 0, 2048 do
                 if sampIs3dTextDefined(id) then
@@ -3915,6 +3971,21 @@ function downloadFile(url, path)
     end
 end
 
+function downloadLibraries()
+    if not doesDirectoryExist(getWorkingDirectory().."/lib/android") and not success or not doesDirectoryExist(getWorkingDirectory().."/lib/android") and not success2 then
+        createDirectory(getWorkingDirectory().."/lib/android")
+        createDirectory(getWorkingDirectory().."/lib/android/jar")
+        downloadFile("https://github.com/MikuImpulse/Miku-Lua-AutoUpdates/raw/refs/heads/main/arizona.lua", getWorkingDirectory().."/lib/android/arizona.lua")
+        downloadFile("https://github.com/MikuImpulse/Miku-Lua-AutoUpdates/raw/refs/heads/main/jni-raw.lua", getWorkingDirectory().."/lib/android/jni-raw.lua")
+        downloadFile("https://github.com/MikuImpulse/Miku-Lua-AutoUpdates/raw/refs/heads/main/jnienv-util.lua", getWorkingDirectory().."/lib/android/jnienv-util.lua")
+        downloadFile("https://github.com/MikuImpulse/Miku-Lua-AutoUpdates/raw/refs/heads/main/jnienv.lua", getWorkingDirectory().."/lib/android/jnienv.lua")
+        downloadFile("https://github.com/MikuImpulse/Miku-Lua-AutoUpdates/raw/refs/heads/main/arzapi.jar", getWorkingDirectory().."/lib/android/jar/arzapi.jar")
+        thisScript():reload()
+    else
+        jniUtil.LooperPrepare()
+    end
+end
+
 function check_update()
     notf4(u8'Проверка наличия обновлений...')
     local currentVersionFile = io.open(lmPath, "r")
@@ -4381,14 +4452,27 @@ end
 
 -- watermark
 imgui.OnFrame(function() return settings.menu.watermark[0] end, function(self)
+    if success or success2 then
+    local BatteryPercent = getBatteryPercentage()
     imgui.SetNextWindowPos(imgui.ImVec2(25, 15), imgui.Cond.FirstUseEver)
-    imgui.SetNextWindowSize(imgui.ImVec2(275 * MONET_DPI_SCALE, 38 * MONET_DPI_SCALE), imgui.Cond.Always)
+    imgui.SetNextWindowSize(imgui.ImVec2(280 * MONET_DPI_SCALE, 34 * MONET_DPI_SCALE), imgui.Cond.Always)
     imgui.PushStyleColor(imgui.Col.WindowBg, imgui.ImVec4(0.12, 0.12, 0.14, 0.70))
     imgui.PushStyleColor(imgui.Col.Text, imgui.ImVec4(0.90, 0.90, 0.93, 0.85))
     imgui.Begin("##minet", settings.menu.watermark, imgui.WindowFlags.NoMove + imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoInputs + imgui.WindowFlags.NoScrollbar)
-    imgui.Text(u8"Miku Reborn | v"..script_ver.." | @mikusilent", MONET_DPI_SCALE)
+    if BatteryPercent <= 5 then
+        imgui.Text(u8"Miku Reborn | v"..script_ver.." | @mikusilent | "..fa.BATTERY_EMPTY.." "..BatteryPercent, MONET_DPI_SCALE)
+    elseif BatteryPercent <= 30 and BatteryPercent > 5 then
+        imgui.Text(u8"Miku Reborn | v"..script_ver.." | @mikusilent | "..fa.BATTERY_QUARTER.." "..BatteryPercent, MONET_DPI_SCALE)
+    elseif BatteryPercent <= 50 and BatteryPercent > 30 then
+        imgui.Text(u8"Miku Reborn | v"..script_ver.." | @mikusilent | "..fa.BATTERY_HALF.." "..BatteryPercent, MONET_DPI_SCALE)
+    elseif BatteryPercent <= 80 and BatteryPercent > 50 then
+        imgui.Text(u8"Miku Reborn | v"..script_ver.." | @mikusilent | "..fa.BATTERY_THREE_QUARTERS.." "..BatteryPercent, MONET_DPI_SCALE)
+    elseif BatteryPercent <= 100 and BatteryPercent > 80 then
+        imgui.Text(u8"Miku Reborn | v"..script_ver.." | @mikusilent | "..fa.BATTERY_FULL.." "..BatteryPercent, MONET_DPI_SCALE)
+    end
     imgui.End()
     imgui.PopStyleColor(2)
+    end
 end)
 
 --({ DRAWLIST ESP })--
@@ -4664,5 +4748,33 @@ end
 function events.onSetPlayerSkillLevel(playerId, skill, level)
     if settings.ped.setskills[0] then
         return false
+    end
+end
+
+-- Battery Percentage
+function getBatteryPercentage()
+    if success or success2 then
+    local batteryManager = jniUtil.GetSystemService(jniUtil.SystemService.BATTERY_SERVICE)
+
+    if batteryManager == nil then
+        sampAddChatMessage("[Miku] Ошибка: не удалось получить сервис BatteryManager", -1)
+        sampAddChatMessage("[Miku] Процент заряда в Watermark не будет отображаться корректно", -1)
+        return -1
+    end
+
+    local percentage = -1
+    -- Явно преобразуем параметр к jint через ffi.new, чтобы убедиться в правильности типа
+    local param = ffi.new("jint", BATTERY_PROPERTY_CAPACITY)
+    local ok, result = pcall(jniUtil.CallIntMethod, batteryManager, "getIntProperty", "(I)I", param)
+
+    if ok then
+        percentage = result
+    else
+        sampAddChatMessage("[Miku] Ошибка вызова getIntProperty(BATTERY_PROPERTY_CAPACITY): " .. tostring(result), -1)
+        percentage = -1 -- Устанавливаем значение ошибки
+    end
+
+    env.DeleteLocalRef(batteryManager)
+    return percentage
     end
 end
