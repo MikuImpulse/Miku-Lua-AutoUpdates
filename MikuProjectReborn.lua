@@ -1,5 +1,5 @@
 -------Версия скрипта--------
-local script_ver = '1.2.7'
+local script_ver = '1.2.8'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
@@ -86,7 +86,8 @@ local ini = inicfg.load({
         antimask = (false),
         timeblockserv = (false),
         weatherblockserv = (false),
-        autocaptcha = (false)
+        autocaptcha = (false),
+        antiFreeze = (false)
     },
     ped = {
         godmode_enabled = (false),
@@ -220,7 +221,8 @@ local settings = {
         antimask = imgui.new.bool(ini.main.antimask),
         timeblockserv = imgui.new.bool(ini.main.timeblockserv),
         weatherblockserv = imgui.new.bool(ini.main.weatherblockserv),
-        autocaptcha = imgui.new.bool(ini.main.autocaptcha)
+        autocaptcha = imgui.new.bool(ini.main.autocaptcha),
+        antiFreeze = imgui.new.bool(ini.main.antiFreeze)
     },
     ped = {
         godmode_enabled = imgui.new.bool(ini.ped.godmode_enabled),
@@ -330,6 +332,10 @@ local window_state = new.bool()
 local custommimguiStyle = new.bool()
 local menusettings = new.bool()
 local found_update = new.bool()
+-- fps
+local fps = 0
+local frameCount = 0
+local lastUpdateTime = os.clock()
 -- battery manager
 local BATTERY_PROPERTY_CAPACITY = 4
 local BATTERY_PROPERTY_CHARGE_COUNTER = 1
@@ -911,7 +917,6 @@ imgui.OnFrame(function() return window_state[0] end, function()
                     end
                 end
                 if settings.battery.notifyLowCharge[0] then
-                    imgui.SameLine()
                     imgui.PushItemWidth(200) 
                     if imgui.SliderInt(u8'Уровень заряда', settings.battery.lowBatteryLevel, 1, 100) then
                         if settings.battery.lowBatteryLevel[0] < 1 then
@@ -924,6 +929,13 @@ imgui.OnFrame(function() return window_state[0] end, function()
                             ini.battery.lowBatteryLevel = settings.battery.lowBatteryLevel[0]
                             save()
                         end
+                    end
+                    imgui.PopItemWidth()
+                end
+                if imgui.ToggleButton(u8"Антифриз", settings.main.antiFreeze) then
+                    if settings.cfg.autosave[0] then
+                        ini.main.antiFreeze = settings.main.antiFreeze[0]
+                        save()
                     end
                 end
                 if imgui.Button(u8'Реконнект', imgui.ImVec2(80 * MONET_DPI_SCALE, 30 * MONET_DPI_SCALE)) and not Reconnect.reconnecting and not Reconnect.waiting then
@@ -2098,6 +2110,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         ini.main.timeblockserv = settings.main.timeblockserv[0]
                         ini.main.weatherblockserv = settings.main.weatherblockserv[0]
                         ini.main.autocaptcha = settings.main.autocaptcha[0]
+                        ini.main.antiFreeze = settings.main.antiFreeze[0]
                         ini.ped.godmode_enabled = settings.ped.godmode_enabled[0]
                         ini.ped.noreload = settings.ped.noreload[0]
                         ini.ped.setskills = settings.ped.setskills[0]
@@ -2341,9 +2354,17 @@ function bringVec2To(from, to, start_time, duration)
     return (timer > duration) and to or from, false
 end
 
+function fps1()
+    lua_thread.create(function()
+        while true do wait(0)
+            getFPS()
+        end
+    end)
+end
 ------main func------
 function main()
     while not isSampAvailable() do wait(0) end
+    fps1()
     downloadLibraries()
     checkResFolder()
     clearTags()
@@ -3884,7 +3905,9 @@ end)
 
 -- nofreeze
 function events.onTogglePlayerControllable(controllable)
-	return false
+    if settings.main.antiFreeze[0] then
+    	return false
+    end
 end
 
 -- message form
@@ -4451,29 +4474,78 @@ function table_filter(tbl, fn)
 end
 
 -- watermark
-imgui.OnFrame(function() return settings.menu.watermark[0] end, function(self)
-    if success or success2 then
+imgui.OnFrame(function() return settings.menu.watermark[0] end, function(player)
+    local scrx, scry = getScreenResolution()
+    imgui.SetNextWindowPos(imgui.ImVec2(20, 10), imgui.Cond.Always)
+    imgui.SetNextWindowSize(imgui.ImVec2(390 * MONET_DPI_SCALE, 34 * MONET_DPI_SCALE), imgui.Cond.Always)
     local BatteryPercent = getBatteryPercentage()
-    imgui.SetNextWindowPos(imgui.ImVec2(25, 15), imgui.Cond.FirstUseEver)
-    imgui.SetNextWindowSize(imgui.ImVec2(280 * MONET_DPI_SCALE, 34 * MONET_DPI_SCALE), imgui.Cond.Always)
+    local colors = {
+        blue = imgui.ImVec4(0, 0.5, 1, 1),
+        white = imgui.ImVec4(1, 1, 1, 1),
+        red = imgui.ImVec4(1, 0, 0, 1),
+        orange = imgui.ImVec4(1, 0.5, 0, 1),
+        yellow = imgui.ImVec4(1, 0.8, 0, 1),
+        green = imgui.ImVec4(0, 1, 0, 1),
+    }
+    
+    local batteryIcon, batteryColor = "", colors.white
+    local fpsColor, pingColor = colors.white, colors.white
+    local ping = sampGetPlayerPing(select(2, sampGetPlayerIdByCharHandle(PLAYER_PED)))
+
+    if BatteryPercent <= 10 then
+        batteryIcon, batteryColor = fa.BATTERY_EMPTY, colors.red
+    elseif BatteryPercent <= 30 then
+        batteryIcon, batteryColor = fa.BATTERY_QUARTER, colors.orange
+    elseif BatteryPercent <= 60 then
+        batteryIcon, batteryColor = fa.BATTERY_HALF, colors.yellow
+    elseif BatteryPercent <= 80 then
+        batteryIcon, batteryColor = fa.BATTERY_THREE_QUARTERS, colors.green
+    else
+        batteryIcon, batteryColor = fa.BATTERY_FULL, colors.green
+    end
+
+    fpsColor = fps <= 5 and colors.red or fps <= 10 and colors.orange or fps <= 30 and colors.yellow or colors.green
+
+    pingColor = ping <= 60 and colors.green or ping <= 120 and colors.yellow or colors.red
+
     imgui.PushStyleColor(imgui.Col.WindowBg, imgui.ImVec4(0.12, 0.12, 0.14, 0.70))
     imgui.PushStyleColor(imgui.Col.Text, imgui.ImVec4(0.90, 0.90, 0.93, 0.85))
-    imgui.Begin("##minet", settings.menu.watermark, imgui.WindowFlags.NoMove + imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoInputs + imgui.WindowFlags.NoScrollbar)
-    if BatteryPercent <= 5 then
-        imgui.Text(u8"Miku Reborn | v"..script_ver.." | @mikusilent | "..fa.BATTERY_EMPTY.." "..BatteryPercent, MONET_DPI_SCALE)
-    elseif BatteryPercent <= 30 and BatteryPercent > 5 then
-        imgui.Text(u8"Miku Reborn | v"..script_ver.." | @mikusilent | "..fa.BATTERY_QUARTER.." "..BatteryPercent, MONET_DPI_SCALE)
-    elseif BatteryPercent <= 50 and BatteryPercent > 30 then
-        imgui.Text(u8"Miku Reborn | v"..script_ver.." | @mikusilent | "..fa.BATTERY_HALF.." "..BatteryPercent, MONET_DPI_SCALE)
-    elseif BatteryPercent <= 80 and BatteryPercent > 50 then
-        imgui.Text(u8"Miku Reborn | v"..script_ver.." | @mikusilent | "..fa.BATTERY_THREE_QUARTERS.." "..BatteryPercent, MONET_DPI_SCALE)
-    elseif BatteryPercent <= 100 and BatteryPercent > 80 then
-        imgui.Text(u8"Miku Reborn | v"..script_ver.." | @mikusilent | "..fa.BATTERY_FULL.." "..BatteryPercent, MONET_DPI_SCALE)
+
+    if imgui.Begin("##minet", settings.menu.watermark, imgui.WindowFlags.NoMove + imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoInputs + imgui.WindowFlags.NoScrollbar) then
+        imgui.TextColored(colors.blue, "Miku")
+        imgui.SameLine()
+        imgui.SetCursorPosX(imgui.GetCursorPosX() - 8)
+        imgui.TextColored(colors.white, "Reborn")
+        imgui.SameLine()
+        imgui.SetCursorPosX(imgui.GetCursorPosX() - 8)
+        imgui.Text(u8("| "..script_ver.." | @mikusilent | "))
+        imgui.SameLine()
+        imgui.SetCursorPos(imgui.ImVec2(imgui.GetCursorPosX() - 10, imgui.GetCursorPosY() + 5))
+        imgui.TextColored(batteryColor, batteryIcon)
+        imgui.SameLine()
+        imgui.SetCursorPos(imgui.ImVec2(imgui.GetCursorPosX() - 10, imgui.GetCursorPosY() - 3.5))
+        imgui.TextColored(batteryColor, BatteryPercent .. "%%")
+        imgui.SameLine()
+        imgui.TextColored(fpsColor, string.format("FPS: %.0f", fps))
+        imgui.SameLine()
+        imgui.SetCursorPosY(imgui.GetCursorPosY() - 1)
+        imgui.TextColored(pingColor, string.format("ping: %.0f", ping))
     end
-    imgui.End()
+
     imgui.PopStyleColor(2)
-    end
+    imgui.End()
 end)
+
+-- FPS
+function getFPS()
+    frameCount = frameCount + 1
+    local currentTime = os.clock()
+    if currentTime - lastUpdateTime >= 0.5 then
+        fps = frameCount / (currentTime - lastUpdateTime)
+        frameCount = 0
+        lastUpdateTime = currentTime
+    end
+end
 
 --({ DRAWLIST ESP })--
 imgui.OnFrame(function() return settings.ESP.drawing[0] and not isGamePaused() end, function(self)
@@ -4763,7 +4835,6 @@ function getBatteryPercentage()
     end
 
     local percentage = -1
-    -- Явно преобразуем параметр к jint через ffi.new, чтобы убедиться в правильности типа
     local param = ffi.new("jint", BATTERY_PROPERTY_CAPACITY)
     local ok, result = pcall(jniUtil.CallIntMethod, batteryManager, "getIntProperty", "(I)I", param)
 
@@ -4771,7 +4842,7 @@ function getBatteryPercentage()
         percentage = result
     else
         sampAddChatMessage("[Miku] Ошибка вызова getIntProperty(BATTERY_PROPERTY_CAPACITY): " .. tostring(result), -1)
-        percentage = -1 -- Устанавливаем значение ошибки
+        percentage = -1
     end
 
     env.DeleteLocalRef(batteryManager)
