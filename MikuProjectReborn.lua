@@ -1,5 +1,5 @@
 -------Версия скрипта--------
-local script_ver = '1.2.9'
+local script_ver = '1.3.0'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
@@ -2369,7 +2369,6 @@ function main()
     checkResFolder()
     clearTags()
     check_update()
-    antifall()
     jniUtil.Toast(u8"Miku Reborn загружен!", jniUtil.ToastFlag.LENGTH_SHORT):show()
     
     sampRegisterChatCommand('miku', function() window_state[0] = not window_state[0] end)
