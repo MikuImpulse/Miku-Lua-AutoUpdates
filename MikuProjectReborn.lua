@@ -1,5 +1,5 @@
 -------Версия скрипта--------
-local script_ver = '1.2.8'
+local script_ver = '1.2.9'
 --------О скрипте--------
 script_name('Miku Project Reborn')
 script_version(script_ver)
@@ -2398,6 +2398,9 @@ function main()
     end)
     while true do wait(0)
         while not sampIsLocalPlayerSpawned() do wait(0) end
+        if settings.ped.nofall[0] and (isCharPlayingAnim(playerPed, 'KO_SKID_BACK') or isCharPlayingAnim(playerPed, 'FALL_COLLAPSE')) then
+            clearCharTasksImmediately(playerPed)
+        end
         if settings.battery.notifyLowCharge[0] and success or settings.battery.notifyLowCharge[0] and success2 then
             local getBatteryLevel = getBatteryPercentage()
             if getBatteryLevel <= settings.battery.lowBatteryLevel[0] then
@@ -2624,7 +2627,11 @@ function main()
             forceWeatherNow(WeatherAndTime.weather[0])
         end
         if wwwflycar then
-            FlyCar.processFlyCar()
+            if isCharInAnyCar(PLAYER_PED) then
+                FlyCar.processFlyCar()
+            else
+                wwwflycar = false
+            end
         end
         if not wwwflycar then
             FlyCar.cars = 0
@@ -2880,7 +2887,6 @@ function main()
             raknetBitStreamWriteString(bs, "")
             raknetSendBitStreamEx(bs, 1, 7, 1)
             raknetDeleteBitStream(bs)
-            return
         end
         if enabledair then
             processAirBrake()
@@ -2935,17 +2941,14 @@ function main()
             end
         end
         if settings.silent.salo[0] then
-            lua_thread.create(function() 
-                wait(0)
-                if ped ~= nil then
-                    local _, id = sampGetPlayerIdByCharHandle(ped)
-                    if _ then
-                        targetId = id
-                    end
-                else
-                    targetId = -1
+            if ped ~= nil then
+                local _, id = sampGetPlayerIdByCharHandle(ped)
+                if _ then
+                    targetId = id
                 end
-            end)
+            else
+                targetId = -1
+            end
         end
         if checkRenders(true, nil) then
             for _, obj_hand in pairs(getAllObjects()) do
@@ -2985,7 +2988,7 @@ end
 --      Общие эвенты        --
 function events.onSendVehicleSync(data)
     if enabledair then
-        local mx, my = getMoveSpeed(getCharHeading(PLAYER_PED), speed > 2 and 2 or speed)
+        local mx, my = getMoveSpeed(getCharHeading(PLAYER_PED), speed > 1 and 1 or speed)
         data.moveSpeed.x = mx
         data.moveSpeed.y = my
     end
@@ -3028,7 +3031,6 @@ function getTargetBlipCoordinatesFixed()
     return bool, x, y, z
 end
 
---      unoccupied      --
 function samp_create_sync_data(sync_type, copy_from_player)
     local ffi = require 'ffi'
     local sampfuncs = require 'sampfuncs'
@@ -3312,12 +3314,6 @@ function events.onSendBulletSync(sync)
                         end
                         if not miss then
                             sampSendGiveDamage(targetId, weapon.dmg, getCurrentCharWeapon(PLAYER_PED), 3)
-                            if settings.silent.doubledamage[0] then
-                                sampSendGiveDamage(targetId, weapon.dmg, getCurrentCharWeapon(PLAYER_PED), 3)
-                                if settings.silent.tripledamage[0] then
-                                    sampSendGiveDamage(targetId, weapon.dmg, getCurrentCharWeapon(PLAYER_PED), 3)
-                                end
-                            end
                         end
                         if settings.silent.printString[0] then
                             printStringNow(miss and 'Shot missed' or string.format('Player ~r~%d ~w~damaged', targetId), 500)
@@ -3628,26 +3624,6 @@ function incarcoord(vehId, x, y, z, pos)
     data.send()
 end
 
-function setCharCoordinatesDontResetAnim(char, x, y, z)
-	if doesCharExist(char) then
-		local ptr = getCharPointer(char)
-		setEntityCoordinates(ptr, x, y, z)
-	end
-end
-
-function setEntityCoordinates(entityPtr, x, y, z)
-	if entityPtr ~= 0 then
-		local matrixPtr = readMemory(entityPtr + 0x14, 4, false)
-		if matrixPtr ~= 0 then
-			local posPtr = matrixPtr + 0x30
-			writeMemory(posPtr + 0, 4, representFloatAsInt(x), false)
-			writeMemory(posPtr + 4, 4, representFloatAsInt(y), false)
-			writeMemory(posPtr + 8, 4, representFloatAsInt(z), false)
-		end
-	end
-end
-
-
 function jumpIntoCar(car)
   	local seat = getCarFreeSeat(car)
   	if not seat then return false end
@@ -3726,130 +3702,6 @@ function readFile(path)
     end
     f:close()
     return table.concat(lines, "\n")
-end
-
--- Бот для завода
-function botwork() 
-	while armorbotstate do
-		wait(0)
-		for k, v in pairs(coordinates) do
-			runToPoint(v[1], v[2])
-		end
-	end
-end
-
-function runToPoint(tox, toy)
-	local x, y, z = getCharCoordinates(PLAYER_PED)
-    local angle = getHeadingFromVector2d(tonumber(tox) - x, tonumber(toy) - y)
-    local xAngle = math.random(-50, 50)/250
-    setCameraPositionUnfixed(xAngle, math.rad(angle - 90))
-    while armorbotstate and getDistanceBetweenCoords2d(x, y, tox, toy) > 1 or (getDistanceBetweenCoords2d(x, y, 2558.9885253906, -1287.6723632813) > 1 and point == 0) or (getDistanceBetweenCoords2d(x, y, 2558.4392089844, -1291.0050048828) > 1 and point == 1) or (getDistanceBetweenCoords2d(x, y, 2564.4611816406, -1292.9296875) > 1 and point == 2) do
-        setGameKeyState(1, -255)
-        wait(1)
-		local x, y, z = getCharCoordinates(PLAYER_PED)
-        angle = getHeadingFromVector2d(tox - x, toy - y)
-        setCameraPositionUnfixed(xAngle, math.rad(angle - 90))
-		if point == 0 and getDistanceBetweenCoords2d(x, y, 2558.9885253906, -1287.6723632813) < 1 then
-			notf1(u8'Берём детали...')
-			wait(1500)
-			point = point + 1
-			break
-		end
-		if point == 1 and getDistanceBetweenCoords2d(x, y, 2558.4392089844, -1291.0050048828) < 1 then
-			armorbotalt = true
-			notf1(u8'Изготавливаем...')
-			repeat sendKey(1024) wait(math.random(75, 150)) until not armorbotalt or not armorbotstate
-			point = point + 1
-			break
-		end
-		if point == 2 and getDistanceBetweenCoords2d(x, y, 2564.4611816406, -1292.9296875) < 1 then
-			armorbotalt = true
-			notf1(u8'Сдаём...')
-			repeat sendKey(1024) wait(math.random(75, 150)) until not armorbotalt or not armorbotstate
-			notf1(currentrounds..u8' круг..')
-			point = 0
-			break
-		end
-        if getDistanceBetweenCoords2d(x, y, tox, toy) < 1 then
-            break
-        end
-    end
-end
-
-function events.onApplyPlayerAnimation(playerId, animLib, animName)
-	if armorbotstate then
-		if playerId == idb and animName == 'PUTDWN' then
-			currentrounds = currentrounds + 1
-			lua_thread.create(function()
-				wait(math.random(1050, 1175))
-				armorbotalt = false
-			end)
-		end
-	end
-end
-
-function events.onShowTextDraw(id, data)
-	if armorbotstate then
-		if data.modelId == 7891 then
-			detal1 = id
-		end
-		if data.modelId == 18644 then
-			detal2 = id
-		end
-	end
-end
-
-function events.onServerMessage(clr, txt) 
-	if armorbotstate then
-		if string.find(txt, 'Вы сделали бракованную деталь') then
-			lua_thread.create(function()
-				wait(math.random(200, 300))
-				point = 0
-				statusbot: terminate()
-				wait(100)
-				statusbot: run()
-			end)
-		end
-		if string.find(txt, 'ответил вам') or string.find(txt, 'телепортированы') then	
-		    notf2(u8'Вам написал администратор, закругляемся...')
-			lua_thread.create(function()
-				wait(math.random(1470, 1955))
-				point = 0
-				statusbot: terminate()
-			end)	
-		end
-	end
-end
-
-function events.onSetPlayerAttachedObject(playerId, index, create, data)
-	if armorbotstate then
-		if playerId == idb and data.modelId == 1279 then
-			lua_thread.create(function()
-				wait(math.random(350, 550))
-				armorbotalt = false
-			end)
-		end
-	end
-end
-
-function events.onShowDialog(dlgid, stl, tlt, b1, b2, text)
-	if armorbotstate and string.find(text, 'Администратор') or string.find(text, 'телепортированы') then
-		notf2(u8'Вам написал администратор, закругляемся...')
-		lua_thread.create(function()
-			wait(math.random(1470, 1955))
-			point = 0
-			armorbotstate = false
-			statusbot: terminate()
-		end)	
-	end
-end
-
-function sendKey(key)
-    local data = allocateMemory(68)
-    sampStorePlayerOnfootData(idb, data)
-    setStructElement(data, 4, 2, key, false)
-    sampSendOnfootData(data)
-    freeMemory(data)
 end
 
 -- auto captcha
@@ -4079,26 +3931,27 @@ end
 
 -- fast enter vehicle
 function events.onSendEnterVehicle(vehicleId, passenger)
-    lua_thread.create(function()
-        if settings.car.fastenter[0] and not passenger then
-            wait(300)
-            warpCharIntoCar(PLAYER_PED, select(2, sampGetCarHandleBySampVehicleId(vehicleId)))
-        elseif settings.car.fastenter[0] and passenger then
-            wait(300)
-            warpCharIntoCarAsPassenger(PLAYER_PED, select(2, sampGetCarHandleBySampVehicleId(vehicleId)), 2)
-        end
-    end)
+    if settings.car.fastenter[0] then
+        lua_thread.create(function()
+            wait(200)
+            if not passenger then
+                warpCharIntoCar(PLAYER_PED, select(2, sampGetCarHandleBySampVehicleId(vehicleId)))
+            else
+                warpCharIntoCarAsPassenger(PLAYER_PED, select(2, sampGetCarHandleBySampVehicleId(vehicleId)), 2)
+            end
+        end)
+    end
 end
 
 --  spawnself  --
 function sendSpawn()
     lua_thread.create(function()
         nop = true
-        clearCharTasksImmediately(PLAYER_PED)
         setCharHealth(PLAYER_PED, 0)
-        sampSendDeathByPlayer(65535, 51)
+        wait(100)
+        clearCharTasksImmediately(PLAYER_PED)
         sampRequestClass(getCharModel(PLAYER_PED))
-        wait(200)
+        wait(100)
         nop = false
     end)
 end
@@ -4173,48 +4026,6 @@ function explode_argb(argb)
     local g = bit.band(bit.rshift(argb, 8), 0xFF)
     local b = bit.band(argb, 0xFF)
     return a, r, g, b
-end
-
-function rgb2hex(r, g, b)
-    local hex = string.format("#%02X%02X%02X", r, g, b)
-    return hex
-end
-
-function ColorAccentsAdapter(color)
-    local a, r, g, b = explode_argb(color)
-    local ret = {a = a, r = r, g = g, b = b}
-    function ret:apply_alpha(alpha)
-        self.a = alpha
-        return self
-    end
-    function ret:as_u32()
-        return join_argb(self.a, self.b, self.g, self.r)
-    end
-    function ret:as_vec4()
-        return imgui.ImVec4(self.r / 255, self.g / 255, self.b / 255, self.a / 255)
-    end
-    function ret:as_argb()
-        return join_argb(self.a, self.r, self.g, self.b)
-    end
-    function ret:as_rgba()
-        return join_argb(self.r, self.g, self.b, self.a)
-    end
-    function ret:as_chat()
-        return string.format("%06X", ARGBtoRGB(join_argb(self.a, self.r, self.g, self.b)))
-    end
-    return ret
-end
-
-function join_argb(a, r, g, b)
-    local argb = b  -- b
-    argb = bit.bor(argb, bit.lshift(g, 8))  -- g
-    argb = bit.bor(argb, bit.lshift(r, 16)) -- r
-    argb = bit.bor(argb, bit.lshift(a, 24)) -- a
-    return argb
-end
-
-function ARGBtoRGB(color)
-    return bit.band(color, 0xFFFFFF)
 end
 
 -- notifications from script mgr
@@ -4795,18 +4606,6 @@ function get_player_color_imvec4_2(id)
     local b_float = b / 255.0
 
   return imgui.ImVec4(r_float, g_float, b_float, settings.ESP.fillboxvalue[0])
-end
-
--- no fall
-function antifall()
-    lua_thread.create(function()
-        while settings.ped.nofall[0] do -- no falltaskPlayAnim(playerPed HANDSUP PED 4.0 0 0 0 0 4)
-            wait(0)
-            if isCharPlayingAnim(playerPed, 'KO_SKID_BACK') or isCharPlayingAnim(playerPed, 'FALL_COLLAPSE') then
-                clearCharTasksImmediately(playerPed)
-            end
-        end
-    end)
 end
 
 -- anti car skill
