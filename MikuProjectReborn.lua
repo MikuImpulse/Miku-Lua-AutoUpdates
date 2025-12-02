@@ -1,21 +1,19 @@
--------Версия скрипта--------
-local script_ver = '1.2.8'
---------О скрипте--------
+local script_ver = '1.2.9'
+
 script_name('Miku Project Reborn')
 script_version(script_ver)
 script_author('@mikusilent')
 script_description('MultiCheat named *Miku* for Arizona Mobile. Type /miku to open menu. Our channeI: t.me/mikusilent')
---------Проверка на название скрипта--------
+
 local getName = thisScript().path
 local targetName = getWorkingDirectory()..'/MikuProjectReborn.lua'
 if getName ~= targetName then
     os.rename(getName, targetName)
     thisScript():reload()
 end
---------Для подгрузки Android v0.1--------
+
 local success, jniUtil = pcall(require, "android.jnienv-util")
 local success2, env = pcall(require, "android.jnienv")
---------Библиотеки--------
 local imgui = require 'mimgui'
 local fa = require 'fAwesome6_solid'
 local faicons = require 'fAwesome6'
@@ -33,11 +31,11 @@ local ltn12 = require 'ltn12'
 local http = require 'socket.http'
 samem.require 'CPed'
 local FontFlags = require 'lib.moonloader'.font_flag
---------Кодировка--------
+
 local encoding = require 'encoding'
 encoding.default = 'CP1251'
 local u8 = encoding.UTF8
-----------Конфиг----------
+
 local directIni = 'MikuProject.ini'
 local ini = inicfg.load({
     silent = {
@@ -129,6 +127,7 @@ local ini = inicfg.load({
     },
     render = {
         ruda = (false),
+        deer = (false),
         narkotiki = (false),
         podarok = (false),
         musortsr = (false),
@@ -264,6 +263,7 @@ local settings = {
     },
     render = {
         ruda = imgui.new.bool(ini.render.ruda),
+        deer = imgui.new.bool(ini.render.deer),
         narkotiki = imgui.new.bool(ini.render.narkotiki),
         podarok = imgui.new.bool(ini.render.podarok),
         musortsr = imgui.new.bool(ini.render.musortsr),
@@ -314,7 +314,7 @@ local settings = {
         autosave = imgui.new.bool(ini.cfg.autosave)
     }
 }
---      buffers     --
+-- /* xyu official variables */ --
 -- Меню
 local tab = 1
 local activetab = 1
@@ -332,10 +332,6 @@ local window_state = new.bool()
 local custommimguiStyle = new.bool()
 local menusettings = new.bool()
 local found_update = new.bool()
--- fps
-local fps = 0
-local frameCount = 0
-local lastUpdateTime = os.clock()
 -- battery manager
 local BATTERY_PROPERTY_CAPACITY = 4
 local BATTERY_PROPERTY_CHARGE_COUNTER = 1
@@ -460,8 +456,6 @@ local silentfovcolor = {
 
 local animSpeed = {'RUN_CIVI', 'RUN_1ARMED', 'RUN_ARMED', 'RUN_CSAW', 'RUN_FAT', 'RUN_FATOLD', 'RUN_GANG1', 'RUN_LEFT', 'RUN_OLD', 'RUN_PLAYER', 'RUN_RIGHT', 'RUN_ROCKET', 'RUN_WUZI', 'RUN_STOP', 'RUN_STOPR', 'IDLE_STANCE', 'XPRESSSCRATCH', 'ROADCROSS', 'ROADCROSS_FEMALE', 'ROADCROSS_GANG', 'ROADCROSS_OLD', 'IDLE_HBHB', 'IDLE_GANG1', 'IDLE_ARMED', 'IDLESTANCE_OLD', 'IDLESTANCE_FAT', 'FIGHTIDLE', 'FIGHTA_M', 'FIGHTA_1'}
 local rapidAnimations = {"PYTHON_CROUCHFIRE", "PYTHON_FIRE", "PYTHON_FIRE_POOR", "PYTHON_CROCUCHRELOAD", "RIFLE_CROUCHFIRE", "RIFLE_CROUCHLOAD", "RIFLE_FIRE", "RIFLE_FIRE_POOR", "RIFLE_LOAD", "SHOTGUN_CROUCHFIRE", "SHOTGUN_FIRE", "SHOTGUN_FIRE_POOR", "SILENCED_CROUCH_RELOAD", "SILENCED_CROUCH_FIRE", "SILENCED_FIRE", "SILENCED_RELOAD", "TEC_crouchfire", "TEC_crouchreload", "TEC_fire", "TEC_reload", "UZI_crouchfire", "UZI_crouchreload", "UZI_fire", "UZI_fire_poor", "UZI_reload", "idle_rocket", "Rocket_Fire", "run_rocket", "walk_rocket", "WALK_start_rocket", "WEAPON_sniper"}
-
--- render objects
 
 local guns = {16, 17, 18, 25, 33, 34, 35, 36, 39, 40}
 local ruda1 = {
@@ -1011,6 +1005,12 @@ imgui.OnFrame(function() return window_state[0] end, function()
                 if imgui.ToggleButton(u8'Руда', settings.render.ruda) then
                     if settings.cfg.autosave[0] then
                         ini.render.ruda = settings.render.ruda[0]
+                        save()
+                    end
+                end
+                if imgui.ToggleButton(u8'Олени', settings.render.deer) then
+                    if settings.cfg.autosave[0] then
+                        ini.render.deer = settings.render.deer[0]
                         save()
                     end
                 end
@@ -2146,6 +2146,7 @@ imgui.OnFrame(function() return window_state[0] end, function()
                         ini.car.jumpcar = settings.car.jumpcar[0]
                         ini.car.anticarskill = settings.car.anticarskill[0]
                         ini.render.ruda = settings.render.ruda[0]
+                        ini.render.deer = settings.render.deer[0]
                         ini.render.narkotiki = settings.render.narkotiki[0]
                         ini.render.podarok = settings.render.podarok[0]
                         ini.render.musortsr = settings.render.musortsr[0]
@@ -2354,17 +2355,9 @@ function bringVec2To(from, to, start_time, duration)
     return (timer > duration) and to or from, false
 end
 
-function fps1()
-    lua_thread.create(function()
-        while true do wait(0)
-            getFPS()
-        end
-    end)
-end
-------main func------
+-- /* never update */ --
 function main()
     while not isSampAvailable() do wait(0) end
-    fps1()
     downloadLibraries()
     checkResFolder()
     clearTags()
@@ -2423,6 +2416,24 @@ function main()
                             renderDrawLine(x1, y2, p3, p4, 2, 0xB8B8FCFF)
                             renderFontDrawText(font, text, x1, y2, -1)
                         end
+                    end
+                end
+            end
+        end
+        if settings.render.deer[0] then
+            local x, y, z = getCharCoordinates(PLAYER_PED)
+            local c1, c2 = convert3DCoordsToScreen(x, y, z)
+
+            for k, v in ipairs(getAllChars()) do
+                if getCharModel(v) == 3150 and v ~= PLAYER_PED then
+                    local x1, y1, z1 = getCharCoordinates(v)
+                    local o1, o2 = convert3DCoordsToScreen(x1, y1, z1)
+                    local dist = math.floor(getDistanceBetweenCoords3d(x, y, z, x1, y1, z1))
+                    local text = '{87CEEB}Олень\n{87CEEB}DIST: '..dist..'m.'
+                    
+                    if isPointOnScreen(x1, y1, z1, 0) then
+                        renderDrawLine(c1, c2, o1, o2, 1, 0xB8B8FCFF)
+                        renderFontDrawText(font, text, o1, o2, -1)
                     end
                 end
             end
@@ -4490,6 +4501,7 @@ imgui.OnFrame(function() return settings.menu.watermark[0] end, function(player)
     
     local batteryIcon, batteryColor = "", colors.white
     local fpsColor, pingColor = colors.white, colors.white
+    local fps = imgui.GetIO().Framerate
     local ping = sampGetPlayerPing(select(2, sampGetPlayerIdByCharHandle(PLAYER_PED)))
 
     if BatteryPercent <= 10 then
@@ -4505,7 +4517,6 @@ imgui.OnFrame(function() return settings.menu.watermark[0] end, function(player)
     end
 
     fpsColor = fps <= 5 and colors.red or fps <= 10 and colors.orange or fps <= 30 and colors.yellow or colors.green
-
     pingColor = ping <= 60 and colors.green or ping <= 120 and colors.yellow or colors.red
 
     imgui.PushStyleColor(imgui.Col.WindowBg, imgui.ImVec4(0.12, 0.12, 0.14, 0.70))
@@ -4535,17 +4546,6 @@ imgui.OnFrame(function() return settings.menu.watermark[0] end, function(player)
     imgui.PopStyleColor(2)
     imgui.End()
 end)
-
--- FPS
-function getFPS()
-    frameCount = frameCount + 1
-    local currentTime = os.clock()
-    if currentTime - lastUpdateTime >= 0.5 then
-        fps = frameCount / (currentTime - lastUpdateTime)
-        frameCount = 0
-        lastUpdateTime = currentTime
-    end
-end
 
 --({ DRAWLIST ESP })--
 imgui.OnFrame(function() return settings.ESP.drawing[0] and not isGamePaused() end, function(self)
